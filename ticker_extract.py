@@ -12,7 +12,7 @@ def test_yahoo(ticker):
     stock = yf.Ticker(ticker)
     # print(stock.info)
     # output to csv called ticker.csv
-    hist = stock.history(period="3mo", interval="1h")
+    hist = stock.history(period="5y", interval="1d")
     print(type(hist))
     # convert hist dataframe to csv
     hist.to_csv(ticker+".csv")
