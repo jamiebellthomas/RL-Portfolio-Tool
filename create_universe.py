@@ -35,11 +35,13 @@ def time_series_edit(hist):
     Input: hist (pandas DataFrame) - the complete time series data for the given ticker symbol
     Output: hist (pandas DataFrame) - the complete time series data for the given ticker symbol with all formatting adjustments.
     """
-    # This will be the function that will be used to edit the time series.
-    # For now, it will only create a new column for the average price
 
     # create a new column for average price, this is the average of the 'High' and 'Low' columns
-    hist['Average'] = (hist['High'] + hist['Low']) / 2
+    hist["value"] = (hist["High"] + hist["Low"]) / 2
+    
+
+    # edit the Date column so it only contains the date and not the time
+    hist.index = hist.index.date
     return hist
 
 def create_collection(ticker_list):
@@ -52,6 +54,7 @@ def create_collection(ticker_list):
     asset_list = []
     for ticker in ticker_list:
         hist = extract_time_series(ticker)
+        
         if hist.empty:
             continue
         hist = time_series_edit(hist)
@@ -69,7 +72,7 @@ def main_create():
     """
     ticker_list = extract_ticker(file_path)
     collection = create_collection(ticker_list)
-    filename = 'collection.pkl'
+    filename = 'Collections/asset_universe.pkl'
 
     # Open the file with write-binary ('wb') mode and dump the object
     with open(filename, 'wb') as file:
@@ -92,21 +95,20 @@ def main_read():
     Input: None
     Output: None
     """
-    collection = read_collection('collection.pkl')
+    filename = 'Collections/asset_universe.pkl'
+    collection = read_collection(filename)
     print(collection.attribute_list.__len__())
     # select 10 random ites from collection.attribute_list and plot them
     import random
     random_items = random.sample(collection.attribute_list, 5)
     for item in random_items:
         # add title to the plot
-        plt.plot(item.time_series['Average'])
-        plt.title(item.ticker)
-        plt.show()
+        item.plot_asset()
 
     
 
 if __name__ == "__main__":
     ticker_list = extract_ticker(file_path)
     print(ticker_list.__len__())
-    #main_create()
-    #main_read()
+    main_create()
+    main_read()
