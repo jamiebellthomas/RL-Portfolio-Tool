@@ -1,8 +1,9 @@
 from fredapi import Fred
-import matplotlib.pyplot as plt
 from Asset import Asset
 from Collection import Collection
 import pickle
+import yfinance as yf
+from create_universe import time_series_edit
 fred = Fred(api_key='ce93398088b6cef191be72551306fcae')
 
 def clean_dataset(dataset):
@@ -20,7 +21,15 @@ def clean_dataset(dataset):
     return dataset
 
 
-
+def extract_snp500():
+    """
+    This function will extract the S&P 500 data from Yahoo Finance using the yfinance library.
+    """
+    sp500 = yf.Ticker("^GSPC")
+    # Get historical data
+    hist_data = sp500.history(period="max")
+    hist_data = time_series_edit(hist_data)
+    return hist_data
 
 def generate_macro_economic_factors():
     """
@@ -30,9 +39,11 @@ def generate_macro_economic_factors():
     'Unemployment Rate' - the Unemployment Rate (UNRATE)
     'Federal Funds Rate' - the Federal Funds Rate/Interest Rates (FEDFUNDS)
     'Consumer Price Index' - the Consumer Price Index/Inflation Rate (CPIAUCNS)
-    'S&P 500' - the S&P 500 (SP500)
+    'S&P 500' - the S&P 500 (SP500) This needs to be extracted from Yahoo Finance as FRED only has this data since 2013
+    '3 Month Treasury Bill' - the 3 Month Treasury Bill (DTB3) - Risk Free Rate for CAPM calculation (among others)
+    '10 Year Treasury Bond' - the 10 Year Treasury Bond (DGS10) - Risk Free Rate for long term investments, leaving this here for now
     """
-    macro_economic_factors_series_ids = ['GDP', 'UNRATE', 'FEDFUNDS', 'CPIAUCNS', 'SP500']
+    macro_economic_factors_series_ids = ['GDP', 'UNRATE', 'FEDFUNDS', 'CPIAUCNS', 'DTB3', 'DGS10']
     macro_economic_factors_list = []
 
     for series_id in macro_economic_factors_series_ids:
@@ -40,6 +51,10 @@ def generate_macro_economic_factors():
         series = clean_dataset(series)
         asset = Asset(series_id, series)
         macro_economic_factors_list.append(asset)
+    
+    sp500 = extract_snp500()
+    asset = Asset('SP500', sp500)
+    macro_economic_factors_list.append(asset)
 
     return Collection(macro_economic_factors_list)
 
@@ -62,7 +77,9 @@ def plot_pickle_data():
 
     for asset in macro_economic_factors.attribute_list:
         asset.plot_asset()
+    
+
 
 if __name__ == '__main__':
     generate_macro_economic_file()
-    plot_pickle_data()
+    #plot_pickle_data()

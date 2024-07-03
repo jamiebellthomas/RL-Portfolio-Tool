@@ -35,6 +35,8 @@ def time_series_edit(hist):
     Input: hist (pandas DataFrame) - the complete time series data for the given ticker symbol
     Output: hist (pandas DataFrame) - the complete time series data for the given ticker symbol with all formatting adjustments.
     """
+    # drop any rows with NaN values
+    hist = hist.dropna()
 
     # create a new column for average price, this is the average of the 'High' and 'Low' columns
     hist["value"] = (hist["High"] + hist["Low"]) / 2
