@@ -2,7 +2,8 @@ import unittest
 import pickle
 import datetime
 from Asset import Asset
-
+from Collection import Collection
+from hyperparameters import hyperparameters
 
 asset_universe_file = 'Collections/asset_universe.pkl'
 macro_economic_factors_file = 'Collections/macro_economic_factors.pkl'
@@ -61,7 +62,7 @@ class FinancialModelTestCalcs(unittest.TestCase):
         date = '2002-08-19'
         date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
         # calculate the CAPM
-        expected_return = test_asset.calculate_CAPM(macro_economic_factors, date)
+        expected_return = test_asset.calculate_CAPM(macro_economic_factors, date, hyperparameters["CAPM_period"])
         print("Expected return: ",expected_return)
         # check that the expected return is correct
         ##self.assertAlmostEqual(expected_return, 0.0002, places=4)

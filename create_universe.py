@@ -2,6 +2,7 @@ file_path = "NASDAQ-List.txt"
 import yfinance as yf
 from Asset import Asset
 from Collection import Collection
+
 import pickle
 
 

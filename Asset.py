@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas
-from Collection import Collection
+import Collection
 import datetime
-from hyperparameters import hyperparameters
 """
 Asset class
 Ticker is the ticker symbol of the asset e.g Apple is AAPL
@@ -51,23 +50,30 @@ class Asset:
     
 
 
-    def calculate_CAPM(self, macro_economic_collection: Collection, date: datetime.date):
+    def calculate_CAPM(self, macro_economic_collection: Collection, date: datetime.date, period: int):
         """
         This function will calculate the Capital Asset Pricing Model (CAPM) for the asset.
         The formula for CAPM is:
         Expected Return = Risk Free Rate + Beta * (Expected Market Return - Risk Free Rate)
         Input: macro_economic_collection (Collection) - the collection of macro economic factors
                 date (str) - the date we want to calculate the CAPM at
+                period (int) - the period we want to calculate the CAPM over (in years)
         Output: expected_return (float) - the expected return of the asset
         """
 
-        period = hyperparameters["CAPM_period"]
         # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
-        start_date = date - datetime.timedelta(days=period*365)
+        try:
+            start_date = date - datetime.timedelta(days=period*365)
+        except:
+            print("Date: ",date)
+            print("Period: ",period)
+            return
+        #start_date = date - datetime.timedelta(days=period*365)
+        start_date = self.closest_date_match(self.time_series, start_date)
 
         # first we need the relevant subsection of the time series data
         subsection = self.extract_subsection(self.time_series, 
-                                             self.closest_date_match(self.time_series, start_date), 
+                                             start_date, 
                                              self.closest_date_match(self.time_series, date))
         # next we need the relevant subsection of the macro economic factors
         sp500 = macro_economic_collection.asset_lookup('SP500')
@@ -91,12 +97,11 @@ class Asset:
         expected_daily_market_return = market_return.mean()
         expected_annual_market_return = (1 + expected_daily_market_return)**252 - 1
 
-        print("Expected annual market return",expected_annual_market_return)
-
-        print("Risk Free Rate: ",risk_free_rate_at_time)
-        print("Expected Daily Market Return: ",expected_annual_market_return)
-        print("Beta: ",beta)
+        #print("Expected annual market return",expected_annual_market_return)
+        #print("Risk Free Rate: ",risk_free_rate_at_time)
+        #print("Expected Daily Market Return: ",expected_annual_market_return)
+        #print("Beta: ",beta)
 
         expected_return = risk_free_rate_at_time + beta * (expected_annual_market_return - risk_free_rate_at_time)
 
-        return expected_return
+        return expected_return.value
