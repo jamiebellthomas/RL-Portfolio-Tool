@@ -81,5 +81,5 @@ def plot_pickle_data():
 
 
 if __name__ == '__main__':
-    generate_macro_economic_file()
-    #plot_pickle_data()
+    #generate_macro_economic_file()
+    plot_pickle_data()

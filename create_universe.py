@@ -3,7 +3,6 @@ import yfinance as yf
 from Asset import Asset
 from Collection import Collection
 import pickle
-import matplotlib.pyplot as plt
 
 
 def extract_ticker(file_path):
@@ -99,18 +98,14 @@ def main_read():
     """
     filename = 'Collections/asset_universe.pkl'
     collection = read_collection(filename)
-    print(collection.attribute_list.__len__())
-    # select 10 random ites from collection.attribute_list and plot them
+    # select 5 random items from collection.attribute_list and plot them
     import random
     random_items = random.sample(collection.attribute_list, 5)
     for item in random_items:
-        # add title to the plot
         item.plot_asset()
 
     
 
 if __name__ == "__main__":
-    ticker_list = extract_ticker(file_path)
-    print(ticker_list.__len__())
-    main_create()
+    #main_create()
     main_read()
