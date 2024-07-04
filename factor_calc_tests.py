@@ -63,9 +63,48 @@ class FinancialModelTestCalcs(unittest.TestCase):
         date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
         # calculate the CAPM
         expected_return = test_asset.calculate_CAPM(macro_economic_factors, date, hyperparameters["CAPM_period"])
-        print("Expected return: ",expected_return)
-        # check that the expected return is correct
-        ##self.assertAlmostEqual(expected_return, 0.0002, places=4)
+        
+        # Make sure it is in range pf -0.2 to 0.2
+        self.assertTrue(-0.2 <= expected_return <= 0.2)
+    
+    def test_volume_traded_data_is_present(self):
+        """
+        This function will test that the volume traded data is present for all assets in the asset universe.
+        """
+        for asset in asset_universe.attribute_list:
+            # check that it has a 'Volume' column
+            self.assertTrue('Volume' in asset.time_series.columns)
+        
+    def test_close_price_data_is_present(self):
+        """
+        This function will test that the close price data is present for all assets in the asset universe.
+        """
+        for asset in asset_universe.attribute_list:
+            # check that it has a 'Close' column
+            self.assertTrue('Close' in asset.time_series.columns)
+    
+    def test_open_price_data_is_present(self):
+        """
+        This function will test that the open price data is present for all assets in the asset universe.
+        """
+        for asset in asset_universe.attribute_list:
+            # check that it has a 'Open' column
+            self.assertTrue('Open' in asset.time_series.columns)
+    
+    def test_illiquidity_ratio(self):
+        """
+        This function will test the calculate_illiquidity_ratio function in the Asset class.
+        """
+        # get the date we want to calculate the illiquidity ratio at
+        date = '2002-08-19'
+        date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+        # calculate the illiquidity ratio
+        illiquidity_ratio = test_asset.calculate_illiquidity_ratio(date, hyperparameters["illiquidity_ratio_period"])
+        # A very large company like Apple should have an incredibly low illiquidity ratio as it is one of the mist highly traded stocks in the world
+        # make sure it is near-zero 
+        self.assertTrue(0 <= illiquidity_ratio <= 0.000001)
+        # Further investigations will be done elsewhere
+        
         
 
 

@@ -11,6 +11,9 @@ class Asset:
     def __init__(self, ticker ,time_series):
         self.ticker = ticker
         self.time_series = time_series
+        self.expected_return = None
+        self.beta = None
+        self.illiquidity_ratio = None
 
     def __str__(self):
         return self.ticker
@@ -92,7 +95,7 @@ class Asset:
         
         variance = market_return.var()
         
-        beta = covariance / variance
+        self.beta = covariance / variance
         
         expected_daily_market_return = market_return.mean()
         expected_annual_market_return = (1 + expected_daily_market_return)**252 - 1
@@ -102,6 +105,42 @@ class Asset:
         #print("Expected Daily Market Return: ",expected_annual_market_return)
         #print("Beta: ",beta)
 
-        expected_return = risk_free_rate_at_time + beta * (expected_annual_market_return - risk_free_rate_at_time)
+        self.expected_return = (risk_free_rate_at_time + self.beta * (expected_annual_market_return - risk_free_rate_at_time)).value
 
-        return expected_return.value
+        return self.expected_return
+
+
+    def calculate_illiquidity_ratio(self, date: datetime.date, period: int):
+        """
+        This function will calculate the Illiquidity Ratio for the asset.
+        The formula for Illiquidity Ratio is:
+        Illiquidity Ratio = (Volume * Close Price) / (High Price - Low Price)
+        Input: macro_economic_collection (Collection) - the collection of macro economic factors
+                date (str) - the date we want to calculate the Illiquidity Ratio at
+        Output: illiquidity_ratio (float) - the illiquidity ratio of the asset
+        """
+        # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
+        start_date = date - datetime.timedelta(days=period*365)
+        start_date = self.closest_date_match(self.time_series, start_date)
+
+        # first we need the relevant subsection of the time series data
+        subsection = self.extract_subsection(self.time_series, 
+                                             start_date, 
+                                             self.closest_date_match(self.time_series, date))
+        
+        # remove rows of subsection where Volume = 0 so we dont get a divide by 0 error
+        subsection = subsection[subsection['Volume'] != 0]
+
+        volume = subsection['Volume']
+        close_price = subsection['Close']
+        open_price = subsection['Open']
+
+        subsection['delta_P'] = close_price - open_price
+        # Take the absolute value of the delta_P column
+        subsection['delta_P'] = abs(subsection['delta_P'])
+        # Now compute the illiquidity ratio for each row
+        subsection['illiquidity_ratio'] = subsection['delta_P']/volume
+        # Now take the average of the illiquidity ratios
+        self.illiquidity_ratio = subsection['illiquidity_ratio'].mean()
+
+        return self.illiquidity_ratio
