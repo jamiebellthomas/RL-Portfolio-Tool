@@ -4,5 +4,6 @@
 # The dictionary will be stored in a pickle file so that it can be easily accessed by the financial model calculations.
 
 hyperparameters = {"CAPM_period": 3,
+                   "illiquidity_ratio_period": 3,
                    }
 

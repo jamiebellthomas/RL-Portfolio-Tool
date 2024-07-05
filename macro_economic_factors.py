@@ -75,7 +75,7 @@ def plot_pickle_data():
     with open('Collections/macro_economic_factors.pkl', 'rb') as file:
         macro_economic_factors = pickle.load(file)
 
-    for asset in macro_economic_factors.attribute_list:
+    for asset in macro_economic_factors.asset_list:
         asset.plot_asset()
 
 def open_macro_economic_file():

@@ -2,6 +2,7 @@ file_path = "NASDAQ-List.txt"
 import yfinance as yf
 from Asset import Asset
 from Collection import Collection
+import os
 
 import pickle
 
@@ -72,9 +73,15 @@ def main_create():
     Input: None
     Output: None
     """
+    filename = 'Collections/asset_universe.pkl'
+    # First check to see if the file already exists, if so, delete it
+    try:
+        os.remove(filename)
+    except FileNotFoundError:
+        pass
     ticker_list = extract_ticker(file_path)
     collection = create_collection(ticker_list)
-    filename = 'Collections/asset_universe.pkl'
+    
 
     # Open the file with write-binary ('wb') mode and dump the object
     with open(filename, 'wb') as file:
@@ -99,14 +106,14 @@ def main_read():
     """
     filename = 'Collections/asset_universe.pkl'
     collection = read_collection(filename)
-    # select 5 random items from collection.attribute_list and plot them
+    # select 5 random items from collection.asset_list and plot them
     import random
-    random_items = random.sample(collection.attribute_list, 5)
+    random_items = random.sample(collection.asset_list, 5)
     for item in random_items:
         item.plot_asset()
 
     
 
 if __name__ == "__main__":
-    #main_create()
-    main_read()
+    main_create()
+    #main_read()

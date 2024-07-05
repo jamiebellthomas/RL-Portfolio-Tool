@@ -71,7 +71,7 @@ class FinancialModelTestCalcs(unittest.TestCase):
         """
         This function will test that the volume traded data is present for all assets in the asset universe.
         """
-        for asset in asset_universe.attribute_list:
+        for asset in asset_universe.asset_list:
             # check that it has a 'Volume' column
             self.assertTrue('Volume' in asset.time_series.columns)
         
@@ -79,7 +79,7 @@ class FinancialModelTestCalcs(unittest.TestCase):
         """
         This function will test that the close price data is present for all assets in the asset universe.
         """
-        for asset in asset_universe.attribute_list:
+        for asset in asset_universe.asset_list:
             # check that it has a 'Close' column
             self.assertTrue('Close' in asset.time_series.columns)
     
@@ -87,7 +87,7 @@ class FinancialModelTestCalcs(unittest.TestCase):
         """
         This function will test that the open price data is present for all assets in the asset universe.
         """
-        for asset in asset_universe.attribute_list:
+        for asset in asset_universe.asset_list:
             # check that it has a 'Open' column
             self.assertTrue('Open' in asset.time_series.columns)
     

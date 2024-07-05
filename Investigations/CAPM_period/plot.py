@@ -31,7 +31,7 @@ def CAPM_investigation(asset: Asset):
     # create a list of CAPM periods to investigate from 1-10, every other year
     CAPM_periods = list(range(1, 11, 2))
     # loop through every 3 years, from 2000, 2023
-    years = list(range(2000, 2021, 3))
+    years = list(range(2000, 2022, 3))
     
     macro_economic_collection = open_macro_economic_file()
 
@@ -90,7 +90,7 @@ def CAPM_investigation(asset: Asset):
 
 def main():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN','AZTA','SCYX','CROX','PSTV']
-    # tickers for 4 of the FAANG stocks and 3 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
+    # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
     for ticker in tickers:
         asset = asset_creation(ticker)
         CAPM_investigation(asset)
