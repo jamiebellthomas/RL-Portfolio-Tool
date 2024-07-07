@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import pandas
 import Collection
 import datetime
+from statsmodels.tsa.stattools import adfuller
+import numpy as np
 """
 Asset class
 Ticker is the ticker symbol of the asset e.g Apple is AAPL
@@ -100,11 +102,6 @@ class Asset:
         expected_daily_market_return = market_return.mean()
         expected_annual_market_return = (1 + expected_daily_market_return)**252 - 1
 
-        #print("Expected annual market return",expected_annual_market_return)
-        #print("Risk Free Rate: ",risk_free_rate_at_time)
-        #print("Expected Daily Market Return: ",expected_annual_market_return)
-        #print("Beta: ",beta)
-
         self.expected_return = (risk_free_rate_at_time + self.beta * (expected_annual_market_return - risk_free_rate_at_time)).value
 
         return self.expected_return
@@ -144,3 +141,37 @@ class Asset:
         self.illiquidity_ratio = subsection['illiquidity_ratio'].mean()
 
         return self.illiquidity_ratio
+    
+    def stationarity_test(self, time_series: pandas.Series):
+        """
+        This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
+        """
+        result = adfuller(time_series)
+        print('ADF Statistic: %f' % result[0])
+        print('p-value: %f' % result[1])
+        print('Critical Values:')
+        for key, value in result[4].items():
+            print('\t%s: %.3f' % (key, value))
+        if result[1] > 0.05:
+            print("The time series is not stationary")
+        else:
+            print("The time series is stationary")
+        
+    def differencing(self, time_series: pandas.Series):
+        """
+        This function will difference the time series data.
+        """
+        log_differenced_time_series = np.log(time_series['value']).diff().dropna()
+
+        return log_differenced_time_series
+        
+    
+    
+    def ARMA():
+        """
+        This function will calculate the Autoregressive Moving Average (ARMA) model for the asset.
+        This model is used to forecast future values of the asset.
+        It is a combination of the Autoregressive (AR) and Moving Average (MA) model.
+        """
+    def GARCH():
+        pass
