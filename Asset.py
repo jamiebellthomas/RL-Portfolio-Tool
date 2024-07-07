@@ -22,6 +22,7 @@ class Asset:
         self.illiquidity_ratio = None
         self.ARMA_model = None
         self.best_pq = None 
+        self.ARMA_model_aic = None
 
     def __str__(self):
         return self.ticker
@@ -202,7 +203,7 @@ class Asset:
             except:
                 continue
         print(f'Best ARMA(p,q) = {best_pq} with AIC = {best_aic} and BIC = {best_bic}')
-        return best_pq, best_model
+        return best_pq, best_model, best_aic
         
     
     
@@ -229,7 +230,7 @@ class Asset:
 
         # convert the time series data to a numpy array
 
-        self.best_pq, self.ARMA_model = self.ARMA_model_select(transformed_subsection)
+        self.best_pq, self.ARMA_model, self.ARMA_model_aic = self.ARMA_model_select(transformed_subsection)
 
 
     def GARCH():

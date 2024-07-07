@@ -5,5 +5,6 @@
 
 hyperparameters = {"CAPM_period": 3,
                    "illiquidity_ratio_period": 3,
+                   "ARMA_period": 2,
                    }
 

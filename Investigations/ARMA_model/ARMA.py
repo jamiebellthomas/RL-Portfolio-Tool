@@ -10,8 +10,9 @@ import numpy as np
 import pandas as pd
 
 filename = 'Collections/asset_universe.pkl'
-date = datetime.date(2007, 5, 7)
-period = 3
+date = datetime.date(2023, 1, 7)
+period = 1
+ticker = 'CROX'
 
 def stationary_check_investigation(asset: Asset):
     """
@@ -61,7 +62,7 @@ def ARMA_investigation(asset: Asset):
     print("Investigating ARMA Model for Asset:", asset.ticker)
     
     asset.ARMA(date, period)
-    next_steps = 200
+    next_steps = 31
     start_date = date - datetime.timedelta(days=round(period*365))
     end_date = date + datetime.timedelta(days=next_steps)
     
@@ -90,14 +91,13 @@ def ARMA_investigation(asset: Asset):
     plot.update_layout(title='Forecasted Data for '+asset.ticker,
                        xaxis_title='Date',
                        yaxis_title='Value')
-    plot.write_image("Investigations/ARMA_model/Forecasted_Data.png")
+    plot.write_image("Investigations/ARMA_model/Forecasted_Data_"+asset.ticker+"_"+str(date)+".png")
         
 
 
 def main():
     asset_universe = read_collection(filename)
-    asset_ticker = 'PSTV'
-    asset = asset_universe.asset_lookup(asset_ticker)
+    asset = asset_universe.asset_lookup(ticker)
     #stationary_check_investigation(asset)
     ARMA_investigation(asset)
     
