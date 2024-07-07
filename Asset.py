@@ -4,6 +4,10 @@ import Collection
 import datetime
 from statsmodels.tsa.stattools import adfuller
 import numpy as np
+from statsmodels.tsa.arima.model import ARIMA
+import statsmodels.api as sm
+import itertools 
+import warnings
 """
 Asset class
 Ticker is the ticker symbol of the asset e.g Apple is AAPL
@@ -16,6 +20,8 @@ class Asset:
         self.expected_return = None
         self.beta = None
         self.illiquidity_ratio = None
+        self.ARMA_model = None
+        self.best_pq = None 
 
     def __str__(self):
         return self.ticker
@@ -68,7 +74,7 @@ class Asset:
 
         # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
         try:
-            start_date = date - datetime.timedelta(days=period*365)
+            start_date = date - datetime.timedelta(days=round(period*365))
         except:
             print("Date: ",date)
             print("Period: ",period)
@@ -117,7 +123,7 @@ class Asset:
         Output: illiquidity_ratio (float) - the illiquidity ratio of the asset
         """
         # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
-        start_date = date - datetime.timedelta(days=period*365)
+        start_date = date - datetime.timedelta(days=round(period*365))
         start_date = self.closest_date_match(self.time_series, start_date)
 
         # first we need the relevant subsection of the time series data
@@ -154,24 +160,77 @@ class Asset:
             print('\t%s: %.3f' % (key, value))
         if result[1] > 0.05:
             print("The time series is not stationary")
+            return False
         else:
             print("The time series is stationary")
+            return True
         
     def differencing(self, time_series: pandas.Series):
         """
         This function will difference the time series data.
         """
-        log_differenced_time_series = np.log(time_series['value']).diff().dropna()
+        log_differenced_time_series = (time_series).diff().dropna()
 
         return log_differenced_time_series
+
+    def ARMA_model_select(self, time_series: pandas.Series):
+        """
+        This function will evaluate the p and q values for the ARMA model.
+        """
+        # generate tuples of p and q values
+        p_values = range(0, 3)
+        q_values = range(0, 3)
+        pq_values = list(itertools.product(p_values, q_values))
+        best_aic = np.inf
+        best_bic = np.inf
+        best_pq = None
+        best_model = None
+
+        for pq in pq_values:
+            #print(f'Fitting ARMA(p,q) = {pq}')
+            try:
+                model = ARIMA(time_series, order=(pq[0], 0, pq[1]))
+                model_fit = model.fit()
+                aic = model_fit.aic
+                bic = model_fit.bic
+                if aic < best_aic:
+                    best_aic = aic
+                    best_pq = pq
+                    best_model = model_fit
+                if bic < best_bic:
+                    best_bic = bic
+            except:
+                continue
+        print(f'Best ARMA(p,q) = {best_pq} with AIC = {best_aic} and BIC = {best_bic}')
+        return best_pq, best_model
         
     
     
-    def ARMA():
+    def ARMA(self, date: datetime.date, period: int):
         """
         This function will calculate the Autoregressive Moving Average (ARMA) model for the asset.
         This model is used to forecast future values of the asset.
         It is a combination of the Autoregressive (AR) and Moving Average (MA) model.
         """
+        if(self.ARMA_model != None):
+            return
+        warnings.filterwarnings("ignore")
+        start_date = date - datetime.timedelta(days=round(period*365))
+        start_date = self.closest_date_match(self.time_series, start_date)
+
+        subsection = self.extract_subsection(self.time_series, 
+                                             start_date, 
+                                             self.closest_date_match(self.time_series, date))
+        
+        transformed_subsection = self.differencing(subsection['value'])
+        if(not self.stationarity_test(transformed_subsection)):
+            print("Time series data is not stationary")
+            return
+
+        # convert the time series data to a numpy array
+
+        self.best_pq, self.ARMA_model = self.ARMA_model_select(transformed_subsection)
+
+
     def GARCH():
         pass
