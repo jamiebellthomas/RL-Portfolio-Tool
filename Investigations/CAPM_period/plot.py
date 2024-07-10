@@ -6,8 +6,10 @@ import pandas as pd
 import numpy as np
 
 from Asset import Asset
+from Collection import Collection
 from create_universe import extract_time_series, time_series_edit
 from macro_economic_factors import open_macro_economic_file
+
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -89,7 +91,7 @@ def CAPM_investigation(asset: Asset):
     
 
 def main():
-    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN','AZTA','SCYX','CROX','PSTV']
+    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN','AZTA','SCYX','CROX','PSTV', 'SSSS']
     # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
     for ticker in tickers:
         asset = asset_creation(ticker)
