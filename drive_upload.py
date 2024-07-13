@@ -6,9 +6,10 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from googleapiclient.http import MediaIoBaseDownload
 
 # If modifying these SCOPES, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/drive.file']
+SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.readonly']
 
 def authenticate():
     creds = None
@@ -103,3 +104,58 @@ def upload(file_path_local, parent_directory_remote, file_name_remote):
     # Upload the file with message to the user
     print(f"Uploading {file_name} to {parent_directory_remote}...")
     upload_file(file_path_local, drive_service, parent_directory_id)
+
+def update_rl_models():
+    # This function will update the RL-Model on the Google Drive, by inserting all the latest versions of the files which have been edited here
+    # The RL model is stored in the folder 'RL Model' in the 'Dissertation' folder
+    rl_model_document_list = ["CartPole.ipynb"]
+    for document in rl_model_document_list:
+        filename = f"RL-Models/{document}"
+        # check it exists
+        if not os.path.exists(filename):
+            print(f"File {filename} does not exist")
+            pass
+        upload(filename, "RL-Models", filename)
+
+def download_folder(folder_name):
+    # This function will download all the models in the 'Models' folder in the 'Dissertation' folder and save them to the local machine in the Trained-Models folder
+    print(f"Downloading {folder_name} folder from Google Drive...")
+    creds = authenticate()
+    drive_service = build('drive', 'v3', credentials=creds)
+    dissertation_folder_id = get_folder_id(drive_service, 'Dissertation')
+    models_folder_id = get_folder_id(drive_service, folder_name, parent_id=dissertation_folder_id)
+
+    results = drive_service.files().list(q=f"'{models_folder_id}' in parents", spaces='drive', fields='files(id, name)').execute()
+    items = results.get('files', [])
+
+    for item in items:
+        file_id = item['id']
+        file_name = item['name']
+        request = drive_service.files().get_media(fileId=file_id)
+        with open(f'{folder_name}/{file_name}', 'wb') as f:
+            downloader = MediaIoBaseDownload(f, request)
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+                print(f"Downloaded {int(status.progress() * 100)}%")
+
+
+def main():
+    # This function will handle syncing the local machine with the Google Drive
+    # collect user input if they want to upload or download.
+    # If they enter 'upload', run update_rl_models()
+    # If they enter 'download', run download_trained_models() and download_rl_models()
+
+    # collect user input
+    user_input = input("Do you want to upload or download? ")
+    if user_input == "upload" or user_input == "u":
+        update_rl_models()
+    elif user_input == "download" or user_input == "d":
+        download_folder("Trained-Models")
+        download_folder("RL-Models")
+
+    else:
+        print("Invalid input, please enter 'upload' or 'download'")
+
+if __name__ == "__main__":
+    main()
