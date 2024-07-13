@@ -7,9 +7,6 @@ from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-from create_universe import main_create
-from macro_economic_factors import generate_macro_economic_file
-
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
@@ -92,41 +89,17 @@ def upload_file(file_path, drive_service, parent_id):
             print(f"Uploaded {int(status.progress() * 100)}%")
     print(f'Uploaded file ID: {response.get("id")}')
 
-def main():
 
-    # Create the asset universe and macro economic factors collections
-    #main_create()
-    #generate_macro_economic_file()
-
+def upload(file_path_local, parent_directory_remote, file_name_remote):
     creds = authenticate()
     drive_service = build('drive', 'v3', credentials=creds)
-
-    # Ensure the Dissertation/Collections folder exists and get its ID
     dissertation_folder_id = get_folder_id(drive_service, 'Dissertation')
-    collections_folder_id = get_folder_id(drive_service, 'Collections', parent_id=dissertation_folder_id)
 
-    # Path to the .pkl file in your project folder
-    project_folder = 'Collections'
-    macro_economic_pkl_file = 'macro_economic_factors.pkl'
-    macro_economic_pkl_file = os.path.join(project_folder, macro_economic_pkl_file)
-
-    asser_universe_pkl_file = 'asset_universe.pkl'
-    asser_universe_pkl_file = os.path.join(project_folder, asser_universe_pkl_file)
-
-
-
-    # Ensure the .pkl file exists
-    if os.path.exists(macro_economic_pkl_file):
-        upload_file(macro_economic_pkl_file, drive_service, collections_folder_id)
-        print(f"File uploaded successfully: {macro_economic_pkl_file}")
-    else:
-        print(f"File does not exist: {macro_economic_pkl_file}")
-
-    if os.path.exists(asser_universe_pkl_file):
-        upload_file(asser_universe_pkl_file, drive_service, collections_folder_id)
-        print(f"File uploaded successfully: {asser_universe_pkl_file}")
-    else:
-        print(f"File does not exist: {asser_universe_pkl_file}")
-
-if __name__ == '__main__':
-    main()
+    # This takes a file from the local machine and uploads it to the Google Drive, the file is saved at file_path_local and is uploaded to file_path_remote
+    # First we need the folder id of file_path_remote
+    parent_directory_id = get_folder_id(drive_service, parent_directory_remote, parent_id=dissertation_folder_id)
+    # Extract name of local file from file_path_local
+    file_name = os.path.basename(file_path_local)
+    # Upload the file with message to the user
+    print(f"Uploading {file_name} to {parent_directory_remote}...")
+    upload_file(file_path_local, drive_service, parent_directory_id)

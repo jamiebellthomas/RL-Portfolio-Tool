@@ -5,6 +5,7 @@ from Collection import Collection
 import os
 
 import pickle
+from drive_upload import upload
 
 
 def extract_ticker(file_path):
@@ -86,6 +87,10 @@ def main_create():
     # Open the file with write-binary ('wb') mode and dump the object
     with open(filename, 'wb') as file:
         pickle.dump(collection, file)
+    
+    # upload the file to Google Drive
+    upload(filename,'Collections','asset_universe.pkl')
+
 
 def read_collection(filename):
     """

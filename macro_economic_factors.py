@@ -4,6 +4,7 @@ from Collection import Collection
 import pickle
 import yfinance as yf
 from create_universe import time_series_edit
+from drive_upload import upload
 fred = Fred(api_key='ce93398088b6cef191be72551306fcae')
 
 def clean_dataset(dataset):
@@ -64,8 +65,11 @@ def generate_macro_economic_file():
     This function will generate a pickle file containing the macro economic factors that we will use in our backtesting.
     """
     macro_economic_factors = generate_macro_economic_factors()
-    with open('Collections/macro_economic_factors.pkl', 'wb') as file:
+    file_path = 'Collections/macro_economic_factors.pkl'
+    with open(file_path, 'wb') as file:
         pickle.dump(macro_economic_factors, file)
+
+    upload(file_path,'Collections','macro_economic_factors.pkl')
 
 
 def plot_pickle_data():
