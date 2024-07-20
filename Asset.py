@@ -34,7 +34,7 @@ class Asset:
         plt.ylabel('Value')
         plt.show()
 
-    def closest_date_match(self, time_series:pandas.DataFrame, date: datetime.date):
+    def closest_date_match(self, time_series:pandas.DataFrame, date: datetime.date) -> datetime.date:
         """
         This function will find the closest date in the time series data to the given date.
         Input: date (str) - the date we want to find the closest date to
@@ -47,7 +47,7 @@ class Asset:
         return closest_date
     
 
-    def extract_subsection(self, time_series:pandas.DataFrame, start_date: datetime.date, end_date: datetime.date):
+    def extract_subsection(self, time_series:pandas.DataFrame, start_date: datetime.date, end_date: datetime.date) -> pandas.DataFrame:
         """
         This function will extract a subsection of the time series data for the asset.
         Input: start_date (str) - the start date of the subsection
@@ -62,7 +62,7 @@ class Asset:
     
 
 
-    def calculate_CAPM(self, macro_economic_collection: Collection, date: datetime.date, period: int):
+    def calculate_CAPM(self, macro_economic_collection: Collection, date: datetime.date, period: int) -> float:
         """
         This function will calculate the Capital Asset Pricing Model (CAPM) for the asset.
         The formula for CAPM is:
@@ -114,7 +114,7 @@ class Asset:
         return self.expected_return
 
 
-    def calculate_illiquidity_ratio(self, date: datetime.date, period: int):
+    def calculate_illiquidity_ratio(self, date: datetime.date, period: int) -> float:
         """
         This function will calculate the Illiquidity Ratio for the asset.
         The formula for Illiquidity Ratio is:
@@ -149,7 +149,7 @@ class Asset:
 
         return self.illiquidity_ratio
     
-    def stationarity_test(self, time_series: pandas.Series):
+    def stationarity_test(self, time_series: pandas.Series) -> bool:
         """
         This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
         """
@@ -166,7 +166,7 @@ class Asset:
             print("The time series is stationary")
             return True
         
-    def differencing(self, time_series: pandas.Series):
+    def differencing(self, time_series: pandas.Series) -> pandas.Series:
         """
         This function will difference the time series data.
         """
@@ -174,7 +174,7 @@ class Asset:
 
         return log_differenced_time_series
 
-    def ARMA_model_select(self, time_series: pandas.Series):
+    def ARMA_model_select(self, time_series: pandas.Series) -> tuple:
         """
         This function will evaluate the p and q values for the ARMA model.
         """
@@ -207,7 +207,7 @@ class Asset:
         
     
     
-    def ARMA(self, date: datetime.date, period: int):
+    def ARMA(self, date: datetime.date, period: int) -> None:
         """
         This function will calculate the Autoregressive Moving Average (ARMA) model for the asset.
         This model is used to forecast future values of the asset.

@@ -5,9 +5,10 @@ import pickle
 import yfinance as yf
 from create_universe import time_series_edit
 from drive_upload import upload
+import pandas as pd
 fred = Fred(api_key='ce93398088b6cef191be72551306fcae')
 
-def clean_dataset(dataset):
+def clean_dataset(dataset: pd.Series) -> pd.DataFrame:
     """
     This function will take in the panda series outputted by the fredapi, convert it to a dataframe, and clean it.
     The function will drop any rows with NaN values and reset the index.

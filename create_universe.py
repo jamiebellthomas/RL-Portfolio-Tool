@@ -3,12 +3,13 @@ import yfinance as yf
 from Asset import Asset
 from Collection import Collection
 import os
+import pandas as pd
 
 import pickle
 from drive_upload import upload
 
 
-def extract_ticker(file_path):
+def extract_ticker(file_path: str) -> list: 
     """
     This function will extract the ticker symbols from a file containing all stocks listed on NASDAQ and return a list of them.
     Input: file_path (str) - the path to the file containing the ticker symbols
@@ -21,7 +22,7 @@ def extract_ticker(file_path):
             ticker_list.append(first_word)
     return ticker_list
 
-def extract_time_series(ticker):
+def extract_time_series(ticker: str) -> pd.DataFrame:
     """
     This function will extract the time series data for a given ticker symbol using the yfinance library.
     Input: ticker (str) - the ticker symbol
@@ -31,7 +32,7 @@ def extract_time_series(ticker):
     hist = stock.history(period="max", interval="1d")
     return hist
 
-def time_series_edit(hist):
+def time_series_edit(hist: pd.DataFrame) -> pd.DataFrame:
     """
     This function will edit the time series data and handle all formatting 
     Input: hist (pandas DataFrame) - the complete time series data for the given ticker symbol
@@ -48,7 +49,7 @@ def time_series_edit(hist):
     hist.index = hist.index.date
     return hist
 
-def create_collection(ticker_list):
+def create_collection(ticker_list: list) -> Collection:
     """
     This function will create a collection of assets from a list of ticker symbols.
     This will be our universe of assets that we will use for our backtesting.
@@ -92,7 +93,7 @@ def main_create():
     upload(filename,'Collections','asset_universe.pkl')
 
 
-def read_collection(filename):
+def read_collection(filename: str) -> Collection:
     """
     This function will read a collection of assets from a pickle file.
     Input: filename (str) - the name of the file containing the collection

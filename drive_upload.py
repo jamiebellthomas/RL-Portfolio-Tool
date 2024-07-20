@@ -12,6 +12,10 @@ from googleapiclient.http import MediaIoBaseDownload
 SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.readonly']
 
 def authenticate():
+    """
+    This function will authenticate the user with the Google Drive API.
+
+    """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first time.
@@ -30,7 +34,7 @@ def authenticate():
             token.write(creds.to_json())
     return creds
 
-def get_folder_id(service, folder_name, parent_id=None):
+def get_folder_id(service: object, folder_name: str, parent_id: str = None) -> str:
     """Get the folder ID by name, create it if it doesn't exist."""
     query = f"name = '{folder_name}' and mimeType = 'application/vnd.google-apps.folder'"
     if parent_id:
@@ -57,7 +61,7 @@ def get_folder_id(service, folder_name, parent_id=None):
     else:
         return items[0]['id']
 
-def delete_existing_file(service, file_name, parent_id):
+def delete_existing_file(service: object, file_name: str, parent_id: str):
     """Delete the existing file with the same name in the specified folder."""
     query = f"name = '{file_name}' and '{parent_id}' in parents"
     results = service.files().list(
@@ -70,7 +74,7 @@ def delete_existing_file(service, file_name, parent_id):
         service.files().delete(fileId=item['id']).execute()
         print(f"Deleted file: {item['name']} (ID: {item['id']})")
 
-def upload_file(file_path, drive_service, parent_id):
+def upload_file(file_path: str, drive_service: object, parent_id: str):
     file_name = os.path.basename(file_path)
     # Delete existing file if it exists
     delete_existing_file(drive_service, file_name, parent_id)
@@ -91,7 +95,7 @@ def upload_file(file_path, drive_service, parent_id):
     print(f'Uploaded file ID: {response.get("id")}')
 
 
-def upload(file_path_local, parent_directory_remote, file_name_remote):
+def upload(file_path_local: str, parent_directory_remote: str, file_path_remote: str):
     creds = authenticate()
     drive_service = build('drive', 'v3', credentials=creds)
     dissertation_folder_id = get_folder_id(drive_service, 'Dissertation')
@@ -108,7 +112,7 @@ def upload(file_path_local, parent_directory_remote, file_name_remote):
 def update_rl_models():
     # This function will update the RL-Model on the Google Drive, by inserting all the latest versions of the files which have been edited here
     # The RL model is stored in the folder 'RL Model' in the 'Dissertation' folder
-    rl_model_document_list = ["CartPole.ipynb"]
+    rl_model_document_list = ["DefaultEnvs.ipynb"]
     for document in rl_model_document_list:
         filename = f"RL-Models/{document}"
         # check it exists
@@ -117,7 +121,7 @@ def update_rl_models():
             pass
         upload(filename, "RL-Models", filename)
 
-def download_folder(folder_name):
+def download_folder(folder_name: str):
     # This function will download all the models in the 'Models' folder in the 'Dissertation' folder and save them to the local machine in the Trained-Models folder
     print(f"Downloading {folder_name} folder from Google Drive...")
     creds = authenticate()
