@@ -16,8 +16,11 @@ class AssetCollection(Collection):
         It will loop through each asset in the asset universe and generate the observation for each asset, appending it to the observation space.
         The observation space will ne a np.array of shape (n_assets, n_features) where n_assets is the number of assets in the asset universe and n_features is the number of features for each asset.
         """
+        print(len(self.asset_list))
         observation_space = []
         for asset in self.asset_list:
+            print(asset.ticker)
+
             observation = asset.get_observation(macro_economic_collection, date, CAPM_lookback_period, illiquidity_ratio_lookback_period, ARMA_lookback_period)
             self.feature_count = len(observation)
             observation_space.append(observation)

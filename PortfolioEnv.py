@@ -46,13 +46,15 @@ from hyperparameters import hyperparameters
 
 class PortfolioEnv(gym.Env):
     def __init__(self, 
-                 asset_univserse: AssetCollection, macro_economic_data: MacroEconomicCollection,
-                 initial_date: datetime.date,):
+                 asset_universe: AssetCollection, macro_economic_data: MacroEconomicCollection,
+                 initial_date: datetime.date):
         # Initialize the environment
         super(PortfolioEnv, self).__init__()
 
+        self.initial_date = initial_date
+
         # Load in the asset universe and macro economic data, and create the portfolio
-        self.asset_univserse = asset_univserse
+        self.asset_universe = self.asset_sub_universe(asset_universe)
         self.macro_economic_data = macro_economic_data
         self.portfolio = PortfolioCollection(asset_list=[])
         
@@ -64,12 +66,14 @@ class PortfolioEnv(gym.Env):
         self.max_portfolio_size = hyperparameters["max_portfolio_size"]
         self.max_steps = hyperparameters["max_steps"]
         self.transaction_cost = hyperparameters["transaction_cost"]
+        self.asset_feature_count = hyperparameters["asset_feature_count"]
+        self.macro_economic_feature_count = hyperparameters["macro_economic_feature_count"]
+        self.portfolio_status_feature_count = hyperparameters["portfolio_status_feature_count"]
 
 
         # Intialise other environment variables
         self.cash = self.initial_balance
         self.current_step = 0
-        self.initial_date = initial_date
         self.current_date = initial_date
         # final date is a year after the initial date
         self.final_date = self.initial_date + datetime.timedelta(days=365)
@@ -79,10 +83,10 @@ class PortfolioEnv(gym.Env):
         # The np.infs will need to be changed but for now we will leave them as is, we'll change them when we proceed to data normalisation
 
         self.observation_space = spaces.Dict({
-            'asset_universe': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.asset_univserse.asset_list), self.asset_univserse.feature_count), dtype=np.float32),
-            'portfolio': spaces.Box(low=-np.inf, high=np.inf, shape=(self.max_portfolio_size, self.asset_univserse.feature_count), dtype=np.float32),
-            'macro_economic_data': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.macro_economic_data.asset_list), self.macro_economic_data.feature_count), dtype=np.float32),
-            'portfolio_status': spaces.Box(low=-np.inf, high=np.inf, shape=(1, 8), dtype=np.float32)
+            'asset_universe': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.asset_universe.asset_list), self.asset_feature_count), dtype=np.float32),
+            'portfolio': spaces.Box(low=-np.inf, high=np.inf, shape=(self.max_portfolio_size, self.asset_feature_count), dtype=np.float32),
+            'macro_economic_data': spaces.Box(low=-np.inf, high=np.inf, shape=(1, self.macro_economic_feature_count), dtype=np.float32),
+            'portfolio_status': spaces.Box(low=-np.inf, high=np.inf, shape=(1, self.portfolio_status_feature_count), dtype=np.float32)
         })
     
     def reset(self) -> dict:    
@@ -102,7 +106,7 @@ class PortfolioEnv(gym.Env):
         self.cash = self.initial_balance
 
         obs = self._next_observation(self.initial_date)
-        print(obs)
+        #print(obs)
 
         return obs
     
@@ -112,7 +116,7 @@ class PortfolioEnv(gym.Env):
         This method will return the next observation for the environment.
         """
 
-        asset_obs = self.asset_univserse.get_observation(self.macro_economic_data, date, 
+        asset_obs = self.asset_universe.get_observation(self.macro_economic_data, date, 
                                                 self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period)
         
         portfolio_obs = self.portfolio.get_observation(self.macro_economic_data, date, 
@@ -141,6 +145,18 @@ class PortfolioEnv(gym.Env):
         reward = 1
         infos = {}
         return obs, reward, done, infos
+    
+    def asset_sub_universe(self, asset_universe:AssetCollection) -> AssetCollection:
+        """
+        This method will return the assets that exist at the time of the initial date.
+        It will do this by checking if the initial date is between the start and end date of the asset.
+        This will be called during initialisation of the environment.
+        """
+        asset_list = []
+        for asset in asset_universe.asset_list:
+            if asset.start_date <= self.initial_date <= asset.end_date:
+                asset_list.append(asset)
+        return AssetCollection(asset_list=asset_list)
     
     def render(self, mode='human'):
         return 0

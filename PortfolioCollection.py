@@ -2,6 +2,7 @@ from Collection import Collection
 from AssetCollection import AssetCollection
 import numpy as np
 import datetime
+from hyperparameters import hyperparameters
 
 class PortfolioCollection(Collection):
     def __init__(self, asset_list):
@@ -23,7 +24,7 @@ class PortfolioCollection(Collection):
             observation_space.append(observation)
 
         # Add rows of zeros to pad the observation space to the max_portfolio_size
-        for i in range(max_portfolio_size - len(self.asset_list)):
+        for i in range(max_portfolio_size - hyperparameters["max_portfolio_size"]):
             observation_space.append(np.zeros(self.feature_count))
         return np.array(observation_space)
     
@@ -58,4 +59,4 @@ class PortfolioCollection(Collection):
         for asset in self.asset_list:
             value += asset.calculate_value(date)
         
-        pass
+        return value

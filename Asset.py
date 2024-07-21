@@ -18,6 +18,8 @@ class Asset:
     def __init__(self, ticker ,time_series):
         self.ticker = ticker
         self.time_series = time_series
+        self.start_date = time_series.index[0]
+        self.end_date = time_series.index[-1]
         self.expected_return = None
         self.beta = None
         self.illiquidity_ratio = None
@@ -77,13 +79,9 @@ class Asset:
         """
 
         # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
-        try:
-            start_date = date - datetime.timedelta(days=round(period*365))
-        except:
-            print("Date: ",date)
-            print("Period: ",period)
-            return
-        #start_date = date - datetime.timedelta(days=period*365)
+        
+        start_date = date - datetime.timedelta(days=round(period*365))
+
         start_date = self.closest_date_match(self.time_series, start_date)
 
         # first we need the relevant subsection of the time series data
@@ -157,16 +155,9 @@ class Asset:
         This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
         """
         result = adfuller(time_series)
-        print('ADF Statistic: %f' % result[0])
-        print('p-value: %f' % result[1])
-        print('Critical Values:')
-        for key, value in result[4].items():
-            print('\t%s: %.3f' % (key, value))
         if result[1] > 0.05:
-            print("The time series is not stationary")
             return False
         else:
-            print("The time series is stationary")
             return True
         
     def differencing(self, time_series: pandas.Series) -> pandas.Series:
@@ -205,7 +196,6 @@ class Asset:
                     best_bic = bic
             except:
                 continue
-        print(f'Best ARMA(p,q) = {best_pq} with AIC = {best_aic} and BIC = {best_bic}')
         return best_pq, best_model, best_aic
         
     
