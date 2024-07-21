@@ -63,41 +63,65 @@ class PortfolioEnv(gym.Env):
         self.illiquidity_ratio_period = hyperparameters["illiquidity_ratio_period"]
         self.ARMA_period = hyperparameters["ARMA_period"]
 
+        #
+
 
 
 
 
 
         self.initial_balance = initial_balance
+        self.cash = initial_balance
         self.max_steps = max_steps
         self.current_step = 0
         self.initial_date = initial_date
         self.max_portfolio_size = max_portfolio_size
 
-        self.next_obs = 1
-        # Maybe the observation space can be 2 numpy arrays, one showing the asset universe, the other showing the current portfolio
+
+        # Define the observation space
+        self.observation_space = spaces.Dict({
+            'asset_universe': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.asset_univserse.asset_list), self.asset_univserse.feature_count), dtype=np.float32),
+            'portfolio': spaces.Box(low=-np.inf, high=np.inf, shape=(self.max_portfolio_size, self.asset_univserse.feature_count), dtype=np.float32),
+            'macro_economic_data': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.macro_economic_data.asset_list), self.macro_economic_data.feature_count), dtype=np.float32),
+            'portfolio_status': spaces.Box(low=-np.inf, high=np.inf, shape=(1, 8), dtype=np.float32)
+        })
     
-    def reset(self) -> np.array:    
+    def reset(self) -> dict:    
         """
         This method needs to initialise the environment and return the initial observation.
         As part of this, this method will need to:
-        - Establish the initial state of the asset universe at the initial date
+        - Establish the initial state of the asset universe at the initial date (done)
         - Establish the initial state of the macro economic data at the initial date
-        - Establish the initial state of the portfolio (empty) at the initial date
+        - Establish the initial state of the portfolio (empty) at the initial date (done)
         - Establish the initial state of the portfolio status at the initial date
         - Return the initial observation
         """
         obs = []
 
+        # First let's reset the basic environment variables
+        self.current_step = 0
+        self.cash = self.initial_balance
+
+        return self._next_observation(self.initial_date)
+    
+
+    def _next_observation(self, date) -> dict:
+        """
+        This method will return the next observation for the environment.
+        """
+
+        asset_obs = self.asset_univserse.get_observation(self.macro_economic_data, date, 
+                                                self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period)
         
-        # Establish the initial state of the asset universe at the initial date
-        self.asset_univserse.get_observation(self.macro_economic_data, self.initial_date, 
-                                             self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period)
+        portfolio_obs = self.portfolio.get_observation(self.macro_economic_data, date, 
+                                                self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period, self.max_portfolio_size)
         
-        # Establish the initial state of the macro economic data at the initial date
+        portfolio_status_obs = self.portfolio.get_status_observation(date, self.cash, self.initial_balance)
+
+        #macro_economic_obs = self.macro_economic_data.get_observation(self.macro_economic_data, date,
         
 
-        return obs
+        pass
 
     def step(self, action):
         # Take a step in the environment

@@ -7,6 +7,7 @@ class AssetCollection(Collection):
     def __init__(self, asset_list):
         super().__init__(asset_list=asset_list)
         # Additional initialization for AssetCollection
+        self.feature_count = 0
 
     def get_observation(self, macro_economic_collection: AssetCollection, date: datetime.date,
                         CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int) -> np.array:
@@ -18,5 +19,6 @@ class AssetCollection(Collection):
         observation_space = []
         for asset in self.asset_list:
             observation = asset.get_observation(macro_economic_collection, date, CAPM_lookback_period, illiquidity_ratio_lookback_period, ARMA_lookback_period)
+            self.feature_count = len(observation)
             observation_space.append(observation)
         return np.array(observation_space)

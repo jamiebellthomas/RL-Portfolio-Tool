@@ -239,6 +239,13 @@ class Asset:
     def GARCH():
         pass
 
+    def calculate_value(self, date: datetime.date) -> float:
+        """
+        This function will calculate the value of the asset at a given date.
+        """
+        value = self.time_series.loc[self.closest_date_match(self.time_series, date)]['Close']
+        return value
+
 
 
     def get_observation(self, macro_economic_collection: Collection, date: datetime.date, 
