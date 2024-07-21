@@ -1,7 +1,7 @@
 file_path = "NASDAQ-List.txt"
 import yfinance as yf
 from Asset import Asset
-from Collection import Collection
+from AssetCollection import AssetCollection
 import os
 import pandas as pd
 
@@ -49,7 +49,7 @@ def time_series_edit(hist: pd.DataFrame) -> pd.DataFrame:
     hist.index = hist.index.date
     return hist
 
-def create_collection(ticker_list: list) -> Collection:
+def create_collection(ticker_list: list) -> AssetCollection:
     """
     This function will create a collection of assets from a list of ticker symbols.
     This will be our universe of assets that we will use for our backtesting.
@@ -65,7 +65,7 @@ def create_collection(ticker_list: list) -> Collection:
         hist = time_series_edit(hist)
         asset = Asset(ticker, hist)
         asset_list.append(asset)
-    return Collection(asset_list)
+    return AssetCollection(asset_list)
 
 def main_create():
     """
@@ -93,7 +93,7 @@ def main_create():
     upload(filename,'Collections','asset_universe.pkl')
 
 
-def read_collection(filename: str) -> Collection:
+def read_collection(filename: str) -> AssetCollection:
     """
     This function will read a collection of assets from a pickle file.
     Input: filename (str) - the name of the file containing the collection
@@ -122,4 +122,4 @@ def main_read():
 
 if __name__ == "__main__":
     main_create()
-    #main_read()
+    main_read()

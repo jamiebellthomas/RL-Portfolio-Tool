@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 
 filename = 'Collections/asset_universe.pkl'
 # date is the date we want to centre the ARMA model around
-date = datetime.date(2016, 1, 1)
+date = datetime.date(2023, 1, 1)
 # period is the number of years we want to train the ARMA model on (how many years prior to 'date')
 period = 2
 # ticker is the asset we want to investigate
-ticker = 'FTC'
+ticker = 'KROS'
 # next_steps is the number of days we want to forecast
-next_steps = 120
+next_steps = 60
 
 def stationary_check_investigation(asset: Asset):
     """
@@ -127,6 +127,10 @@ def ARMA_investigation(asset: Asset):
     # save the plot as a png file as a 1000x1000 image
     plt.savefig("Investigations/ARMA_model/Diagnostics_"+asset.ticker+"_"+str(date)+".png", dpi=1000)
     asset.plot_asset()
+
+    print(asset.ARMA_model.params.keys().tolist())
+    print(asset.ARMA_model.params.get('ma.L1'))
+    
 
 
 def main():

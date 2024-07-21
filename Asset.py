@@ -8,6 +8,7 @@ from statsmodels.tsa.arima.model import ARIMA
 import statsmodels.api as sm
 import itertools 
 import warnings
+from hyperparameters import hyperparameters
 """
 Asset class
 Ticker is the ticker symbol of the asset e.g Apple is AAPL
@@ -23,6 +24,8 @@ class Asset:
         self.ARMA_model = None
         self.best_pq = None 
         self.ARMA_model_aic = None
+        self.ar_term_limit = hyperparameters.get("ARMA_ar_term_limit")
+        self.ma_term_limit = hyperparameters.get("ARMA_ma_term_limit")
 
     def __str__(self):
         return self.ticker
@@ -179,8 +182,8 @@ class Asset:
         This function will evaluate the p and q values for the ARMA model.
         """
         # generate tuples of p and q values
-        p_values = range(0, 3)
-        q_values = range(0, 3)
+        p_values = range(0, self.ar_term_limit)
+        q_values = range(0, self.ma_term_limit)
         pq_values = list(itertools.product(p_values, q_values))
         best_aic = np.inf
         best_bic = np.inf
@@ -235,3 +238,41 @@ class Asset:
 
     def GARCH():
         pass
+
+
+
+    def get_observation(self, macro_economic_collection: Collection, date: datetime.date, 
+                        CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int) -> np.array:
+        """
+        This will generate the row of the observation space for the asset, this will be a numpy array of shape (1, n_features)
+        It will combine all calculated features above into a single row. 
+        """
+        observation = []
+        self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
+        observation.append(self.expected_return)
+        observation.append(self.beta)
+
+        self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
+        observation.append(self.illiquidity_ratio)
+
+        self.ARMA(date, ARMA_lookback_period)
+        # extract ARMA coefficients
+        ARMA_params = self.ARMA_model.params
+        for i in range(1, self.ar_term_limit+1):
+            coefficient = "ar.L"+str(i)
+            if(coefficient in ARMA_params.keys().tolist()):
+                observation.append(ARMA_params.get(coefficient))
+            else:
+                observation.append(0.0)
+        for i in range(1, self.ma_term_limit+1):
+            coefficient = "ma.L"+str(i)
+            if(coefficient in ARMA_params.keys().tolist()):
+                observation.append(ARMA_params.get(coefficient))
+            else:
+                observation.append(0.0)
+        observation.append(ARMA_params.get("sigma2"))
+
+
+
+
+        return np.array(observation)

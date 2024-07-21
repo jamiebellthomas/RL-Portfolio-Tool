@@ -39,20 +39,32 @@ import numpy as np
 import pandas as pd
 import random
 import datetime
-from Collection import Collection
+from AssetCollection import AssetCollection
+from PortfolioCollection import PortfolioCollection
+from hyperparameters import hyperparameters
 
 class PortfolioEnv(gym.Env):
     def __init__(self, 
-                 asset_univserse: Collection, macro_economic_data: Collection,
+                 asset_univserse: AssetCollection, macro_economic_data: AssetCollection,
                  initial_balance: float, 
                  max_steps: int, 
                  initial_date: datetime.date,
                  max_portfolio_size: int):
         # Initialize the environment
         super(PortfolioEnv, self).__init__()
-        
+
+        # Load in the asset universe and macro economic data, and create the portfolio
         self.asset_univserse = asset_univserse
         self.macro_economic_data = macro_economic_data
+        self.portfolio = PortfolioCollection(asset_list=[])
+        
+        # Read in hyper parameters
+        self.CAPM_period = hyperparameters["CAPM_period"]
+        self.illiquidity_ratio_period = hyperparameters["illiquidity_ratio_period"]
+        self.ARMA_period = hyperparameters["ARMA_period"]
+
+
+
 
 
 
@@ -65,7 +77,7 @@ class PortfolioEnv(gym.Env):
         self.next_obs = 1
         # Maybe the observation space can be 2 numpy arrays, one showing the asset universe, the other showing the current portfolio
     
-    def reset(self):    
+    def reset(self) -> np.array:    
         """
         This method needs to initialise the environment and return the initial observation.
         As part of this, this method will need to:
@@ -75,11 +87,17 @@ class PortfolioEnv(gym.Env):
         - Establish the initial state of the portfolio status at the initial date
         - Return the initial observation
         """
+        obs = []
+
         
         # Establish the initial state of the asset universe at the initial date
+        self.asset_univserse.get_observation(self.macro_economic_data, self.initial_date, 
+                                             self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period)
+        
+        # Establish the initial state of the macro economic data at the initial date
         
 
-        return None
+        return obs
 
     def step(self, action):
         # Take a step in the environment

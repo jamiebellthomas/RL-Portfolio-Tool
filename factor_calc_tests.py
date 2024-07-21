@@ -2,7 +2,7 @@ import unittest
 import pickle
 import datetime
 from Asset import Asset
-from Collection import Collection
+from AssetCollection import AssetCollection
 from hyperparameters import hyperparameters
 
 asset_universe_file = 'Collections/asset_universe.pkl'
