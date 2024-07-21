@@ -1,5 +1,5 @@
 from Collection import Collection
-from AssetCollection import AssetCollection
+from MacroEconomicCollection import MacroEconomicCollection
 import numpy as np
 import datetime
 
@@ -9,7 +9,7 @@ class AssetCollection(Collection):
         # Additional initialization for AssetCollection
         self.feature_count = 0
 
-    def get_observation(self, macro_economic_collection: AssetCollection, date: datetime.date,
+    def get_observation(self, macro_economic_collection: MacroEconomicCollection, date: datetime.date,
                         CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int) -> np.array:
         """
         The get observation generates the asset universe component of the observation space.

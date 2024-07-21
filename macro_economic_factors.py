@@ -1,6 +1,6 @@
 from fredapi import Fred
 from Asset import Asset
-from AssetCollection import AssetCollection
+from MacroEconomicCollection import MacroEconomicCollection
 import pickle
 import yfinance as yf
 from create_universe import time_series_edit
@@ -58,7 +58,7 @@ def generate_macro_economic_factors():
     asset = Asset('SP500', sp500)
     macro_economic_factors_list.append(asset)
 
-    return AssetCollection(macro_economic_factors_list)
+    return MacroEconomicCollection(macro_economic_factors_list)
 
 
 def generate_macro_economic_file():
@@ -94,5 +94,5 @@ def open_macro_economic_file():
 
 
 if __name__ == '__main__':
-    generate_macro_economic_file()
+    #generate_macro_economic_file()
     plot_pickle_data()

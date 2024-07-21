@@ -12,9 +12,9 @@ class PortfolioCollection(Collection):
                         CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int,
                         max_portfolio_size: int) -> np.array:
         """
-        The get observation generates the asset universe component of the observation space.
-        It will loop through each asset in the asset universe and generate the observation for each asset, appending it to the observation space.
-        The observation space will ne a np.array of shape (n_assets, n_features) where n_assets is the number of assets in the asset universe and n_features is the number of features for each asset.
+        The get observation generates the Portfolio Assets component of the observation space.
+        It will loop through each asset in the portfolio and generate the observation for each asset, appending it to the observation space.
+        The observation space will ne a np.array of shape (max_portfolio_size, n_features) where max_portfolio_size is the fixed portfolio observation space and n_features is the number of features for each asset.
         """
         observation_space = []
         for asset in self.asset_list:

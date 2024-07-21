@@ -243,7 +243,7 @@ class Asset:
         """
         This function will calculate the value of the asset at a given date.
         """
-        value = self.time_series.loc[self.closest_date_match(self.time_series, date)]['Close']
+        value = self.time_series.loc[self.closest_date_match(self.time_series, date)]['value']
         return value
 
 

@@ -21,7 +21,7 @@ Currently the plan is to have 4 components to the observation space:
 
 3) Macro economic data
     - This will be a np.array of size (p, q) where p is the number of macro economic factors and q is the number of features for each factor
-    - Current macro economic factors include: GDP, Unemployment Rate, Federal Funds Rate, Consumer Price Index, S&P 500, 3 Month Treasury Bill, 10 Year Treasury Bond
+    - Current macro economic factors include: GDP (probably won't be used), Unemployment Rate, Federal Funds Rate, Consumer Price Index (probably won't be used), S&P 500, 3 Month Treasury Bill, 10 Year Treasury Bond
     - This will allow the agent to see the current state of the macro economic data
 
 4) The Portfolio Status
@@ -41,15 +41,13 @@ import random
 import datetime
 from AssetCollection import AssetCollection
 from PortfolioCollection import PortfolioCollection
+from MacroEconomicCollection import MacroEconomicCollection
 from hyperparameters import hyperparameters
 
 class PortfolioEnv(gym.Env):
     def __init__(self, 
-                 asset_univserse: AssetCollection, macro_economic_data: AssetCollection,
-                 initial_balance: float, 
-                 max_steps: int, 
-                 initial_date: datetime.date,
-                 max_portfolio_size: int):
+                 asset_univserse: AssetCollection, macro_economic_data: MacroEconomicCollection,
+                 initial_date: datetime.date,):
         # Initialize the environment
         super(PortfolioEnv, self).__init__()
 
@@ -62,23 +60,24 @@ class PortfolioEnv(gym.Env):
         self.CAPM_period = hyperparameters["CAPM_period"]
         self.illiquidity_ratio_period = hyperparameters["illiquidity_ratio_period"]
         self.ARMA_period = hyperparameters["ARMA_period"]
-
-        #
-
-
-
-
+        self.initial_balance = hyperparameters["initial_balance"]
+        self.max_portfolio_size = hyperparameters["max_portfolio_size"]
+        self.max_steps = hyperparameters["max_steps"]
+        self.transaction_cost = hyperparameters["transaction_cost"]
 
 
-        self.initial_balance = initial_balance
-        self.cash = initial_balance
-        self.max_steps = max_steps
+        # Intialise other environment variables
+        self.cash = self.initial_balance
         self.current_step = 0
         self.initial_date = initial_date
-        self.max_portfolio_size = max_portfolio_size
+        self.current_date = initial_date
+        # final date is a year after the initial date
+        self.final_date = self.initial_date + datetime.timedelta(days=365)
 
 
         # Define the observation space
+        # The np.infs will need to be changed but for now we will leave them as is, we'll change them when we proceed to data normalisation
+
         self.observation_space = spaces.Dict({
             'asset_universe': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.asset_univserse.asset_list), self.asset_univserse.feature_count), dtype=np.float32),
             'portfolio': spaces.Box(low=-np.inf, high=np.inf, shape=(self.max_portfolio_size, self.asset_univserse.feature_count), dtype=np.float32),
@@ -91,9 +90,9 @@ class PortfolioEnv(gym.Env):
         This method needs to initialise the environment and return the initial observation.
         As part of this, this method will need to:
         - Establish the initial state of the asset universe at the initial date (done)
-        - Establish the initial state of the macro economic data at the initial date
+        - Establish the initial state of the macro economic data at the initial date (done)
         - Establish the initial state of the portfolio (empty) at the initial date (done)
-        - Establish the initial state of the portfolio status at the initial date
+        - Establish the initial state of the portfolio status at the initial date (done)
         - Return the initial observation
         """
         obs = []
@@ -102,7 +101,10 @@ class PortfolioEnv(gym.Env):
         self.current_step = 0
         self.cash = self.initial_balance
 
-        return self._next_observation(self.initial_date)
+        obs = self._next_observation(self.initial_date)
+        print(obs)
+
+        return obs
     
 
     def _next_observation(self, date) -> dict:
@@ -118,10 +120,15 @@ class PortfolioEnv(gym.Env):
         
         portfolio_status_obs = self.portfolio.get_status_observation(date, self.cash, self.initial_balance)
 
-        #macro_economic_obs = self.macro_economic_data.get_observation(self.macro_economic_data, date,
-        
+        macro_economic_obs = self.macro_economic_data.get_observation(date)
 
-        pass
+        return {
+            'asset_universe': asset_obs,
+            'portfolio': portfolio_obs,
+            'macro_economic_data': macro_economic_obs,
+            'portfolio_status': portfolio_status_obs
+        }
+
 
     def step(self, action):
         # Take a step in the environment
