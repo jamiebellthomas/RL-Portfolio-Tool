@@ -1,4 +1,5 @@
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
 import pandas
 import Collection
 import datetime
@@ -26,18 +27,21 @@ class Asset:
         self.ARMA_model = None
         self.best_pq = None 
         self.ARMA_model_aic = None
-        self.ar_term_limit = hyperparameters.get("ARMA_ar_term_limit")
-        self.ma_term_limit = hyperparameters.get("ARMA_ma_term_limit")
 
     def __str__(self):
         return self.ticker
     
     def plot_asset(self):
-        self.time_series["value"].plot()
-        plt.title(self.ticker)
-        plt.xlabel('Date')
-        plt.ylabel('Value')
-        plt.show()
+        """
+        This function will plot the time series data for the asset.
+        """
+        plot = go.Figure()
+        plot.add_trace(go.Scatter(x=self.time_series.index, y=self.time_series['value'], mode='lines', name='Asset Value'))
+        plot.update_layout(title='Asset Value for '+self.ticker,
+                           xaxis_title='Date',
+                           yaxis_title='Value')
+        # save the plot to a png file
+        plot.write_image("Investigations/Value_Plots/Asset_Value.png")
 
     def closest_date_match(self, time_series:pandas.DataFrame, date: datetime.date) -> datetime.date:
         """
@@ -154,7 +158,11 @@ class Asset:
         """
         This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
         """
-        result = adfuller(time_series)
+        try:
+            result = adfuller(time_series)
+        except:
+            print(time_series)
+            return False
         if result[1] > 0.05:
             return False
         else:
@@ -168,13 +176,13 @@ class Asset:
 
         return log_differenced_time_series
 
-    def ARMA_model_select(self, time_series: pandas.Series) -> tuple:
+    def ARMA_model_select(self, time_series: pandas.Series, ar_term_limit: int, ma_term_limit: int) -> tuple:
         """
         This function will evaluate the p and q values for the ARMA model.
         """
         # generate tuples of p and q values
-        p_values = range(0, self.ar_term_limit)
-        q_values = range(0, self.ma_term_limit)
+        p_values = range(0, ar_term_limit+1)
+        q_values = range(0, ma_term_limit+1)
         pq_values = list(itertools.product(p_values, q_values))
         best_aic = np.inf
         best_bic = np.inf
@@ -200,14 +208,12 @@ class Asset:
         
     
     
-    def ARMA(self, date: datetime.date, period: int) -> None:
+    def ARMA(self, date: datetime.date, period: int, ar_term_limit: int, ma_term_limit: int) -> None:
         """
         This function will calculate the Autoregressive Moving Average (ARMA) model for the asset.
         This model is used to forecast future values of the asset.
         It is a combination of the Autoregressive (AR) and Moving Average (MA) model.
         """
-        if(self.ARMA_model != None):
-            return
         warnings.filterwarnings("ignore")
         start_date = date - datetime.timedelta(days=round(period*365))
         start_date = self.closest_date_match(self.time_series, start_date)
@@ -217,13 +223,21 @@ class Asset:
                                              self.closest_date_match(self.time_series, date))
         
         transformed_subsection = self.differencing(subsection['value'])
+        # if transformed_subsection is too short, then we cannot perform the ARMA model, set model to None and return
+        if(len(transformed_subsection) < 25):
+            self.ARMA_model = None
+            return 
         if(not self.stationarity_test(transformed_subsection)):
-            print("Time series data is not stationary")
+            # create an ARMA model where p,q = 0,0
+            self.best_pq = (0,0)
+            self.ARMA_model = ARIMA(transformed_subsection, order=(0,0,0))
+            self.ARMA_model = self.ARMA_model.fit()
+            self.ARMA_model_aic = self.ARMA_model.aic
             return
 
         # convert the time series data to a numpy array
 
-        self.best_pq, self.ARMA_model, self.ARMA_model_aic = self.ARMA_model_select(transformed_subsection)
+        self.best_pq, self.ARMA_model, self.ARMA_model_aic = self.ARMA_model_select(transformed_subsection, ar_term_limit, ma_term_limit)
 
 
     def GARCH():
@@ -239,29 +253,50 @@ class Asset:
 
 
     def get_observation(self, macro_economic_collection: Collection, date: datetime.date, 
-                        CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int) -> np.array:
+                        CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int,
+                        ar_term_limit: int, ma_term_limit: int) -> np.array:
         """
         This will generate the row of the observation space for the asset, this will be a numpy array of shape (1, n_features)
         It will combine all calculated features above into a single row. 
         """
         observation = []
         self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
+
         observation.append(self.expected_return)
         observation.append(self.beta)
 
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
 
-        self.ARMA(date, ARMA_lookback_period)
+        for index,obs in enumerate(observation):
+            if(type(obs) != np.float64):
+                print("Error: ", obs)
+                print("Type: ", type(obs))
+                print("Ticker: ", self.ticker)
+
+            if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):
+                
+                observation[index] = np.float64(0.0)
+
+        self.ARMA(date, ARMA_lookback_period, ar_term_limit, ma_term_limit)
+
+        if(self.ARMA_model == None):
+            for i in range(1, ar_term_limit+1):
+                observation.append(0.0)
+            for i in range(1, ma_term_limit+1):
+                observation.append(0.0)
+            observation.append(0.0)
+            return np.array(observation)
+
         # extract ARMA coefficients
         ARMA_params = self.ARMA_model.params
-        for i in range(1, self.ar_term_limit+1):
+        for i in range(1, ar_term_limit+1):
             coefficient = "ar.L"+str(i)
             if(coefficient in ARMA_params.keys().tolist()):
                 observation.append(ARMA_params.get(coefficient))
             else:
                 observation.append(0.0)
-        for i in range(1, self.ma_term_limit+1):
+        for i in range(1, ma_term_limit+1):
             coefficient = "ma.L"+str(i)
             if(coefficient in ARMA_params.keys().tolist()):
                 observation.append(ARMA_params.get(coefficient))

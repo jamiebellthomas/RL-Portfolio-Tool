@@ -69,6 +69,8 @@ class PortfolioEnv(gym.Env):
         self.asset_feature_count = hyperparameters["asset_feature_count"]
         self.macro_economic_feature_count = hyperparameters["macro_economic_feature_count"]
         self.portfolio_status_feature_count = hyperparameters["portfolio_status_feature_count"]
+        self.ar_term_limit = hyperparameters["ARMA_ar_term_limit"]
+        self.ma_term_limit = hyperparameters["ARMA_ma_term_limit"]
 
 
         # Intialise other environment variables
@@ -117,7 +119,8 @@ class PortfolioEnv(gym.Env):
         """
 
         asset_obs = self.asset_universe.get_observation(self.macro_economic_data, date, 
-                                                self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period)
+                                                self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period,
+                                                self.ar_term_limit, self.ma_term_limit)
         
         portfolio_obs = self.portfolio.get_observation(self.macro_economic_data, date, 
                                                 self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period, self.max_portfolio_size)

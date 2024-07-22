@@ -118,8 +118,22 @@ def main_read():
     for item in random_items:
         item.plot_asset()
 
+def asset_lookup(collection: AssetCollection, ticker: str) -> Asset:
+    """
+    This function will return the asset with the given ticker from the collection of assets.
+    Input: collection (Collection) - a collection of assets
+           ticker (str) - the ticker of the asset
+    Output: asset (Asset) - the asset with the given ticker
+    """
+    asset = collection.asset_lookup(ticker)
+    asset.plot_asset()
+
     
 
 if __name__ == "__main__":
-    main_create()
-    main_read()
+    #main_create()
+    #main_read()
+
+    collection = read_collection('Collections/asset_universe.pkl')
+    asset_lookup(collection, 'FMNB')
+
