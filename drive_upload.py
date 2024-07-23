@@ -121,6 +121,15 @@ def update_rl_models():
             pass
         upload(filename, "RL-Models", filename)
 
+def upload_class_files():
+    """
+    This function will upload all class files so they can be read in on Google Colab
+    """
+    class_files = ["Collection.py", "AssetCollection.py", "MacroEconomicCollection.py", "hyperparameters.py", "PortfolioCollection.py", "Asset.py", "PortfolioEnv.py"]
+    for file in class_files:
+        upload(file, "Classes", file)
+
+
 def download_folder(folder_name: str):
     # This function will download all the models in the 'Models' folder in the 'Dissertation' folder and save them to the local machine in the Trained-Models folder
     print(f"Downloading {folder_name} folder from Google Drive...")
@@ -153,7 +162,8 @@ def main():
     # collect user input
     user_input = input("Do you want to upload or download? ")
     if user_input == "upload" or user_input == "u":
-        update_rl_models()
+        #update_rl_models()
+        upload_class_files()
     elif user_input == "download" or user_input == "d":
         download_folder("Trained-Models")
         download_folder("RL-Models")

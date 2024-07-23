@@ -1,5 +1,4 @@
 from Collection import Collection
-from AssetCollection import AssetCollection
 import numpy as np
 import datetime
 from hyperparameters import hyperparameters

@@ -68,7 +68,7 @@ def generate_macro_economic_file():
     macro_economic_factors = generate_macro_economic_factors()
     file_path = 'Collections/macro_economic_factors.pkl'
     with open(file_path, 'wb') as file:
-        pickle.dump(macro_economic_factors, file)
+        pickle.dump(macro_economic_factors, file, protocol=pickle.HIGHEST_PROTOCOL)
 
     upload(file_path,'Collections','macro_economic_factors.pkl')
 

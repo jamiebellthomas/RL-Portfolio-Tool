@@ -87,7 +87,7 @@ def main_create():
 
     # Open the file with write-binary ('wb') mode and dump the object
     with open(filename, 'wb') as file:
-        pickle.dump(collection, file)
+        pickle.dump(collection, file, protocal=pickle.HIGHEST_PROTOCOL)
     
     # upload the file to Google Drive
     upload(filename,'Collections','asset_universe.pkl')
