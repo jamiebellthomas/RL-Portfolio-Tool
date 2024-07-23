@@ -42,7 +42,7 @@ def time_series_edit(hist: pd.DataFrame) -> pd.DataFrame:
     hist = hist.dropna()
 
     # create a new column for average price, this is the average of the 'High' and 'Low' columns
-    hist["value"] = (hist["High"] + hist["Low"]) / 2
+    hist.loc[:,"value"] = (hist["High"] + hist["Low"]) / 2
     
 
     # edit the Date column so it only contains the date and not the time
@@ -134,6 +134,7 @@ if __name__ == "__main__":
     #main_create()
     #main_read()
 
-    collection = read_collection('Collections/asset_universe.pkl')
-    asset_lookup(collection, 'FMNB')
+    #collection = read_collection('Collections/asset_universe.pkl')
+    #asset_lookup(collection, 'FMNB')
+    pass
 

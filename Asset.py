@@ -21,6 +21,7 @@ class Asset:
         self.time_series = time_series
         self.start_date = time_series.index[0]
         self.end_date = time_series.index[-1]
+        self.portfolio_weight = 0.0
         self.expected_return = None
         self.beta = None
         self.illiquidity_ratio = None
@@ -190,7 +191,6 @@ class Asset:
         best_model = None
 
         for pq in pq_values:
-            #print(f'Fitting ARMA(p,q) = {pq}')
             try:
                 model = ARIMA(time_series, order=(pq[0], 0, pq[1]))
                 model_fit = model.fit()
@@ -260,8 +260,10 @@ class Asset:
         It will combine all calculated features above into a single row. 
         """
         observation = []
-        self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
 
+        observation.append(self.portfolio_weight)
+
+        self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
         observation.append(self.expected_return)
         observation.append(self.beta)
 
@@ -269,10 +271,6 @@ class Asset:
         observation.append(self.illiquidity_ratio)
 
         for index,obs in enumerate(observation):
-            if(type(obs) != np.float64):
-                print("Error: ", obs)
-                print("Type: ", type(obs))
-                print("Ticker: ", self.ticker)
 
             if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):
                 
@@ -303,6 +301,11 @@ class Asset:
             else:
                 observation.append(0.0)
         observation.append(ARMA_params.get("sigma2"))
+
+        try: 
+            np.array(observation)
+        except:
+            print(observation)
 
 
 

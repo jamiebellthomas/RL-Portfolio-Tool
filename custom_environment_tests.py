@@ -3,6 +3,7 @@ import pickle
 import datetime
 from PortfolioEnv import PortfolioEnv
 import numpy as np
+from stable_baselines3.common.env_checker import check_env
 
 asset_universe_file = 'Collections/asset_universe.pkl'
 macro_economic_factors_file = 'Collections/macro_economic_factors.pkl'
@@ -14,10 +15,10 @@ with open(asset_universe_file, 'rb') as file:
 with open(macro_economic_factors_file, 'rb') as file:
     macro_economic_factors = pickle.load(file)
 # Set initial date to a long time ago or you will have to go through a LOT of data
-#initial_date = datetime.date(1973, 1, 1)
-#initial_date = datetime.date(2000, 1, 1)
-initial_date = datetime.date(1990, 1, 1)
-portfolio_env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date)
+initial_date1 = datetime.date(1970, 1, 1)
+initial_date2 = datetime.date(1980, 1, 1)
+#initial_date = datetime.date(1990, 1, 1)
+portfolio_env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date1)
 
 
 class PortfolioEnvTests(unittest.TestCase):
@@ -25,21 +26,37 @@ class PortfolioEnvTests(unittest.TestCase):
         """
         This function will test the reset function in the PortfolioEnv class.
         """
-        print("Testing the reset function in the PortfolioEnv class")
-        obs = portfolio_env.reset()
+        print("Testing the reset function in the PortfolioEnv class...")
+        obs, info = portfolio_env.reset()
+        # Make assertion tests for the observation space
+        print("Reset function successful")
 
-        # print the dimensions of each element in the obs dictionary
-        print("Asset Universe: ", obs['asset_universe'].shape)
-        print("Portfolio: ", obs['portfolio'].shape)
-        print("Macro Economic Data: ", obs['macro_economic_data'].shape)
-        print("Portfolio Status: ", obs['portfolio_status'].shape)
+    
+    def test_env(self):
+        """
+        This function will test if the env can be initialised as a gym environment.
+        """
+        check_env(portfolio_env)
+        print("Environment is a valid gym environment")
 
-        print(obs)
-
-        # export the numpy arrays to csv files
-        np.savetxt('asset_universe.csv', obs['asset_universe'], delimiter=',')
-        print("Initialisation of environment successful")
-       
+    def test_env_interactions(self):
+        """
+        This method does some interactions with the environment to see if it works, generating valid actions and observations.
+        """ 
+        print("Testing environment interactions...")
+        env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date2)
+        obs, info = env.reset()
+        done = False
+        for _ in range(10):
+            action = env.action_space.sample()
+            obs, reward, done,truncated ,info = env.step(action)
+            print("Action: ", action)
+            print("Observation: ", obs)
+            print("Reward: ", reward)
+            print("Done: ", done)
+            print("Info: ", info)
+            print("\n")
+        print("Environment interactions successful")
     
         
     
