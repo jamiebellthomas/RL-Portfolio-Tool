@@ -75,6 +75,7 @@ def main_create():
     Input: None
     Output: None
     """
+    
     filename = 'Collections/asset_universe.pkl'
     # First check to see if the file already exists, if so, delete it
     try:
@@ -82,14 +83,17 @@ def main_create():
     except FileNotFoundError:
         pass
     ticker_list = extract_ticker(file_path)
+    # for testing purposes, we will only use the first 5 tickers
+    #ticker_list = ticker_list[:100]
     collection = create_collection(ticker_list)
     
 
     # Open the file with write-binary ('wb') mode and dump the object
     with open(filename, 'wb') as file:
-        pickle.dump(collection, file, protocal=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(collection, file)
     
     # upload the file to Google Drive
+
     upload(filename,'Collections','asset_universe.pkl')
 
 
@@ -131,7 +135,7 @@ def asset_lookup(collection: AssetCollection, ticker: str) -> Asset:
     
 
 if __name__ == "__main__":
-    #main_create()
+    main_create()
     #main_read()
 
     #collection = read_collection('Collections/asset_universe.pkl')

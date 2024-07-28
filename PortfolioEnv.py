@@ -42,6 +42,7 @@ import datetime
 from AssetCollection import AssetCollection
 from PortfolioCollection import PortfolioCollection
 from MacroEconomicCollection import MacroEconomicCollection
+from Asset import Asset
 from hyperparameters import hyperparameters
 
 class PortfolioEnv(gym.Env):
@@ -180,7 +181,7 @@ class PortfolioEnv(gym.Env):
             new_weighting = action[i]
             absolute_delta += abs(current_weighting - new_weighting)
             asset.portfolio_weight = new_weighting
-        self.portfolio.portfolio_value = current_portfolio_value * 1 - (absolute_delta * self.transaction_cost)
+        self.portfolio.portfolio_value = current_portfolio_value * (1-(self.transaction_cost * absolute_delta))
 
         #STEP 2 Adjust the portfolio object so only assets that have a non-zero weighting are included
         new_asset_list = []
@@ -191,9 +192,10 @@ class PortfolioEnv(gym.Env):
 
         #STEP 3: Calculate the new portfolio value at the next time step
         new_portfolio_value = self.portfolio.calculate_portfolio_value(self.current_date,next_date)
+        self.portfolio_value = new_portfolio_value
 
         #STEP 4: Calculate the REWARD at the next time step (current just the ROI)
-        roi = 1- ((new_portfolio_value - self.initial_balance) / self.initial_balance)
+        roi = ((new_portfolio_value - self.initial_balance) / self.initial_balance)
 
         #STEP 5: Update the environment variables
         self.current_date = next_date
@@ -216,7 +218,7 @@ class PortfolioEnv(gym.Env):
         reward = roi
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
-        return obs, reward, terminated,truncated ,info
+        return obs, reward, terminated, truncated, info
     
     
     def asset_sub_universe(self, asset_universe:AssetCollection) -> AssetCollection:
@@ -238,5 +240,16 @@ class PortfolioEnv(gym.Env):
         """
         This method will generate the info dictionary at the current time step. 
         """
-        return {}
+        portfolio_weightings = []
+        for asset in self.portfolio.asset_list:
+            portfolio_weightings.append(asset.portfolio_weight)
+
+
+        return {
+            'Current Date': self.current_date,
+            'Current Step': self.current_step,
+            'Portfolio Value': self.portfolio_value,
+            'Portfolio Weightings': portfolio_weightings
+            
+        }
 

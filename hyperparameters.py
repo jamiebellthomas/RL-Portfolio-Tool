@@ -3,12 +3,13 @@
 # This will allow for easy access to the hyperparameters in the financial model calculations.
 # The dictionary will be stored in a pickle file so that it can be easily accessed by the financial model calculations.
 
-hyperparameters = { # Look back period for financial model calculations in years
-                    "CAPM_period": 3,
-                    "illiquidity_ratio_period": 3,
-                    "ARMA_period": 2,
-                    # Number of auto-regressive terms and moving average for the ARMA model, these are both set to 1 because it was really rare that the l2 terms were significant (alot of unnecessary computation and noise)
-                    "ARMA_ar_term_limit": 1,
+hyperparameters = {
+                     # Look back period for financial model calculations in years
+                     "CAPM_period": 3,
+                     "illiquidity_ratio_period": 3,
+                     "ARMA_period": 2,
+                     # Number of auto-regressive terms and moving average for the ARMA model, these are both set to 1 because it was really rare that the l2 terms were significant (alot of unnecessary computation and noise)
+                     "ARMA_ar_term_limit": 1,
                      "ARMA_ma_term_limit": 1,
                      # The number of features for each asset in the asset universe
                      # asset_universe_feature_count needs to be calculated as a function of ARMA_ar_term_limit & ARMA_ma_term_limit

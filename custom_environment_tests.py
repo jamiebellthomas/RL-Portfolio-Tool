@@ -43,11 +43,12 @@ class PortfolioEnvTests(unittest.TestCase):
         """
         This method does some interactions with the environment to see if it works, generating valid actions and observations.
         """ 
+        # RUN THIS METHOD WITH A PROFILER TO SEE WHERE THE BOTTLENECKS ARE, AND GENERATE A PROFILE REPORT & FLAME GRAPH
         print("Testing environment interactions...")
         env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date2)
         obs, info = env.reset()
         done = False
-        for _ in range(10):
+        for _ in range(5):
             action = env.action_space.sample()
             obs, reward, done,truncated ,info = env.step(action)
             print("Action: ", action)

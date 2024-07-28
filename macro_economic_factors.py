@@ -6,6 +6,7 @@ import yfinance as yf
 from create_universe import time_series_edit
 from drive_upload import upload
 import pandas as pd
+import numpy as np
 fred = Fred(api_key='ce93398088b6cef191be72551306fcae')
 
 def clean_dataset(dataset: pd.Series) -> pd.DataFrame:
@@ -66,19 +67,22 @@ def generate_macro_economic_file():
     This function will generate a pickle file containing the macro economic factors that we will use in our backtesting.
     """
     macro_economic_factors = generate_macro_economic_factors()
-    file_path = 'Collections/macro_economic_factors.pkl'
-    with open(file_path, 'wb') as file:
-        pickle.dump(macro_economic_factors, file, protocol=pickle.HIGHEST_PROTOCOL)
+    file = 'Collections/macro_economic_factors.pkl'
 
-    upload(file_path,'Collections','macro_economic_factors.pkl')
+    with open(file, 'wb') as f:
+        pickle.dump(macro_economic_factors, f)
+
+    upload(file,'Collections','macro_economic_factors.pkl')
 
 
 def plot_pickle_data():
     """
     This function will load the macro economic factors from the pickle file and plot the data.
     """
-    with open('Collections/macro_economic_factors.pkl', 'rb') as file:
-        macro_economic_factors = pickle.load(file)
+    file = 'Collections/macro_economic_factors.pkl'
+
+    with open(file, 'rb') as f:
+        macro_economic_factors = pickle.load(f)
 
     for asset in macro_economic_factors.asset_list:
         asset.plot_asset()
@@ -87,12 +91,19 @@ def open_macro_economic_file():
     """
     This function will load the macro economic factors from the pickle file.
     """
-    with open('Collections/macro_economic_factors.pkl', 'rb') as file:
-        macro_economic_factors = pickle.load(file)
+    file = 'Collections/macro_economic_factors.pkl'
+
+    with open(file, 'rb') as f:
+        macro_economic_factors = pickle.load(f)
+
+
     return macro_economic_factors
     
 
 
 if __name__ == '__main__':
-    #generate_macro_economic_file()
-    plot_pickle_data()
+    
+    generate_macro_economic_file()
+    print(np.__version__)
+    print(pd.__version__)
+    #plot_pickle_data()

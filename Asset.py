@@ -19,6 +19,7 @@ class Asset:
     def __init__(self, ticker ,time_series):
         self.ticker = ticker
         self.time_series = time_series
+        # convert datetime.datetime to datetime.date
         self.start_date = time_series.index[0]
         self.end_date = time_series.index[-1]
         self.portfolio_weight = 0.0
@@ -42,7 +43,7 @@ class Asset:
                            xaxis_title='Date',
                            yaxis_title='Value')
         # save the plot to a png file
-        plot.write_image("Investigations/Value_Plots/Asset_Value.png")
+        plot.write_image("Investigations/Value_Plots/"+self.ticker+".png")
 
     def closest_date_match(self, time_series:pandas.DataFrame, date: datetime.date) -> datetime.date:
         """
