@@ -41,7 +41,7 @@ class PortfolioCollection(Collection):
         # Calculate the return on investment
         roi = (self.portfolio_value - initial_investment) / initial_investment
 
-        # Calculate the number of assets in the portfolio
+        # Calculate tje portion of assests that have been invested in
         n_assets = len(self.asset_list)
 
         # MORE FEATURES TO BE ADDED
@@ -49,7 +49,7 @@ class PortfolioCollection(Collection):
 
 
 
-        return np.array([roi, n_assets])
+        return np.array([roi])
 
         pass
 

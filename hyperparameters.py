@@ -16,7 +16,7 @@ hyperparameters = {
                      # These terms will need to be managed manually unfortunately, until we can find a way to calculate them
                      "asset_feature_count": 7,
                       "macro_economic_feature_count": 4,
-                      "portfolio_status_feature_count": 2,
+                      "portfolio_status_feature_count": 1,
                       # Max number assets that can be held in the portfolio
                       "max_portfolio_size": 50,
                       # Initial balance for the portfolio
@@ -25,8 +25,10 @@ hyperparameters = {
                       "max_steps": 1e6,
                       # transaction cost for buying and selling assets
                       "transaction_cost": 0.005,
-                      # How many days the model should run for
-                      "max_days": 1000
+                      # How many years the model should run for
+                      "episode_length": 10,
+                     # Days between recalculating asset_universe economic factors
+                     "recalculation_period": 7
                       
 
                    }

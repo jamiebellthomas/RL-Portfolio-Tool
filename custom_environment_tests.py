@@ -48,14 +48,20 @@ class PortfolioEnvTests(unittest.TestCase):
         env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date2)
         obs, info = env.reset()
         done = False
-        for _ in range(5):
+        for _ in range(2):
             action = env.action_space.sample()
             obs, reward, done,truncated ,info = env.step(action)
             print("Action: ", action)
             print("Observation: ", obs)
+            # output the observation space to a csv
+            np.savetxt('observation_space.csv', obs.get("asset_universe"), delimiter=',')
             print("Reward: ", reward)
             print("Done: ", done)
             print("Info: ", info)
+            print("Total assets: ", obs.get("asset_universe").shape[0])
+            print("Invested assets: ", np.count_nonzero(obs.get("asset_universe")[:,0]))
+            print("Sum of weightings: ", np.sum(obs.get("asset_universe")[:,0]))
+
             print("\n")
         print("Environment interactions successful")
     

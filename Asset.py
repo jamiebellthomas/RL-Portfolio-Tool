@@ -260,10 +260,27 @@ class Asset:
         This will generate the row of the observation space for the asset, this will be a numpy array of shape (1, n_features)
         It will combine all calculated features above into a single row. 
         """
+
+        # create a list to store the observation
         observation = []
 
-        observation.append(self.portfolio_weight)
+        # If date is before the start date of the time series data, return a row of zeros, of size n_features
 
+        if(date < self.start_date):
+            for i in range(hyperparameters['asset_feature_count']):
+                observation.append(0.0)
+            return np.array(observation)
+
+        # Observation will be as follows:
+        # 1. Portfolio Weight
+        # 2. Expected Return
+        # 3. Beta
+        # 4. Illiquidity Ratio
+        # 5. ARMA Coefficients
+        # 6. ARMA Sigma2
+
+        observation.append(self.portfolio_weight)
+        #print("Portfolio Weight Type: " + str(type(self.portfolio_weight)))
         self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
         observation.append(self.expected_return)
         observation.append(self.beta)
@@ -271,11 +288,9 @@ class Asset:
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
 
-        for index,obs in enumerate(observation):
-
-            if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):
-                
-                observation[index] = np.float64(0.0)
+        #for index,obs in enumerate(observation):
+     #       if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):          
+          #      observation[index] = np.float64(0.0)
 
         self.ARMA(date, ARMA_lookback_period, ar_term_limit, ma_term_limit)
 

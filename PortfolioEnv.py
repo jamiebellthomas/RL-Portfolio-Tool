@@ -55,7 +55,7 @@ class PortfolioEnv(gym.Env):
         self.initial_date = initial_date
 
         # Load in the asset universe and macro economic data, and create the portfolio
-        self.asset_universe = self.asset_sub_universe(asset_universe)
+        self.asset_universe = asset_universe
         self.macro_economic_data = macro_economic_data
         self.portfolio = PortfolioCollection(asset_list=[])
         
@@ -72,25 +72,29 @@ class PortfolioEnv(gym.Env):
         self.portfolio_status_feature_count = hyperparameters["portfolio_status_feature_count"]
         self.ar_term_limit = hyperparameters["ARMA_ar_term_limit"]
         self.ma_term_limit = hyperparameters["ARMA_ma_term_limit"]
-        self.episode_length = hyperparameters["max_days"]
+        self.episode_length = hyperparameters["episode_length"]
+        self.recalculation_period = hyperparameters["recalculation_period"]
 
 
         # Intialise other environment variables
         self.current_step = 0
         self.current_date = initial_date
         # final date is a year after the initial date
-        self.final_date = self.initial_date + datetime.timedelta(days=self.episode_length)
+        self.final_date = self.initial_date + datetime.timedelta(days=(self.episode_length*365))
         self.portfolio_value = self.initial_balance
         self.portfolio.portfolio_value = self.portfolio_value
+        self.universe_size = len(self.asset_universe.asset_list)
+        self.days_since_asset_evaluation = self.recalculation_period
+        self.current_observation = None
 
 
         # Define the observation space
         # The np.infs will need to be changed but for now we will leave them as is, we'll change them when we proceed to data normalisation
 
         self.observation_space = spaces.Dict({
-            'asset_universe': spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.asset_universe.asset_list), self.asset_feature_count), dtype=np.float64),
-            'macro_economic_data': spaces.Box(low=-np.inf, high=np.inf, shape=(self.macro_economic_feature_count,), dtype=np.float64),
-            'portfolio_status': spaces.Box(low=-np.inf, high=np.inf, shape=(self.portfolio_status_feature_count,), dtype=np.float64)
+            'asset_universe': spaces.Box(low=0, high=1, shape=(len(self.asset_universe.asset_list), self.asset_feature_count), dtype=np.float64),
+            'macro_economic_data': spaces.Box(low=0, high=1, shape=(self.macro_economic_feature_count,), dtype=np.float64),
+            'portfolio_status': spaces.Box(low=-1, high=1, shape=(self.portfolio_status_feature_count,), dtype=np.float64)
         })
 
         # Define the action space
@@ -119,6 +123,7 @@ class PortfolioEnv(gym.Env):
         self.portfolio_value = self.initial_balance
         self.portfolio = PortfolioCollection(asset_list=[])
         self.portfolio.portfolio_value = self.portfolio_value
+        self.days_since_asset_evaluation = self.recalculation_period
 
 
         obs = self._next_observation(self.initial_date)
@@ -132,10 +137,12 @@ class PortfolioEnv(gym.Env):
         """
         This method will return the next observation for the environment.
         """
-
+        # We'll change it so that the asset universe is only evaluated every 7 days, this will reduce the computational load SIGNIFICANTLY
         asset_obs = self.asset_universe.get_observation(self.macro_economic_data, date, 
                                                 self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period,
                                                 self.ar_term_limit, self.ma_term_limit)
+
+
         
         portfolio_status_obs = self.portfolio.get_status_observation(date, self.initial_balance)
 
@@ -168,6 +175,13 @@ class PortfolioEnv(gym.Env):
         """
         terminated = False
         next_date = self.current_date + datetime.timedelta(days=1)
+        # Set weightings of assets that don't exist in the action vector to 0 (when the current date is before it's first date)
+        #print(type(action))
+        for i in range(len(action)):
+            if(self.current_date < self.asset_universe.asset_list[i].start_date):
+                action[i] = 0.0
+
+
         # First step is to normalise the action vector so it sums to 1
         action = action / np.sum(action)
 
@@ -179,6 +193,8 @@ class PortfolioEnv(gym.Env):
             asset = self.asset_universe.asset_list[i]
             current_weighting = asset.portfolio_weight
             new_weighting = action[i]
+            if(type(new_weighting) == np.ndarray):
+                new_weighting = new_weighting[0]
             absolute_delta += abs(current_weighting - new_weighting)
             asset.portfolio_weight = new_weighting
         self.portfolio.portfolio_value = current_portfolio_value * (1-(self.transaction_cost * absolute_delta))
@@ -220,19 +236,7 @@ class PortfolioEnv(gym.Env):
         info = self.generate_info()
         return obs, reward, terminated, truncated, info
     
-    
-    def asset_sub_universe(self, asset_universe:AssetCollection) -> AssetCollection:
-        """
-        This method will return the assets that exist at the time of the initial date.
-        It will do this by checking if the initial date is between the start and end date of the asset.
-        This will be called during initialisation of the environment.
-        """
-        asset_list = []
-        for asset in asset_universe.asset_list:
-            if asset.start_date <= self.initial_date <= asset.end_date:
-                asset_list.append(asset)
-        return AssetCollection(asset_list=asset_list)
-    
+
     def render(self, mode='human'):
         return 0
     
@@ -240,9 +244,10 @@ class PortfolioEnv(gym.Env):
         """
         This method will generate the info dictionary at the current time step. 
         """
-        portfolio_weightings = []
+        portfolio_weightings = {}
         for asset in self.portfolio.asset_list:
-            portfolio_weightings.append(asset.portfolio_weight)
+            portfolio_weightings[asset.ticker] = asset.portfolio_weight
+        
 
 
         return {
@@ -250,6 +255,6 @@ class PortfolioEnv(gym.Env):
             'Current Step': self.current_step,
             'Portfolio Value': self.portfolio_value,
             'Portfolio Weightings': portfolio_weightings
-            
+
         }
 
