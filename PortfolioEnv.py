@@ -73,7 +73,6 @@ class PortfolioEnv(gym.Env):
         self.ar_term_limit = hyperparameters["ARMA_ar_term_limit"]
         self.ma_term_limit = hyperparameters["ARMA_ma_term_limit"]
         self.episode_length = hyperparameters["episode_length"]
-        self.recalculation_period = hyperparameters["recalculation_period"]
 
 
         # Intialise other environment variables
@@ -84,7 +83,6 @@ class PortfolioEnv(gym.Env):
         self.portfolio_value = self.initial_balance
         self.portfolio.portfolio_value = self.portfolio_value
         self.universe_size = len(self.asset_universe.asset_list)
-        self.days_since_asset_evaluation = self.recalculation_period
         self.current_observation = None
 
 
@@ -117,13 +115,15 @@ class PortfolioEnv(gym.Env):
         obs = []
 
         # First let's reset the basic environment variables
-        self.current_step = 0
+
+        # MAYBE RESETTING THE CURRENT STEP IS THE REASON THE MODEL ISNT ENDING
+        #self.current_step = 0
+        
         self.current_date = self.initial_date
-        self.final_date = self.initial_date + datetime.timedelta(days=self.episode_length)
+        self.final_date = self.initial_date + datetime.timedelta(days=(round(self.episode_length*365)))
         self.portfolio_value = self.initial_balance
         self.portfolio = PortfolioCollection(asset_list=[])
         self.portfolio.portfolio_value = self.portfolio_value
-        self.days_since_asset_evaluation = self.recalculation_period
 
 
         obs = self._next_observation(self.initial_date)
@@ -172,7 +172,18 @@ class PortfolioEnv(gym.Env):
         So in the context of this problem, we will update the portfolio distribution based off the action vector, and then calculate the new portfolio value AT THE NEXT TIME STEP.
         Then we generate the next observation at the next time step and calculate the reward based off the new portfolio value.
 
+
+        I see where the confusion came in, this is a single step in the environment, the agent will take an action, the environment will respond with a new state and a reward.
+        The terminated variable will be set to True when the episode is done, and the reset method will need to be called to reset the environment.
+        So the final_date will be the date an episode ends and the reset method is called, and the total_timesteps defined in the PPO model initialisation will be the number of steps taken throughout training
+        So we'll probably need to scale down n_steps in the PPO initialisation as its default value is 128, which is too high for the number of steps in an episode. (5.6 years), We can start episode length
+        of a few years and set n_steps to 5
+
+        Once we have got profiler functionality we can look at reintroducing some of the financial models to, to try and get some generalisation...
+
+
         """
+        print("Current Step:" , self.current_step)
         terminated = False
         next_date = self.current_date + datetime.timedelta(days=1)
         # Set weightings of assets that don't exist in the action vector to 0 (when the current date is before it's first date)
@@ -182,8 +193,8 @@ class PortfolioEnv(gym.Env):
                 action[i] = 0.0
 
 
-        # First step is to normalise the action vector so it sums to 1
-        action = action / np.sum(action)
+        # Normalise vector using softmax
+        action = np.exp(action) / np.sum(np.exp(action))
 
         #STEP 1: Calculate how the transaction costs associated with the action vector will affect the portfolio value
         # We will calculate the absolute delta in the portfolio value due to the action vector

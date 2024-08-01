@@ -25,6 +25,8 @@ class AssetCollection(Collection):
                                                 ar_term_limit, ma_term_limit)
             self.feature_count = len(observation)
             observation_space.append(observation)
+
+            #print(observation_space)
         return self.normalise_observation(np.array(observation_space))
     
 
@@ -32,18 +34,11 @@ class AssetCollection(Collection):
         """
         This function will normalise the observation space so that all values are between 0 and 1.
         """
-        # Go through each column in the observation space and normalise the values
-        # Each column represents a feature of the asset, so we want to normalise the values of each feature so that they are between 0 and 1
-        for i in range(self.feature_count):
-            # Skip the first column as this is the portfolio weighting of the asset (already normalised)
-            if(i == 0):
-                continue
-            if(np.max(observation[:, i]) == np.min(observation[:, i])):
-                continue
-            if(np.isnan(np.max(observation[:, i])) or np.isnan(np.min(observation[:, i]))):
-                continue
 
-            observation[:, i] = (observation[:, i] - np.min(observation[:, i])) / (np.max(observation[:, i]) - np.min(observation[:, i]))
+        # Normalise every column bar the first one using a softmax function
+        for i in range(1, observation.shape[1]):
+            observation[:, i] = np.exp(observation[:, i]) / np.sum(np.exp(observation[:, i]))
+        
 
 
         return observation

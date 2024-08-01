@@ -45,18 +45,30 @@ class Asset:
         # save the plot to a png file
         plot.write_image("Investigations/Value_Plots/"+self.ticker+".png")
 
-    def closest_date_match(self, time_series:pandas.DataFrame, date: datetime.date) -> datetime.date:
+    def closest_date_match(self, time_series: pandas.DataFrame, date: datetime.date) -> datetime.date:
         """
         This function will find the closest date in the time series data to the given date.
-        Input: date (str) - the date we want to find the closest date to
+        Input: date (datetime.date) - the date we want to find the closest date to
         Output: closest_date (datetime.date) - the closest date in the time series data
         """
-
-        days_delta = (time_series.index - date)
-        closest_date_idx = abs(days_delta).argmin()
-        closest_date = time_series.index[closest_date_idx]
+        # Convert date to a datetime object if it's not already
+        
+        
+        # Use searchsorted to find the insertion point
+        # hopehully using numpy will by significantly faster than using pandas (it is)
+        pos = np.searchsorted(time_series.index, date)
+        
+        if pos == 0:
+            return time_series.index[0]
+        if pos == len(time_series.index):
+            return time_series.index[-1]
+        
+        before = time_series.index[pos - 1]
+        after = time_series.index[pos]
+        
+        # Find the closest date
+        closest_date = after if (after - date) < (date - before) else before
         return closest_date
-    
 
     def extract_subsection(self, time_series:pandas.DataFrame, start_date: datetime.date, end_date: datetime.date) -> pandas.DataFrame:
         """
@@ -104,6 +116,9 @@ class Asset:
         risk_free_rate_at_time = risk_free_rate.time_series.loc[self.closest_date_match(risk_free_rate.time_series, date)]/100 # convert to decimal
         
         asset_return = subsection['value'].pct_change()
+
+        # We need to make a minimum number of points threshold for the variance and covariance calculations
+        # Also maybe look at varience/co-variance over different periods (e.g. 1 month, 3 months, 1 year)
         
         market_return = sp500_subsection['value'].pct_change()
         
@@ -112,11 +127,17 @@ class Asset:
         variance = market_return.var()
         
         self.beta = covariance / variance
+        if np.isnan(self.beta):
+            self.beta = 0.0
+            self.expected_return = 0.0
+            return self.expected_return
         
         expected_daily_market_return = market_return.mean()
         expected_annual_market_return = (1 + expected_daily_market_return)**252 - 1
 
         self.expected_return = (risk_free_rate_at_time + self.beta * (expected_annual_market_return - risk_free_rate_at_time)).value
+
+
 
         return self.expected_return
 
@@ -153,6 +174,9 @@ class Asset:
         subsection['illiquidity_ratio'] = subsection['delta_P']/volume
         # Now take the average of the illiquidity ratios
         self.illiquidity_ratio = subsection['illiquidity_ratio'].mean()
+        if np.isnan(self.illiquidity_ratio):
+            self.illiquidity_ratio = 0.0
+            return self.illiquidity_ratio
 
         return self.illiquidity_ratio
     
@@ -281,16 +305,20 @@ class Asset:
 
         observation.append(self.portfolio_weight)
         #print("Portfolio Weight Type: " + str(type(self.portfolio_weight)))
+        """
         self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
         observation.append(self.expected_return)
         observation.append(self.beta)
 
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
-
+        """
         #for index,obs in enumerate(observation):
      #       if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):          
           #      observation[index] = np.float64(0.0)
+
+        
+        """
 
         self.ARMA(date, ARMA_lookback_period, ar_term_limit, ma_term_limit)
 
@@ -322,6 +350,10 @@ class Asset:
             np.array(observation)
         except:
             print(observation)
+        
+        """
+
+
 
 
 
