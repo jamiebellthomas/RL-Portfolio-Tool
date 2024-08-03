@@ -7,12 +7,13 @@ import sys
 from PortfolioEnv import PortfolioEnv
 import pickle
 import datetime
-import cProfile
-import pstats
+import subprocess
 
-initial_date = datetime.date(1970, 1, 1)
+initial_date = datetime.date(1980, 1, 1)
 asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
 macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
+model_date_and_time = datetime.datetime.now()
+model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
 # Configure the logger to output to both stdout and files
 
 
@@ -21,8 +22,7 @@ def run_model():
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     # Custom logger configuration
-    model_date_and_time = datetime.datetime.now()
-    model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
+   
 
     log_path = os.path.join(logs_path, model_date)
     
@@ -48,19 +48,27 @@ def run_model():
 
     model.set_logger(new_logger)
 
-    model.learn(total_timesteps = 20)
+    model.learn(total_timesteps = (365))
     # save model to Trained-Models folder
-    model.save("Trained-Models/portfolio_env_model_{}".format(model_date))
-    return model
+    model.save("Trained-Models/{}".format(model_date))
 
     
+def run_command(command):
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode == 0:
+        print("Command output:\n", result.stdout)
+    else:
+        print("Error:\n", result.stderr)
+
 
 if __name__ == '__main__':
+    run_model()
 
-    model = run_model()
+    run_command("tensorboard --logdir=Logs/{}".format(model_date))
 
-    # Once model has finished running, run tensorboard --logdir=Logs/PortfolioEnv to view the logs/tensorboard
+    # Once model has finished running, run tensorboard --logdir=Logs/{model_date} to view the logs/tensorboard
 
-
+    # To run it with cProfile, run:
+    # python -m cProfile -o profile_results.prof test_run.py
     # Once you have the cProfile results, to get them in the form of a flame plot, run:
-    # py-spy top --flame profile_results.prof --out profile_results.svg
+    # flameprof profile_results.prof > output.svg

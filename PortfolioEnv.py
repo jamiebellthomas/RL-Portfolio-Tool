@@ -243,6 +243,7 @@ class PortfolioEnv(gym.Env):
         truncated = False
 
         reward = roi
+        print("Reward: ", reward)
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
         return obs, reward, terminated, truncated, info

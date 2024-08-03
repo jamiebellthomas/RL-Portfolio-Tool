@@ -53,30 +53,29 @@ class PortfolioCollection(Collection):
 
         pass
 
-    def calculate_portfolio_value(self, old_date:datetime.date, new_date: datetime.date) -> float:
+    def calculate_portfolio_value(self, old_date: datetime.date, new_date: datetime.date) -> float:
         """
-        This method will determine the change in the portfolio value as a result of the change in asset prices.
+        This method determines the change in the portfolio value as a result of the change in asset prices.
         This will also lead to a change in the weightings of the assets in the portfolio as their relative values change.
         """
-        # We are going to create a vector with the same length as the asset_list, showing the new values of each investment 
-        # in the portfolio, so we can calculate the new portfolio value and the new weightings of the assets in the portfolio.
-        new_investment_values = np.zeros(len(self.asset_list))
-        for asset in self.asset_list:
-            old_price = asset.calculate_value(old_date)
-            new_price = asset.calculate_value(new_date)
+        # Precompute old and new prices for all assets
+        old_prices = np.array([asset.calculate_value(old_date) for asset in self.asset_list])
+        new_prices = np.array([asset.calculate_value(new_date) for asset in self.asset_list])
 
-            old_investment_value = self.portfolio_value * asset.portfolio_weight
+        # Calculate the old investment values
+        old_investment_values = self.portfolio_value * np.array([asset.portfolio_weight for asset in self.asset_list])
 
-            new_investment_value = (new_price / old_price) * old_investment_value
-            # Update the new_investment_values vector
-            new_investment_values[self.asset_list.index(asset)] = new_investment_value
-        
+        # Calculate the new investment values
+        new_investment_values = (new_prices / old_prices) * old_investment_values
+
         # Calculate the new portfolio value
-        self.portfolio_value = np.sum(new_investment_values)
+        new_portfolio_value = np.sum(new_investment_values)
 
-        # Now update the relative weightings of all assets in the portfolio
-        for i in range(len(new_investment_values)):
-            self.asset_list[i].portfolio_weight = new_investment_values[i] / self.portfolio_value
+        # Update the relative weightings of all assets in the portfolio
+        for i, asset in enumerate(self.asset_list):
+            asset.portfolio_weight = new_investment_values[i] / new_portfolio_value
+
+        self.portfolio_value = new_portfolio_value
 
         return self.portfolio_value
 

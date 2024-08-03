@@ -305,11 +305,11 @@ class Asset:
 
         observation.append(self.portfolio_weight)
         #print("Portfolio Weight Type: " + str(type(self.portfolio_weight)))
-        """
+        
         self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
         observation.append(self.expected_return)
         observation.append(self.beta)
-
+        """
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
         """
