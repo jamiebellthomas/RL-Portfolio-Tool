@@ -9,19 +9,20 @@ import pandas as pd
 import numpy as np
 fred = Fred(api_key='ce93398088b6cef191be72551306fcae')
 
-def clean_dataset(dataset: pd.Series) -> pd.DataFrame:
+def clean_dataset(dataset: pd.Series) -> np.array:
     """
     This function will take in the panda series outputted by the fredapi, convert it to a dataframe, and clean it.
     The function will drop any rows with NaN values and reset the index.
     Input: dataset (pandas Series) - the dataset outputted by the fredapi
-    Output: dataset (pandas DataFrame) - the cleaned dataset
+    Output:  np.array - the cleaned dataset, and the dated index column
     """
     dataset = dataset.to_frame()
-    dataset.index = dataset.index.date
     dataset = dataset.dropna()
-    # set first column name to value
-    dataset.columns = ['value']
-    return dataset
+    
+    dataset.index = dataset.index.date
+
+    return np.array(dataset.index.tolist()), np.array(dataset.iloc[:,0].tolist())
+
 
 
 def extract_snp500():
@@ -31,8 +32,8 @@ def extract_snp500():
     sp500 = yf.Ticker("^GSPC")
     # Get historical data
     hist_data = sp500.history(period="max")
-    hist_data = time_series_edit(hist_data)
-    return hist_data
+    index,values,_,_,_ = time_series_edit(hist_data)
+    return index,values
 
 def generate_macro_economic_factors():
     """
@@ -51,12 +52,12 @@ def generate_macro_economic_factors():
 
     for series_id in macro_economic_factors_series_ids:
         series = fred.get_series(series_id)
-        series = clean_dataset(series)
-        asset = Asset(series_id, series)
+        index, values = clean_dataset(series)
+        asset = Asset(series_id, index, values, open_list=None, close_list=None, volume_list=None)
         macro_economic_factors_list.append(asset)
     
-    sp500 = extract_snp500()
-    asset = Asset('SP500', sp500)
+    index,values = extract_snp500()
+    asset = Asset('SP500', index,values, open_list=None, close_list=None, volume_list=None)
     macro_economic_factors_list.append(asset)
 
     return MacroEconomicCollection(macro_economic_factors_list)

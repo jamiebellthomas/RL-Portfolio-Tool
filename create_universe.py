@@ -4,7 +4,7 @@ from Asset import Asset
 from AssetCollection import AssetCollection
 import os
 import pandas as pd
-
+import numpy as np
 import pickle
 from drive_upload import upload
 
@@ -32,22 +32,32 @@ def extract_time_series(ticker: str) -> pd.DataFrame:
     hist = stock.history(period="max", interval="1d")
     return hist
 
-def time_series_edit(hist: pd.DataFrame) -> pd.DataFrame:
+def time_series_edit(hist: pd.DataFrame) -> np.array:
     """
     This function will edit the time series data and handle all formatting 
     Input: hist (pandas DataFrame) - the complete time series data for the given ticker symbol
-    Output: hist (pandas DataFrame) - the complete time series data for the given ticker symbol with all formatting adjustments.
+    Output: np.array - the edited time series data
     """
     # drop any rows with NaN values
     hist = hist.dropna()
 
     # create a new column for average price, this is the average of the 'High' and 'Low' columns
     hist.loc[:,"value"] = (hist["High"] + hist["Low"]) / 2
-    
 
     # edit the Date column so it only contains the date and not the time
     hist.index = hist.index.date
-    return hist
+
+    index_list = np.array(hist.index.tolist())
+
+    value_list = np.array(hist["value"].tolist())
+
+    open_list = np.array(hist["Open"].tolist())
+
+    close_list = np.array(hist["Close"].tolist())  
+
+    volume_list = np.array(hist["Volume"].tolist()) 
+
+    return index_list, value_list, open_list, close_list, volume_list
 
 def create_collection(ticker_list: list) -> AssetCollection:
     """
@@ -62,8 +72,8 @@ def create_collection(ticker_list: list) -> AssetCollection:
         
         if hist.empty:
             continue
-        hist = time_series_edit(hist)
-        asset = Asset(ticker, hist)
+        index_list,value_list, open_list, close_list, vol_list = time_series_edit(hist)
+        asset = Asset(ticker,index_list,value_list,open_list,close_list,vol_list)
         asset_list.append(asset)
     return AssetCollection(asset_list)
 

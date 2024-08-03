@@ -16,12 +16,16 @@ Ticker is the ticker symbol of the asset e.g Apple is AAPL
 time_series is a data frame containing the time series data for the asset. Time series increment as you go down the rows
 """
 class Asset:
-    def __init__(self, ticker ,time_series):
+    def __init__(self, ticker ,index_list:np.array,value_list:np.array,open_list:np.array,close_list:np.array,volume_list:np.array):
         self.ticker = ticker
-        self.time_series = time_series
+        self.index_list = index_list
+        self.value_list = value_list
+        self.open_list = open_list
+        self.close_list = close_list
+        self.volume_list = volume_list
         # convert datetime.datetime to datetime.date
-        self.start_date = time_series.index[0]
-        self.end_date = time_series.index[-1]
+        self.start_date = index_list[0]
+        self.end_date = index_list[-1]
         self.portfolio_weight = 0.0
         self.expected_return = None
         self.beta = None
@@ -38,50 +42,74 @@ class Asset:
         This function will plot the time series data for the asset.
         """
         plot = go.Figure()
-        plot.add_trace(go.Scatter(x=self.time_series.index, y=self.time_series['value'], mode='lines', name='Asset Value'))
+        plot.add_trace(go.Scatter(x=self.index_list, y=self.value_list, mode='lines', name='Asset Value'))
         plot.update_layout(title='Asset Value for '+self.ticker,
                            xaxis_title='Date',
                            yaxis_title='Value')
         # save the plot to a png file
         plot.write_image("Investigations/Value_Plots/"+self.ticker+".png")
 
-    def closest_date_match(self, time_series: pandas.DataFrame, date: datetime.date) -> datetime.date:
+    def closest_date_match(self, date: datetime.date) -> int:
         """
-        This function will find the closest date in the time series data to the given date.
-        Input: date (datetime.date) - the date we want to find the closest date to
-        Output: closest_date (datetime.date) - the closest date in the time series data
+        This function will find the closest date match in the index list to the given date.
+        Input: date (datetime.date) - the date we want to find the closest match to
+        Output: pos (int) - the position of the closest date match in the index list
         """
-        # Convert date to a datetime object if it's not already
-        
-        
-        # Use searchsorted to find the insertion point
-        # hopehully using numpy will by significantly faster than using pandas (it is)
-        pos = np.searchsorted(time_series.index, date)
-        
+        pos = np.searchsorted(self.index_list, date, side='left')
         if pos == 0:
-            return time_series.index[0]
-        if pos == len(time_series.index):
-            return time_series.index[-1]
+            return 0
+        if pos == len(self.index_list):
+            return len(self.index_list) - 1
+        before = self.index_list[pos - 1]
+        after = self.index_list[pos]
+        if after - date < date - before:
+            return pos
+        else:
+            return pos - 1
         
-        before = time_series.index[pos - 1]
-        after = time_series.index[pos]
-        
-        # Find the closest date
-        closest_date = after if (after - date) < (date - before) else before
-        return closest_date
 
-    def extract_subsection(self, time_series:pandas.DataFrame, start_date: datetime.date, end_date: datetime.date) -> pandas.DataFrame:
+    def extract_subsection(self, start_date: datetime.date, end_date: datetime.date) -> np.array:
         """
         This function will extract a subsection of the time series data for the asset.
         Input: start_date (str) - the start date of the subsection
                end_date (str) - the end date of the subsection
         Output: subsection (pandas DataFrame) - the subsection of the time series data
         """
-        start_date = self.closest_date_match(time_series, start_date)
-        end_date = self.closest_date_match(time_series, end_date)
+        start_date_index = self.closest_date_match(start_date)
+        end_date_index = self.closest_date_match(end_date)
 
-        subsection = time_series.loc[start_date:end_date]
-        return subsection
+        
+
+        # Now we have the indexes of the start and end date, we can extract the subsection from the self.value_list np.array
+        value_sub_section = self.value_list[start_date_index:end_date_index+1]
+        if(self.open_list is None and self.close_list is None and self.volume_list is None):
+            return value_sub_section
+        close_sub_section = self.close_list[start_date_index:end_date_index+1]
+        open_sub_section = self.open_list[start_date_index:end_date_index+1]
+        volume_sub_section = self.volume_list[start_date_index:end_date_index+1]
+        return value_sub_section, close_sub_section, open_sub_section, volume_sub_section, start_date_index, end_date_index
+    
+
+    def pct_change(self,arr:np.array, periods=1):
+        """
+        Calculate the percentage change between the current and a prior element in a numpy array.
+        
+        Parameters:
+        arr (numpy.ndarray): Input array.
+        periods (int): Periods to shift for forming the percent change. Default is 1.
+        
+        Returns:
+        numpy.ndarray: Array of percentage changes.
+        """
+        # Calculate the percentage change
+        shifted_arr = np.roll(arr, periods)
+        shifted_arr[:periods] = np.nan  # The first 'periods' elements should be NaN
+        pct_change_arr = (arr - shifted_arr) / shifted_arr
+        # remove first 'periods' elements as they are NaN
+        pct_change_arr = pct_change_arr[periods:]
+
+        
+        return pct_change_arr
     
 
 
@@ -100,31 +128,52 @@ class Asset:
         
         start_date = date - datetime.timedelta(days=round(period*365))
 
-        start_date = self.closest_date_match(self.time_series, start_date)
-
         # first we need the relevant subsection of the time series data
-        subsection = self.extract_subsection(self.time_series, 
-                                             start_date, 
-                                             self.closest_date_match(self.time_series, date))
+        subsection,_,_,_,start_date_index,end_date_index = self.extract_subsection(start_date, date)
+        # if subsection is too short, then we cannot perform the CAPM calculation, set expected return to 0 and return
+        if(len(subsection) < 25):
+            self.expected_return = 0.0
+            self.beta = 0.0
+            return self.expected_return
         # next we need the relevant subsection of the macro economic factors
         sp500 = macro_economic_collection.asset_lookup('SP500')
-        sp500_subsection = sp500.extract_subsection(sp500.time_series, 
-                                                          self.closest_date_match(sp500.time_series,start_date), 
-                                                          self.closest_date_match(sp500.time_series,date))
+        sp500_subsection = sp500.extract_subsection(self.index_list[start_date_index], self.index_list[end_date_index])
         
         risk_free_rate = macro_economic_collection.asset_lookup('DTB3')
-        risk_free_rate_at_time = risk_free_rate.time_series.loc[self.closest_date_match(risk_free_rate.time_series, date)]/100 # convert to decimal
+        # convert the risk free rate to a decimal, the values are stored in a np.array so we need to extract self.value_list array and convert to a decimal
+        risk_free_rate_at_time = risk_free_rate.value_list[risk_free_rate.closest_date_match(date)]
+        risk_free_rate_at_time = risk_free_rate_at_time / 100
+        #print("Risk Free Rate", risk_free_rate_at_time)
         
-        asset_return = subsection['value'].pct_change()
+        # Now we need the percenrage change in the asset value over the period each day
+        asset_return = self.pct_change(subsection, periods=1)
+        #print("Asset Return Length", len(subsection))
 
         # We need to make a minimum number of points threshold for the variance and covariance calculations
         # Also maybe look at varience/co-variance over different periods (e.g. 1 month, 3 months, 1 year)
         
-        market_return = sp500_subsection['value'].pct_change()
+        market_return = self.pct_change(sp500_subsection, periods=1)
+        #print("Market Return Length", len(sp500_subsection))
+
+        if(len(asset_return) < 25 or len(market_return) < 25):
+            self.expected_return = 0.0
+            self.beta = 0.0
+            return self.expected_return
+
+        if(len(asset_return) != len(market_return)):
+            self.expected_return = 0.0
+            self.beta = 0.0
+            print("Mismatched Lengths " + self.ticker)
+            print("Asset Return Length", len(asset_return))
+            print("Market Return Length", len(market_return))
+            print("\n")
+            return self.expected_return
         
-        covariance = asset_return.cov(market_return)
-        
-        variance = market_return.var()
+
+        covariance = np.cov(asset_return, market_return, ddof=1)[0][1]
+        #print("Covarience", covariance)
+        variance = np.var(market_return,ddof=1)
+        #print("Variance", variance)
         
         self.beta = covariance / variance
         if np.isnan(self.beta):
@@ -132,12 +181,23 @@ class Asset:
             self.expected_return = 0.0
             return self.expected_return
         
+        #expected_daily_market_return = market_return.mean()
+        #print("Expected Daily Market Return", expected_daily_market_return)
+        #expected_annual_market_return = (1 + expected_daily_market_return)**252 - 1
+        #print("Expected Annual Market Return", expected_annual_market_return)
+
         expected_daily_market_return = market_return.mean()
+        #print("Expected Daily Market Return", expected_daily_market_return)
         expected_annual_market_return = (1 + expected_daily_market_return)**252 - 1
+        #print("Expected Annual Market Return", expected_annual_market_return)
 
-        self.expected_return = (risk_free_rate_at_time + self.beta * (expected_annual_market_return - risk_free_rate_at_time)).value
 
 
+        self.expected_return = (risk_free_rate_at_time + self.beta * (expected_annual_market_return - risk_free_rate_at_time))
+
+        #print("Expected Return", self.expected_return)
+        #print("Beta", self.beta)
+        #print("\n")
 
         return self.expected_return
 
@@ -153,36 +213,30 @@ class Asset:
         """
         # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
         start_date = date - datetime.timedelta(days=round(period*365))
-        start_date = self.closest_date_match(self.time_series, start_date)
-
         # first we need the relevant subsection of the time series data
-        subsection = self.extract_subsection(self.time_series, 
-                                             start_date, 
-                                             self.closest_date_match(self.time_series, date))
+        _,open_subsection,close_subsection,volume_subsection,_,_ = self.extract_subsection(start_date, date)
         
-        # remove rows of subsection where Volume = 0 so we dont get a divide by 0 error
-        subsection = subsection[subsection['Volume'] != 0]
-
-        volume = subsection['Volume']
-        close_price = subsection['Close']
-        open_price = subsection['Open']
-
-        subsection['delta_P'] = close_price - open_price
+        
+        # remove rows of subsection where Volume = 0 so we dont get a divide by 0 error, subsection is a np.array
+        np.trim_zeros(volume_subsection)
+        # Now we can calculate the Illiquidity Ratio    
+        delta_P = close_subsection - open_subsection
         # Take the absolute value of the delta_P column
-        subsection['delta_P'] = abs(subsection['delta_P'])
+        abs_delta_P = np.abs(delta_P)
         # Now compute the illiquidity ratio for each row
-        subsection['illiquidity_ratio'] = subsection['delta_P']/volume
+        illiquidity_ratio = abs_delta_P/volume_subsection
         # Now take the average of the illiquidity ratios
-        self.illiquidity_ratio = subsection['illiquidity_ratio'].mean()
+        self.illiquidity_ratio = illiquidity_ratio.mean()
         if np.isnan(self.illiquidity_ratio):
             self.illiquidity_ratio = 0.0
             return self.illiquidity_ratio
 
         return self.illiquidity_ratio
     
-    def stationarity_test(self, time_series: pandas.Series) -> bool:
+    def stationarity_test(self, time_series: np.array) -> bool:
         """
         This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
+        IM GOING TO LEAVE THE REST OF THE ARMA CALCS FOR NOW AS I MAY SWITCH TO A DIFFERNET MODEL, SO DONT WANT TO REFACTOR UNNECESSARILY
         """
         try:
             result = adfuller(time_series)
@@ -272,9 +326,8 @@ class Asset:
         """
         This function will calculate the value of the asset at a given date.
         """
-        value = self.time_series.loc[self.closest_date_match(self.time_series, date)]['value']
-        return value
-
+        closest_date_index = self.closest_date_match(date)
+        return self.value_list[closest_date_index]
 
 
     def get_observation(self, macro_economic_collection: Collection, date: datetime.date, 

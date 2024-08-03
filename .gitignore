@@ -166,3 +166,5 @@ cython_debug/
 *.zip
 *.svg
 *.csv
+# The entre Logs folder
+Logs/

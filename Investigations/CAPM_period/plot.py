@@ -21,8 +21,8 @@ def asset_creation(ticker:str):
     This function creates a single asset
     """
     hist = extract_time_series(ticker)
-    hist = time_series_edit(hist)
-    asset = Asset(ticker, hist)
+    index_list, value_list, open_list, close_list, volume_list = time_series_edit(hist)
+    asset = Asset(ticker, index_list, value_list, open_list, close_list, volume_list)
     return asset
 
 def CAPM_investigation(asset: Asset):
@@ -66,10 +66,11 @@ def CAPM_investigation(asset: Asset):
     # now plot the asset value over time on a seperate graph but on the same plotly figure
     # only plot value past year 2000 so graph isnt too compressed
     cut_off_date = datetime.date(2000, 1, 1)
-    new_time_series = asset.time_series.loc[asset.closest_date_match(asset.time_series,cut_off_date):]
+    new_time_series = asset.value_list[asset.index_list >= cut_off_date]
+    new_index = asset.index_list[asset.index_list >= cut_off_date]
 
     
-    fig.add_trace(go.Scatter(x=new_time_series.index, y=new_time_series['value'], mode='lines', name=asset.ticker),
+    fig.add_trace(go.Scatter(x=new_index, y=new_time_series, mode='lines', name=asset.ticker),
                   row=2, col=1)
     fig.update_yaxes(title_text=asset.ticker+" Value", row=2, col=1)
     fig.update_xaxes(title_text="Date", row=2, col=1)
@@ -77,8 +78,9 @@ def CAPM_investigation(asset: Asset):
     # finally plot the S&P 500 data
     cut_off_date = datetime.date(1995, 1, 1)
     sp500 = open_macro_economic_file().asset_lookup('SP500')
-    new_sp500 = sp500.time_series.loc[sp500.closest_date_match(sp500.time_series,cut_off_date):]
-    fig.add_trace(go.Scatter(x=new_sp500.index, y=new_sp500['value'], mode='lines', name='SP500'),
+    new_sp500_values = sp500.value_list[sp500.index_list >= cut_off_date]
+    new_sp500_index = sp500.index_list[sp500.index_list >= cut_off_date]
+    fig.add_trace(go.Scatter(x=new_sp500_index, y=new_sp500_values, mode='lines', name='SP500'),
                   row=3, col=1)
     fig.update_yaxes(title_text="S&P500 Value", row=3, col=1)
     fig.update_xaxes(title_text="Date", row=3, col=1)
@@ -92,6 +94,7 @@ def CAPM_investigation(asset: Asset):
 
 def main():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN','AZTA','SCYX','CROX','PSTV', 'SSSS']
+    tickers = ['GOOGL']
     # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
     for ticker in tickers:
         asset = asset_creation(ticker)

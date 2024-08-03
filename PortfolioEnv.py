@@ -183,7 +183,6 @@ class PortfolioEnv(gym.Env):
 
 
         """
-        print("Current Step:" , self.current_step)
         terminated = False
         next_date = self.current_date + datetime.timedelta(days=1)
         # Set weightings of assets that don't exist in the action vector to 0 (when the current date is before it's first date)
@@ -243,7 +242,6 @@ class PortfolioEnv(gym.Env):
         truncated = False
 
         reward = roi
-        print("Reward: ", reward)
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
         return obs, reward, terminated, truncated, info
