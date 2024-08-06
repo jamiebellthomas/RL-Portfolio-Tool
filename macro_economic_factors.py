@@ -7,6 +7,8 @@ from create_universe import time_series_edit
 from drive_upload import upload
 import pandas as pd
 import numpy as np
+
+import matplotlib.pyplot as plt
 fred = Fred(api_key='ce93398088b6cef191be72551306fcae')
 
 def clean_dataset(dataset: pd.Series) -> np.array:
@@ -33,6 +35,18 @@ def extract_snp500():
     # Get historical data
     hist_data = sp500.history(period="max")
     index,values,_,_,_ = time_series_edit(hist_data)
+
+    return index,values
+
+def extract_nasdaq():
+    """
+    This function will extract the NASDAQ data from Yahoo Finance using the yfinance library.
+    """
+    nasdaq = yf.Ticker("^IXIC")
+    # Get historical data
+    hist_data = nasdaq.history(period="max")
+    index,values,_,_,_ = time_series_edit(hist_data)
+
     return index,values
 
 def generate_macro_economic_factors():
@@ -58,6 +72,10 @@ def generate_macro_economic_factors():
     
     index,values = extract_snp500()
     asset = Asset('SP500', index,values, open_list=None, close_list=None, volume_list=None)
+    macro_economic_factors_list.append(asset)
+
+    index,values = extract_nasdaq()
+    asset = Asset('NASDAQ', index,values, open_list=None, close_list=None, volume_list=None)
     macro_economic_factors_list.append(asset)
 
     return MacroEconomicCollection(macro_economic_factors_list)
@@ -103,7 +121,6 @@ def open_macro_economic_file():
 
 
 if __name__ == '__main__':
-    
     generate_macro_economic_file()
     print(np.__version__)
     print(pd.__version__)

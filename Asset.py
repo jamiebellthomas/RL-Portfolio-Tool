@@ -136,7 +136,7 @@ class Asset:
             self.beta = 0.0
             return self.expected_return
         # next we need the relevant subsection of the macro economic factors
-        sp500 = macro_economic_collection.asset_lookup('SP500')
+        sp500 = macro_economic_collection.asset_lookup('NASDAQ')
         sp500_subsection = sp500.extract_subsection(self.index_list[start_date_index], self.index_list[end_date_index])
         
         risk_free_rate = macro_economic_collection.asset_lookup('DTB3')
@@ -163,10 +163,10 @@ class Asset:
         if(len(asset_return) != len(market_return)):
             self.expected_return = 0.0
             self.beta = 0.0
-            print("Mismatched Lengths " + self.ticker)
-            print("Asset Return Length", len(asset_return))
-            print("Market Return Length", len(market_return))
-            print("\n")
+            #print("Mismatched Lengths " + self.ticker)
+            #print("Asset Return Length", len(asset_return))
+            #print("Market Return Length", len(market_return))
+            #print("\n")
             return self.expected_return
         
 
@@ -211,26 +211,33 @@ class Asset:
                 date (str) - the date we want to calculate the Illiquidity Ratio at
         Output: illiquidity_ratio (float) - the illiquidity ratio of the asset
         """
+        #Supress warnings that come from this method
+        warnings.filterwarnings("ignore")
         # get the start date of the period (remebmer that the period is in years so we need to convert it to a date)
         start_date = date - datetime.timedelta(days=round(period*365))
         # first we need the relevant subsection of the time series data
         _,open_subsection,close_subsection,volume_subsection,_,_ = self.extract_subsection(start_date, date)
         
         
-        # remove rows of subsection where Volume = 0 so we dont get a divide by 0 error, subsection is a np.array
-        np.trim_zeros(volume_subsection)
         # Now we can calculate the Illiquidity Ratio    
         delta_P = close_subsection - open_subsection
+
         # Take the absolute value of the delta_P column
         abs_delta_P = np.abs(delta_P)
+        
+        deltaP_and_volume = np.column_stack((abs_delta_P, volume_subsection))
+        # remove rows where the volume traded is 0
+        deltaP_and_volume = deltaP_and_volume[(deltaP_and_volume[:,1] != 0)]
+
+
         # Now compute the illiquidity ratio for each row
-        illiquidity_ratio = abs_delta_P/volume_subsection
+        illiquidity_ratio = np.divide(deltaP_and_volume[:,0], deltaP_and_volume[:,1])
         # Now take the average of the illiquidity ratios
         self.illiquidity_ratio = illiquidity_ratio.mean()
-        if np.isnan(self.illiquidity_ratio):
+        if np.isnan(self.illiquidity_ratio) or np.isinf(self.illiquidity_ratio):
             self.illiquidity_ratio = 0.0
             return self.illiquidity_ratio
-
+        self.illiquidity_ratio = min(self.illiquidity_ratio, 1.0)
         return self.illiquidity_ratio
     
     def stationarity_test(self, time_series: np.array) -> bool:
@@ -362,10 +369,10 @@ class Asset:
         self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
         observation.append(self.expected_return)
         observation.append(self.beta)
-        """
+        
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
-        """
+        
         #for index,obs in enumerate(observation):
      #       if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):          
           #      observation[index] = np.float64(0.0)
