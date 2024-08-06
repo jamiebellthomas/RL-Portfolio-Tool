@@ -77,12 +77,12 @@ def CAPM_investigation(asset: Asset):
 
     # finally plot the S&P 500 data
     cut_off_date = datetime.date(1995, 1, 1)
-    sp500 = open_macro_economic_file().asset_lookup('SP500')
+    sp500 = macro_economic_collection.asset_lookup('NASDAQ')
     new_sp500_values = sp500.value_list[sp500.index_list >= cut_off_date]
     new_sp500_index = sp500.index_list[sp500.index_list >= cut_off_date]
-    fig.add_trace(go.Scatter(x=new_sp500_index, y=new_sp500_values, mode='lines', name='SP500'),
+    fig.add_trace(go.Scatter(x=new_sp500_index, y=new_sp500_values, mode='lines', name='NASDAQ'),
                   row=3, col=1)
-    fig.update_yaxes(title_text="S&P500 Value", row=3, col=1)
+    fig.update_yaxes(title_text="NASDAQ Composite Index Value", row=3, col=1)
     fig.update_xaxes(title_text="Date", row=3, col=1)
     
     # increase height of figure
@@ -94,7 +94,6 @@ def CAPM_investigation(asset: Asset):
 
 def main():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN','AZTA','SCYX','CROX','PSTV', 'SSSS']
-    tickers = ['GOOGL']
     # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
     for ticker in tickers:
         asset = asset_creation(ticker)
