@@ -20,7 +20,8 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
     period = 5
     #create a normal plotly figure
     fig = go.Figure()
-
+    
+    dud_count = 0   
     for asset in asset_universe.asset_list:
         asset.calculate_illiquidity_ratio(date, period)
         
@@ -29,13 +30,23 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
 
         # get subsection for the asset over the period
         start_date = date - datetime.timedelta(days=period*365)
-        start_date = asset.closest_date_match(asset.time_series, start_date)
-        subsection = asset.extract_subsection(asset.time_series, start_date, asset.closest_date_match(asset.time_series, date))
-        # remove rows of subsection where Volume = 0 so we dont get a divide by 0 error
-        subsection = subsection[subsection['Volume'] != 0]
+        try:
+
+            value_sub_section, close_sub_section, open_sub_section, volume_sub_section, start_date_index, end_date_index = asset.extract_subsection(start_date, date)
+        except TypeError:
+            print(asset.ticker)
+            print("Start: ", start_date)
+            print("End: ", date)
+            dud_count += 1
+            continue
+
+        if len(volume_sub_section) == 0:
+            continue
+        # remove rows from the subsection where the volume traded is 0, volume_sub_section is a np array
+
 
         # calculate the mean of the volume traded column
-        mean_volume = subsection['Volume'].mean()
+        mean_volume = volume_sub_section.mean()
 
         if(asset.illiquidity_ratio == 0.0  or mean_volume < 1000000.0 or asset.illiquidity_ratio > 0.00001 or mean_volume > 50000000.0):
             # skip rest of loop
@@ -54,6 +65,7 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
     fig.update_layout(showlegend=False)
     # save as a png
     fig.write_image("Illiquidity_Ratio_vs_Mean_Volume_Traded.png")
+    print("duds:" , dud_count)
 
 
 

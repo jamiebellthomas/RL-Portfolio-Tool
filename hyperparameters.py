@@ -2,7 +2,7 @@
 # All hyperparameters will be stored in a dictionary with the key being the name of the hyperparameter and the value being the value of the hyperparameter.
 # This will allow for easy access to the hyperparameters in the financial model calculations.
 # The dictionary will be stored in a pickle file so that it can be easily accessed by the financial model calculations.
-
+import datetime
 hyperparameters = {
                      # Look back period for financial model calculations in years
                      "CAPM_period": 3,
@@ -14,7 +14,7 @@ hyperparameters = {
                      # The number of features for each asset in the asset universe
                      # asset_universe_feature_count needs to be calculated as a function of ARMA_ar_term_limit & ARMA_ma_term_limit
                      # These terms will need to be managed manually unfortunately, until we can find a way to calculate them
-                     "asset_feature_count": 3,
+                     "asset_feature_count": 4,
                       "macro_economic_feature_count": 4,
                       "portfolio_status_feature_count": 1,
                       # Max number assets that can be held in the portfolio
@@ -26,7 +26,15 @@ hyperparameters = {
                       # transaction cost for buying and selling assets
                       "transaction_cost": 0.005,
                       # How many years the model should run for
-                      "episode_length": 1,
+                      "episode_length": 10,
+                      # Date the model will start training from
+                     "initial_training_date": datetime.date(1980, 1, 1),
+                     # Date the model will start validating from
+                     "initial_validation_date": datetime.date(2023, 1, 1),
+
+                     # PPO hyperparameters
+                     # tbc
+               
 
                    }
 

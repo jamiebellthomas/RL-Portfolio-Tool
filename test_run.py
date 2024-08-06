@@ -8,6 +8,7 @@ from PortfolioEnv import PortfolioEnv
 import pickle
 import datetime
 import subprocess
+from hyperparameters import hyperparameters
 
 initial_date = datetime.date(1980, 1, 1)
 asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
@@ -38,7 +39,7 @@ def run_model():
 
 
 
-    env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date)
+    env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
     # n_steps is the number of steps that the model will run for before updating the policy, if n_steps is less than total_timesteps then 
     # the model will run for n_steps and then update the policy, if n_steps is greater than total_timesteps then the model will run for total_timesteps and then update the policy every n_steps
     model = PPO("MultiInputPolicy", env, verbose=1, n_steps=5, batch_size=64, n_epochs=10, learning_rate=3e-4, tensorboard_log=log_path)

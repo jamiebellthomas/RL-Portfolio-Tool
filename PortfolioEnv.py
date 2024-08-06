@@ -48,11 +48,12 @@ from hyperparameters import hyperparameters
 class PortfolioEnv(gym.Env):
     def __init__(self, 
                  asset_universe: AssetCollection, macro_economic_data: MacroEconomicCollection,
-                 initial_date: datetime.date):
+                 initial_date: datetime.date, final_date: datetime.date):
         # Initialize the environment
         super(PortfolioEnv, self).__init__()
 
         self.initial_date = initial_date
+        self.final_date = final_date
 
         # Load in the asset universe and macro economic data, and create the portfolio
         self.asset_universe = asset_universe
@@ -78,8 +79,6 @@ class PortfolioEnv(gym.Env):
         # Intialise other environment variables
         self.current_step = 0
         self.current_date = initial_date
-        # final date is a year after the initial date
-        self.final_date = self.initial_date + datetime.timedelta(days=(self.episode_length*365))
         self.portfolio_value = self.initial_balance
         self.portfolio.portfolio_value = self.portfolio_value
         self.universe_size = len(self.asset_universe.asset_list)
@@ -120,7 +119,6 @@ class PortfolioEnv(gym.Env):
         #self.current_step = 0
         
         self.current_date = self.initial_date
-        self.final_date = self.initial_date + datetime.timedelta(days=(round(self.episode_length*365)))
         self.portfolio_value = self.initial_balance
         self.portfolio = PortfolioCollection(asset_list=[])
         self.portfolio.portfolio_value = self.portfolio_value
