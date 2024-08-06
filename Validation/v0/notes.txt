@@ -1,0 +1,11 @@
+All weightings basically the same. Good v0, it managed to learn not to chan ge weightings too much, but rewards basically seem to follow the the NASDAQ value (loosely), but still slightly underperforming.
+No custom PPO parameters:
+Asset Features:
+- Previous Weighting
+- Beta
+- expected return (CAPM)
+- illiquidity ratio
+
+Training takes place from 1980-1990 with only 30k total_timesteps, which is why it didn't get to learn anything except just hold all assets at the same level. 
+
+Reward function is just the ROI from the original investment. 

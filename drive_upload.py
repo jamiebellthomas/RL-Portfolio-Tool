@@ -152,6 +152,21 @@ def download_folder(folder_name: str):
                 status, done = downloader.next_chunk()
                 print(f"Downloaded {int(status.progress() * 100)}%")
 
+def download_logs():
+    """
+    This is a special version of the download_folder function which will download the logs folder, which has a series of subfolders (which is why it is special)
+    """
+    print("Downloading logs folder from Google Drive...")
+    creds = authenticate()
+    drive_service = build('drive', 'v3', credentials=creds)
+    dissertation_folder_id = get_folder_id(drive_service, 'Dissertation')
+    logs_folder_id = get_folder_id(drive_service, "Logs", parent_id=dissertation_folder_id)
+
+    results = drive_service.files().list(q=f"'{logs_folder_id}' in parents", spaces='drive', fields='files(id, name)').execute()
+    # list all the subfolders in the logs folder
+    items = results.get('files', [])
+    print("Items: ", items)
+    return
 
 def main():
     # This function will handle syncing the local machine with the Google Drive
@@ -165,8 +180,9 @@ def main():
         #update_rl_models()
         upload_class_files()
     elif user_input == "download" or user_input == "d":
-        download_folder("Trained-Models")
-        download_folder("RL-Models")
+        #download_folder("Trained-Models")
+        #download_folder("RL-Models")
+        download_logs() 
 
     else:
         print("Invalid input, please enter 'upload' or 'download'")

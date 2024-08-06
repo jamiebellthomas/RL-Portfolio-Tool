@@ -38,7 +38,7 @@ hyperparameters = {
                      "batch_size": 64,
                      "n_epochs": 10,
                      "learning_rate": 3e-4,
-                     "total_timesteps": 252000,
+                     "total_timesteps": 100000,
 
                      # PPO parameters to look into for model:
                      #gamma=hyperparameters["gamma"], 

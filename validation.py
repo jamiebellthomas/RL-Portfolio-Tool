@@ -84,9 +84,12 @@ def validate(model_path: str):
 
     #plot the rewards against the time steps
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=results_df.columns, y=results_df.loc["Reward"], mode='lines+markers'))
-    fig.update_layout(title='Reward vs Time Step', xaxis_title='Time Step', yaxis_title='Reward')
+    fig.add_trace(go.Scatter(x=results_df.columns, y=results_df.loc["Reward"], mode='lines+markers', name="Portfolio"))
     # save as png to same directory
+    nasdaq_roi_df = nasdaq_roi(macro_economic_factors, hyperparameters["initial_validation_date"], latest_date)
+    fig.add_trace(go.Scatter(x=nasdaq_roi_df.index, y=nasdaq_roi_df["ROI"], mode='lines+markers', name="NASDAQ"))
+
+    fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
     fig.write_image("Validation/"+model_date+"/rewards.png")
 
 
@@ -135,6 +138,27 @@ def extract_asset_weightings(asset_universe: AssetCollection) -> list:
     for asset in asset_universe.asset_list:
         asset_weightings.append(asset.portfolio_weight)
     return asset_weightings
+
+def nasdaq_roi(macroeconomic_collection: AssetCollection, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+    """
+    This function will calculate the return on investment for the NASDAQ index
+    """
+    nasdaq = macroeconomic_collection.asset_lookup("NASDAQ")
+    # make a list of all values between the start and end date
+    values = []
+    for date in pd.date_range(start=start_date, end=end_date):
+        # convert date to datetime.date
+        date = date.date()
+        values.append(nasdaq.calculate_value(date))
+
+    initial_value = values[0]
+
+    # for each value in the list calculate the return on investment
+    roi = []
+    for value in values:
+        roi.append((value - initial_value) / initial_value)
+
+    return pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
 
     
 
