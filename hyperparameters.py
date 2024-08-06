@@ -28,13 +28,28 @@ hyperparameters = {
                       # How many years the model should run for
                       "episode_length": 10,
                       # Date the model will start training from
-                     "initial_training_date": datetime.date(1980, 1, 1),
-                     # Date the model will start validating from
+                     "initial_training_date": datetime.date(2000, 1, 1),
+                     # Date the model will start validating from (probably shouldn't change this)
                      "initial_validation_date": datetime.date(2023, 1, 1),
 
                      # PPO hyperparameters
-                     # tbc
-               
+                     "n_envs": 4,
+                     "n_steps": 5,
+                     "batch_size": 64,
+                     "n_epochs": 10,
+                     "learning_rate": 3e-4,
+                     "total_timesteps": 252000,
+
+                     # PPO parameters to look into for model:
+                     #gamma=hyperparameters["gamma"], 
+                     #clip_range=hyperparameters["clip_range"],
+                     #ent_coef=hyperparameters["ent_coef"],
+                     #vf_coef=hyperparameters["vf_coef"],
+                     #max_grad_norm=hyperparameters["max_grad_norm"],
+                     #target_kl=hyperparameters["target_kl"]
+
+                     # and for model.learn:
+                     #log_interval=hyperparameters["log_interval"],
 
                    }
 

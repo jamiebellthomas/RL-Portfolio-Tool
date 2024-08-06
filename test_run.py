@@ -10,7 +10,6 @@ import datetime
 import subprocess
 from hyperparameters import hyperparameters
 
-initial_date = datetime.date(1980, 1, 1)
 asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
 macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
 model_date_and_time = datetime.datetime.now()
@@ -42,14 +41,19 @@ def run_model():
     env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
     # n_steps is the number of steps that the model will run for before updating the policy, if n_steps is less than total_timesteps then 
     # the model will run for n_steps and then update the policy, if n_steps is greater than total_timesteps then the model will run for total_timesteps and then update the policy every n_steps
-    model = PPO("MultiInputPolicy", env, verbose=1, n_steps=5, batch_size=64, n_epochs=10, learning_rate=3e-4, tensorboard_log=log_path)
+    model = PPO("MultiInputPolicy", env, verbose=1, 
+                n_steps=hyperparameters["n_steps"], 
+                batch_size=hyperparameters["batch_size"], 
+                n_epochs=hyperparameters["n_epochs"], 
+                learning_rate=hyperparameters["learning_rate"], 
+                tensorboard_log=log_path)
 
     
     print("Model Date: ", model_date)
 
     model.set_logger(new_logger)
 
-    model.learn(total_timesteps = (365))
+    model.learn(total_timesteps = hyperparameters["total_timesteps"])
     # save model to Trained-Models folder
     model.save("Trained-Models/{}".format(model_date))
 

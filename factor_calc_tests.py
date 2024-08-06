@@ -51,11 +51,14 @@ class FinancialModelTestCalcs(unittest.TestCase):
         end_date = '2019-01-31'
         end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
         # get the subsection
-        value_sub_section, close_sub_section, open_sub_section, volume_sub_section = test_asset.extract_subsection(start_date, end_date)
+        value_sub_section, close_sub_section, open_sub_section, volume_sub_section,fist_index,end_index = test_asset.extract_subsection(start_date, end_date)
         sub_section_array = [value_sub_section, close_sub_section, open_sub_section, volume_sub_section]
         for subsection in sub_section_array:
             # check that the subsection is the correct length
             self.assertEqual(len(subsection), 22)
+        
+        # check that the first and last index are currect distances apart
+        self.assertEqual(end_index - fist_index, 21)
 
     def test_CAPM(self):
         """
