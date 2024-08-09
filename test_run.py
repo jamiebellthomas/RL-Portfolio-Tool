@@ -16,6 +16,35 @@ model_date_and_time = datetime.datetime.now()
 model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
 # Configure the logger to output to both stdout and files
 
+def reset_model(asset_universe, macro_economic_factors):
+    """
+    This function will test the reset method in the PortfolioEnv class
+    As I think it is sometimes causing the model to crash, it will do this by creating a new environment, running step a few times and then resetting it
+    """
+    env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
+    obs, info = env.reset()
+    done = False
+    step = 0
+    while not done:
+        action = env.action_space.sample()
+        obs, reward, done, truncated,info = env.step(action)
+        step += 1
+        if step % 10 == 0:
+            obs, info = env.reset()
+            print("Resetting environment")
+        
+        print("Step: ", step)
+        print("Obs: ", obs)
+
+        if step > 40:
+            break
+    
+
+
+    print("Reset method works")
+    
+
+
 
 def run_model():
     logs_path = "Logs"
@@ -67,9 +96,10 @@ def run_command(command):
 
 
 if __name__ == '__main__':
-    run_model()
+    reset_model(asset_universe, macro_economic_factors)
+    #run_model()
 
-    run_command("tensorboard --logdir=Logs/{}".format(model_date))
+    #run_command("tensorboard --logdir=Logs/{}".format(model_date))
 
     # Once model has finished running, run tensorboard --logdir=Logs/{model_date} to view the logs/tensorboard
 

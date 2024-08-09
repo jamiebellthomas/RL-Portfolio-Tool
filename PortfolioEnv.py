@@ -111,8 +111,6 @@ class PortfolioEnv(gym.Env):
         - Establish the initial state of the portfolio status at the initial date (done)
         - Return the initial observation
         """
-        obs = []
-
         # First let's reset the basic environment variables
 
         # MAYBE RESETTING THE CURRENT STEP IS THE REASON THE MODEL ISNT ENDING
@@ -125,8 +123,12 @@ class PortfolioEnv(gym.Env):
 
 
         obs = self._next_observation(self.initial_date)
+        # set first column of asset universe observation (current portfolio weightings) to 0
+        obs['asset_universe'][:,0] = 0
+
         #print(obs)
-        info = self.generate_info()
+        info = {}
+        print("Environment Reset")
 
         return obs, info
     
@@ -181,6 +183,7 @@ class PortfolioEnv(gym.Env):
 
 
         """
+        
         terminated = False
         next_date = self.current_date + datetime.timedelta(days=1)
         # Set weightings of assets that don't exist in the action vector to 0 (when the current date is before it's first date)
@@ -220,6 +223,12 @@ class PortfolioEnv(gym.Env):
 
         #STEP 4: Calculate the REWARD at the next time step (current just the ROI)
         roi = ((new_portfolio_value - self.initial_balance) / self.initial_balance)
+        if(roi < hyperparameters["ROI_cutoff"]):
+            terminated = True
+        
+        if(self.current_step % 25 == 0):
+            print("Step: ", self.current_step*hyperparameters["n_envs"])
+            print("ROI: ", roi)
 
         #STEP 5: Update the environment variables
         self.current_date = next_date
