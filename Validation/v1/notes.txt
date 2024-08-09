@@ -1,0 +1,112 @@
+This one kept crashing. I took loads of notes of the steps I took to fix the issue:
+
+
+# THE FACT IT IS CRASHING AROUD THE 22320th iteration likely means theres something
+# wrong with the reset method
+# 252 trading days in a year over 23 years
+# 252 * 23 = 5796 time steps
+# 4 envs running simultaneously
+# 5796 * 4 = 23184 time steps
+# So likely something isn't resetting properly when reset it called
+
+
+#ERROR:
+
+"""
+		/usr/local/lib/python3.10/dist-packages/torch/distributions/distribution.py in __init__(self, batch_shape, event_shape, validate_args)
+		     66                 valid = constraint.check(value)
+		     67                 if not valid.all():
+		---> 68                     raise ValueError(
+		     69                         f"Expected parameter {param} "
+		     70                         f"({type(value).__name__} of shape {tuple(value.shape)}) "
+		
+		ValueError: Expected parameter loc (Tensor of shape (4, 4394)) of distribution Normal(loc: torch.Size([4, 4394]), scale: torch.Size([4, 4394])) to satisfy the constraint Real(), but found invalid values:
+		tensor([[nan, nan, nan,  ..., nan, nan, nan],
+		        [nan, nan, nan,  ..., nan, nan, nan],
+		        [nan, nan, nan,  ..., nan, nan, nan],
+		        [nan, nan, nan,  ..., nan, nan, nan]], device='cuda:0')
+"""
+
+# Attempted fix 1:
+# Remove any NaNs from observations.
+# observation = np.nan_to_num(observation)
+# Didn't work
+
+# Fix attempt 2:
+# n_steps currently very low (5) (silly of me), I raised it back to the default (2048)
+"""
+GPT Summary of all bad things caused by low n_steps
+High Variance in Gradient Estimates:
+
+- With fewer steps per update, the algorithm relies on a smaller batch of experiences, which can lead to high variance in the gradient estimates.
+Impact: This can cause unstable updates to the model parameters, leading to poor convergence and oscillations during training.
+Insufficient Data Collection:
+
+- A low n_steps value means the model updates more frequently with less data.
+Impact: This can lead to a noisy learning signal and insufficient representation of the environment dynamics, slowing down the learning process.
+Poor Exploration:
+
+- Less data per update can limit the diversity of experiences collected from the environment.
+Impact: This can hinder the agent's ability to explore and discover optimal policies, leading to suboptimal performance.
+Overfitting to Short-Term Rewards:
+
+- With fewer steps, the model might focus on immediate rewards rather than long-term strategies.
+Impact: This can cause the agent to develop myopic policies that do not maximize long-term rewards.
+Increased Computational Overhead:
+
+- More frequent updates mean that the computational overhead associated with each update (e.g., forward and backward passes) is incurred more often.
+Impact: This can reduce the overall efficiency of the training process, as more time is spent on frequent updates rather than actual data collection.
+Reduced Stability in Learning:
+
+- Frequent updates with small amounts of data can lead to unstable learning dynamics.
+Impact: This can cause convergence issues, where the learning process becomes erratic and fails to settle on a stable policy.
+Higher Likelihood of Numerical Instabilities:
+
+- With fewer steps and higher variance, numerical instabilities like NaN values can arise due to erratic updates and poor conditioning of the optimization problem.
+Impact: This can lead to crashes or the need for additional debugging and handling of NaN values.
+"""
+
+
+"""
+Output of latest poilcy update before the crash:
+-------------------------------------------
+| time/                   |               |
+|    fps                  | 1             |
+|    iterations           | 2             |
+|    time_elapsed         | 9737          |
+|    total_timesteps      | 16384         |
+| train/                  |               |
+|    approx_kl            | 23429702000.0 |
+|    clip_fraction        | 0.819         |
+|    clip_range           | 0.2           |
+|    entropy_loss         | -6.23e+03     |
+|    explained_variance   | -0.00048      |
+|    learning_rate        | 0.0003        |
+|    loss                 | -0.0416       |
+|    n_updates            | 10            |
+|    policy_gradient_loss | -0.108        |
+|    std                  | 1             |
+|    value_loss           | 3.19          |
+-------------------------------------------
+
+Most alarming value here is approx_kl = 23429702000.0
+The approx_kl is calculated as the average KL divergence between the action 
+probabilities under the old policy (before the update) and the action 
+probabilities under the new policy (after the update). This value should be 
+around 10^-1....
+Such an excessively high value for KL divergence suggests that the new policy 
+has diverged drastically from the old policy in a single update. This drastic 
+change is likely causing instability
+
+"""
+
+# Fix attempt 3: Significantly lowered the learning rate to 1e-5 and reduced
+# clip_range to 0.1, Also added an ROI cut off. If it goes below -0.5, 
+# episode is reset. (Also added a few print statements to help with debugging)
+
+# Reset at -0.5 plus debug shows that it's not the reset method causing the crash
+# most likely an issue with explolding gradients then 
+
+
+
+Once the model had finished, it was BARELY any better than the v0, so we can conclude nothing new was learned
