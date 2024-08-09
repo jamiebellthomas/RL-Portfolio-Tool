@@ -23,6 +23,7 @@ def validate(model_path: str):
     """
     This function will validate the trained model on the test data.
     """
+    model_zip = model_path+"/model.zip"
     asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
     macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
     latest_date = extract_latest_date(asset_universe)
@@ -42,7 +43,7 @@ def validate(model_path: str):
     print("Number of steps: ", num_days)
 
     # load model
-    model = PPO.load(model_path)
+    model = PPO.load(model_zip)
 
     # validate model by applying it to the environment
     obs,info = env.reset()
@@ -71,7 +72,7 @@ def validate(model_path: str):
         print("\n")
         results_df[env.current_date] = weightings
 
-    model_date = extract_model_date(model_path) 
+    model_date = extract_model_date(model_zip) 
 
     # create a row at the end of the dataframe to store the rewards
     results_df.loc["Reward"] = rewards
@@ -93,6 +94,11 @@ def validate(model_path: str):
 
     fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
     fig.write_image("Validation/"+model_date+"/rewards.png")
+
+    hyperparameters_dict = move_hyperparameters_to_logs(model_path)
+    with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
+        for key, value in hyperparameters_dict.items():
+            f.write(key+":"+value+"\n")
 
 
     
@@ -162,11 +168,22 @@ def nasdaq_roi(macroeconomic_collection: AssetCollection, start_date: datetime.d
 
     return pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
 
+def move_hyperparameters_to_logs(model_path: str):
+    """
+    This function will read the hyperparameters text file and return it as a dictionary
+    """
+    with open(model_path+"/hyperparameters.txt", "r") as f:
+        hyperparameters = f.read()
+        hyperparameters = hyperparameters.split("\n")
+        hyperparameters = [param.split(":") for param in hyperparameters]
+        hyperparameters = {param[0]:param[1] for param in hyperparameters}
+    return hyperparameters
+
     
 
 
 if __name__ == "__main__":
-    model_path = "Logs/2024-08-09_15-50-39/model.zip"
+    model_path = "Logs/2024-08-09_15-50-39"
 
     validate(model_path=model_path)
 

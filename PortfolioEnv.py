@@ -74,6 +74,8 @@ class PortfolioEnv(gym.Env):
         self.ar_term_limit = hyperparameters["ARMA_ar_term_limit"]
         self.ma_term_limit = hyperparameters["ARMA_ma_term_limit"]
         self.episode_length = hyperparameters["episode_length"]
+        self.ROI_cutoff = hyperparameters["ROI_cutoff"]
+        self.n_envs = hyperparameters["n_envs"]
 
 
         # Intialise other environment variables
@@ -223,11 +225,11 @@ class PortfolioEnv(gym.Env):
 
         #STEP 4: Calculate the REWARD at the next time step (current just the ROI)
         roi = ((new_portfolio_value - self.initial_balance) / self.initial_balance)
-        if(roi < hyperparameters["ROI_cutoff"]):
+        if(roi < self.ROI_cutoff ):
             terminated = True
         
         if(self.current_step % 25 == 0):
-            print("Step: ", self.current_step*hyperparameters["n_envs"])
+            print("Step: ", self.current_step*self.n_envs)
             print("ROI: ", roi)
 
         #STEP 5: Update the environment variables
