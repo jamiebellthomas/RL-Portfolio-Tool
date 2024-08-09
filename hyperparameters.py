@@ -28,7 +28,7 @@ hyperparameters = {
                       # How many years the model should run for
                       "episode_length": 10,
                       # Date the model will start training from
-                     "initial_training_date": datetime.date(2000, 1, 1),
+                     "initial_training_date": datetime.date(2015, 1, 1),
                      # Date the model will start validating from (probably shouldn't change this)
                      "initial_validation_date": datetime.date(2023, 1, 1),
                      # Cut off for ROI for the model to be deemed failed and episode terminated
@@ -39,8 +39,8 @@ hyperparameters = {
                      "n_steps": 2048,
                      "batch_size": 64,
                      "n_epochs": 10,
-                     "learning_rate": 1e-5,
-                     "total_timesteps": 40000,
+                     "learning_rate": 3e-5,
+                     "total_timesteps": 50000,
                      "clip_range": 0.1,
 
                      # PPO parameters to look into for model:

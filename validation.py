@@ -66,7 +66,9 @@ def validate(model_path: str):
         rewards.append(reward)
         step += 1
         print("Step: ", step)
+        print("Date", env.current_date)
         print("Reward: ", reward)
+        print("\n")
         results_df[env.current_date] = weightings
 
     model_date = extract_model_date(model_path) 
@@ -164,7 +166,7 @@ def nasdaq_roi(macroeconomic_collection: AssetCollection, start_date: datetime.d
 
 
 if __name__ == "__main__":
-    model_path = "Logs/2024-08-03_18-18-24/model.zip"
+    model_path = "Logs/2024-08-09_15-50-39/model.zip"
 
     validate(model_path=model_path)
 
