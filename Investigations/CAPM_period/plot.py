@@ -25,7 +25,7 @@ def asset_creation(ticker:str):
     asset = Asset(ticker, index_list, value_list, open_list, close_list, volume_list)
     return asset
 
-def CAPM_investigation(asset: Asset):
+def CAPM_investigation(asset: Asset, macro_economic_collection):
     """
     This  will investigate how varying the CAPM_period hyperparameter in hyperparameter.py effects expected returns
     """
@@ -35,7 +35,7 @@ def CAPM_investigation(asset: Asset):
     # loop through every 3 years, from 2000, 2023
     years = list(range(2000, 2022, 3))
     
-    macro_economic_collection = open_macro_economic_file()
+    
 
     graph_data = {}
     for year in years:
@@ -87,17 +87,57 @@ def CAPM_investigation(asset: Asset):
     
     # increase height of figure
     fig.update_layout(height=1000, width=750)
+
+    # create folder for with the name of the asset if it doesn't exist
+    if not os.path.exists("Investigations/CAPM_period/"+asset.ticker):
+        os.makedirs("Investigations/CAPM_period/"+asset.ticker)
     
-    fig.write_image("Investigations/CAPM_period/"+asset.ticker+"_CAPM_period.png")
+    fig.write_image("Investigations/CAPM_period/"+asset.ticker+"/CAPM_period.png")
+
+
+def CAPM_over_time(asset: Asset, init_date: datetime.date, end_date: datetime.date, period: int, macro_economic_collection):
+    """
+    This function will investigate how the CAPM_period hyperparameter effects the expected return for a given asset over time
+    """
+    print("Investigating Expected Returns Over Time For Asset:", asset.ticker)
+    # Create a range of dates betweeen the init_date and end_date
+    date_range = pd.date_range(init_date, end_date, freq='ME')
+    # Calculate the expected return for each date in the date_range
+    expected_returns = []
+    betas = []
+    for date in date_range:
+        date = date.date()
+        expected_return = asset.calculate_CAPM(macro_economic_collection, date, period)
+        expected_returns.append(expected_return)
+        betas.append(asset.beta)
+    # plot the expected returns against the date
+    returns_fig = go.Figure()
+    returns_fig.add_trace(go.Scatter(x=date_range, y=expected_returns, mode='lines+markers'))
+    returns_fig.update_layout(title='Expected Returns Over Time for '+asset.ticker,
+                      xaxis_title='Date',
+                      yaxis_title='Expected Return')
+    returns_fig.write_image("Investigations/CAPM_period/"+asset.ticker+"/expected_returns.png")
+
+    # plot the betas against the date
+    betas_fig = go.Figure()
+    betas_fig.add_trace(go.Scatter(x=date_range, y=betas, mode='lines+markers'))
+    betas_fig.update_layout(title='Betas Over Time for '+asset.ticker,
+                      xaxis_title='Date',
+                      yaxis_title='Beta')
+    betas_fig.write_image("Investigations/CAPM_period/"+asset.ticker+"/betas.png")
+
+
 
     
 
 def main():
     tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN','AZTA','SCYX','CROX','PSTV', 'SSSS']
     # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
+    macro_economic_collection = open_macro_economic_file()
     for ticker in tickers:
         asset = asset_creation(ticker)
-        CAPM_investigation(asset)
+        CAPM_investigation(asset, macro_economic_collection)
+        CAPM_over_time(asset, datetime.date(2000, 1, 1), datetime.date(2021, 1, 1), 3, macro_economic_collection)
 
 
 if __name__ == "__main__":

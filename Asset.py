@@ -373,9 +373,10 @@ class Asset:
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
         
-        #for index,obs in enumerate(observation):
-     #       if(obs == np.nan or obs == np.inf or obs == -np.inf or obs == 'nan' or type(obs) == float):          
-          #      observation[index] = np.float64(0.0)
+        # check if any values in the observation are NaN, if so, set them to zero
+        observation = np.array(observation)
+        observation = np.nan_to_num(observation, nan=0.0, posinf=10.0, neginf=-10.0)
+
 
         
         """
@@ -418,4 +419,4 @@ class Asset:
 
 
 
-        return np.array(observation)
+        return observation
