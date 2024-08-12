@@ -23,7 +23,16 @@ def validate(model_path: str):
     """
     This function will validate the trained model on the test data.
     """
-    model_zip = model_path+"/model.zip"
+    model_zip = model_path+"/model_32768_steps"
+    model_date = extract_model_date(model_zip) 
+
+    hyperparameters_dict = move_hyperparameters_to_logs(model_path)
+    with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
+        for key, value in hyperparameters_dict.items():
+            f.write(key+":"+value+"\n")
+
+
+    
     asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
     macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
     latest_date = extract_latest_date(asset_universe)
@@ -72,8 +81,7 @@ def validate(model_path: str):
         print("\n")
         results_df[env.current_date] = weightings
 
-    model_date = extract_model_date(model_zip) 
-
+    
     # create a row at the end of the dataframe to store the rewards
     results_df.loc["Reward"] = rewards
 
@@ -95,10 +103,6 @@ def validate(model_path: str):
     fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
     fig.write_image("Validation/"+model_date+"/rewards.png")
 
-    hyperparameters_dict = move_hyperparameters_to_logs(model_path)
-    with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
-        for key, value in hyperparameters_dict.items():
-            f.write(key+":"+value+"\n")
 
 
     
@@ -172,18 +176,25 @@ def move_hyperparameters_to_logs(model_path: str):
     """
     This function will read the hyperparameters text file and return it as a dictionary
     """
+
     with open(model_path+"/hyperparameters.txt", "r") as f:
         hyperparameters = f.read()
+        # split the string by new line
         hyperparameters = hyperparameters.split("\n")
+        # remove the last element as it is an empty string
+        hyperparameters = hyperparameters[:-1]
+        # split each element by the colon
         hyperparameters = [param.split(":") for param in hyperparameters]
+        # create a dictionary from the list
         hyperparameters = {param[0]:param[1] for param in hyperparameters}
+
     return hyperparameters
 
     
 
 
 if __name__ == "__main__":
-    model_path = "Logs/2024-08-09_15-50-39"
+    model_path = "Logs/2024-08-11_23-55-29"
 
     validate(model_path=model_path)
 

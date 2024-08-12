@@ -67,7 +67,7 @@ def extract_version_number(csv: str) -> str:
 
 
 def main():
-    csv_list = ["Validation/v0/results.csv", "Validation/v1/results.csv"]
+    csv_list = ["Validation/v0/results.csv", "Validation/v1/results.csv", "Validation/v2/results.csv"]
     macro_economic_collection = open_macro_economic_file()
     plot_stats(csv_list, macro_economic_collection=macro_economic_collection)
 

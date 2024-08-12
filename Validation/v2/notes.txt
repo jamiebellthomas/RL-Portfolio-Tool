@@ -1,0 +1,16 @@
+After pissing around with crashes for a while I found there was a single nan value slipping into asset universe observation space, so I ran a no_to_nan operation on it and its golden
+Google colab kept just stopping half way through a long cycle for no apparent reason so I had to add a checkpoint callback things that saved the model's progress
+
+I altered the date range so it was smaller and more recent, I managed to get a 30k time step run together and...
+it learned nothing new (if anyting it was slightly worse), so that made no difference. We need a more comprehensive set of features but the model is already so incredibly slow
+I am definitely going to have to cut down the number of assets severely. 
+
+There is so much info and noise the model cant learn anything after only 30k time steps, and this already took about 18 hours
+We need ATLEAST 6-figure time steps I imagine to have any chance of learning anything.
+
+Game plan:
+
+1) Reduce number of assets significantly (about 500-600 range) to see how this effects performance (should be about 8x faster in theory)
+2) Systematically add features and see how that effects validation
+
+I think we have just bitten off more than we can chew with regard to computational power required
