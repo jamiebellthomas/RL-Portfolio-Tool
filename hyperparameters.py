@@ -28,20 +28,21 @@ hyperparameters = {
                       # How many years the model should run for
                       "episode_length": 10,
                       # Date the model will start training from
-                     "initial_training_date": datetime.date(2015, 1, 1),
+                     "initial_training_date": datetime.date(2018, 1, 1),
                      # Date the model will start validating from (probably shouldn't change this)
                      "initial_validation_date": datetime.date(2023, 1, 1),
                      # Cut off for ROI for the model to be deemed failed and episode terminated
-                      "ROI_cutoff": -0.5,
+                      "ROI_cutoff": -1.0,
 
                      # PPO hyperparameters
                      "n_envs": 4,
                      "n_steps": 2048,
                      "batch_size": 64,
                      "n_epochs": 10,
-                     "learning_rate": 3e-5,
-                     "total_timesteps": 50000,
-                     "clip_range": 0.1,
+                     "learning_rate": 1e-6,
+                     # This needs to be multiple of n_steps or it will do a whole extra cycle.
+                     "total_timesteps": 81920,
+                     "clip_range": 0.05,
 
                      # PPO parameters to look into for model:
                      #gamma=hyperparameters["gamma"], 

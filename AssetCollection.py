@@ -38,6 +38,16 @@ class AssetCollection(Collection):
         # Normalise every column bar the first one using a softmax function
         for i in range(1, observation.shape[1]):
             observation[:, i] = np.exp(observation[:, i]) / np.sum(np.exp(observation[:, i]))
+
+        
+        # count the number of NaN values in the observation space
+        #nans = np.isnan(observation).sum()
+        # if there are any NaN values in the observation space, print a warning
+        #if nans > 0:
+        #    print("Warning: There are NaN values in the observation space (", nans, "NaN values)")
+        #    # eliminate any NaN values
+        observation = np.nan_to_num(observation)
+
         
 
 

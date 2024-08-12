@@ -1,6 +1,7 @@
 # prompt: Import PPO from stable-baselines 3 and train PortfolioEnv
 from stable_baselines3 import PPO
 from stable_baselines3.common.logger import configure, Logger, HumanOutputFormat, CSVOutputFormat, TensorBoardOutputFormat
+from stable_baselines3.common.callbacks import CheckpointCallback
 import os
 #Read in asset_universe.pkl and macro_economic_factors
 import sys
@@ -70,21 +71,26 @@ def run_model():
     env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
     # n_steps is the number of steps that the model will run for before updating the policy, if n_steps is less than total_timesteps then 
     # the model will run for n_steps and then update the policy, if n_steps is greater than total_timesteps then the model will run for total_timesteps and then update the policy every n_steps
+
     model = PPO("MultiInputPolicy", env, verbose=1, 
-                n_steps=hyperparameters["n_steps"], 
-                batch_size=hyperparameters["batch_size"], 
-                n_epochs=hyperparameters["n_epochs"], 
-                learning_rate=hyperparameters["learning_rate"], 
-                tensorboard_log=log_path)
+            n_steps=5, 
+            batch_size=hyperparameters["batch_size"], 
+            n_epochs=hyperparameters["n_epochs"], 
+            learning_rate=hyperparameters["learning_rate"], 
+            tensorboard_log=log_path)
 
     
     print("Model Date: ", model_date)
 
     model.set_logger(new_logger)
 
-    model.learn(total_timesteps = hyperparameters["total_timesteps"])
+    checkpoint_callback = CheckpointCallback(save_freq=10, save_path=log_path, name_prefix='model')
+    model.learn(total_timesteps =50, callback=checkpoint_callback)
+
+    #model.learn(total_timesteps = hyperparameters["total_timesteps"])
     # save model to Trained-Models folder
     model.save("Trained-Models/{}".format(model_date))
+    print("Model saved")
 
     
 def run_command(command):
@@ -96,8 +102,8 @@ def run_command(command):
 
 
 if __name__ == '__main__':
-    reset_model(asset_universe, macro_economic_factors)
-    #run_model()
+    #reset_model(asset_universe, macro_economic_factors)
+    run_model()
 
     #run_command("tensorboard --logdir=Logs/{}".format(model_date))
 

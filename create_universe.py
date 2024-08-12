@@ -145,10 +145,10 @@ def asset_lookup(collection: AssetCollection, ticker: str) -> Asset:
     
 
 if __name__ == "__main__":
-    main_create()
+    #main_create()
     #main_read()
 
-    #collection = read_collection('Collections/asset_universe.pkl')
-    #asset_lookup(collection, 'FMNB')
+    collection = read_collection('Collections/asset_universe.pkl')
+    asset_lookup(collection, 'AAPL')
     pass
 

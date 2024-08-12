@@ -150,6 +150,15 @@ class PortfolioEnv(gym.Env):
 
         macro_economic_obs = self.macro_economic_data.get_observation(date)
 
+        # go through each observation and check for NaNs and Infs
+        
+        assert not np.isnan(asset_obs).any(), "NaN detected in asset universe observation"
+        assert not np.isnan(portfolio_status_obs).any(), "NaN detected in portfolio status observation"
+        assert not np.isnan(macro_economic_obs).any(), "NaN detected in macro economic observation"
+        assert not np.isinf(asset_obs).any(), "Inf detected in asset universe observation"
+        assert not np.isinf(portfolio_status_obs).any(), "Inf detected in portfolio status observation"
+        assert not np.isinf(macro_economic_obs).any(), "Inf detected in macro economic observation"
+
         return {
             'asset_universe': asset_obs,
             #'portfolio': portfolio_obs,
@@ -215,7 +224,7 @@ class PortfolioEnv(gym.Env):
         #STEP 2 Adjust the portfolio object so only assets that have a non-zero weighting are included
         new_asset_list = []
         for asset in self.asset_universe.asset_list:
-            if asset.portfolio_weight != 0.0:
+            if asset.portfolio_weight > 0.0:
                 new_asset_list.append(asset)
         self.portfolio.asset_list = new_asset_list
 
@@ -228,9 +237,8 @@ class PortfolioEnv(gym.Env):
         if(roi < self.ROI_cutoff ):
             terminated = True
         
-        if(self.current_step % 25 == 0):
+        if(self.current_step % 250 == 0):
             print("Step: ", self.current_step*self.n_envs)
-            print("ROI: ", roi)
 
         #STEP 5: Update the environment variables
         self.current_date = next_date
@@ -253,6 +261,8 @@ class PortfolioEnv(gym.Env):
         reward = roi
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
+
+
         return obs, reward, terminated, truncated, info
     
 

@@ -158,6 +158,7 @@ class Asset:
         if(len(asset_return) < 25 or len(market_return) < 25):
             self.expected_return = 0.0
             self.beta = 0.0
+            #print("Stock:", self.ticker, " Not Enough Data Points")
             return self.expected_return
 
         if(len(asset_return) != len(market_return)):
@@ -167,6 +168,7 @@ class Asset:
             #print("Asset Return Length", len(asset_return))
             #print("Market Return Length", len(market_return))
             #print("\n")
+            #print("Stock:", self.ticker, " Mismatched Lengths")
             return self.expected_return
         
 
@@ -176,9 +178,10 @@ class Asset:
         #print("Variance", variance)
         
         self.beta = covariance / variance
-        if np.isnan(self.beta):
+        if np.isnan(self.beta) or np.isinf(self.beta):
             self.beta = 0.0
             self.expected_return = 0.0
+            print("Stock:", self.ticker, " Beta is NaN or Inf")
             return self.expected_return
         
         #expected_daily_market_return = market_return.mean()
@@ -369,13 +372,15 @@ class Asset:
         self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
         observation.append(self.expected_return)
         observation.append(self.beta)
+        # append a random value for the expected return between 0 and 1
+        #observation.append(np.random.uniform(0,1))
         
         self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
         observation.append(self.illiquidity_ratio)
         
         # check if any values in the observation are NaN, if so, set them to zero
         observation = np.array(observation)
-        observation = np.nan_to_num(observation, nan=0.0, posinf=10.0, neginf=-10.0)
+        observation = np.nan_to_num(observation, nan=0.0, posinf=1.0, neginf=0.0)
 
 
         
