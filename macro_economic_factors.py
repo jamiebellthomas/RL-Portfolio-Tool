@@ -121,11 +121,11 @@ def open_macro_economic_file():
 
 
 if __name__ == '__main__':
-    #generate_macro_economic_file()
+    generate_macro_economic_file()
     print(np.__version__)
     print(pd.__version__)
     #plot_pickle_data()
-    macro_economic_factors = open_macro_economic_file()
-    asset = macro_economic_factors.asset_lookup("NASDAQ")
-    asset.plot_asset()
+    #macro_economic_factors = open_macro_economic_file()
+    #asset = macro_economic_factors.asset_lookup("NASDAQ")
+    #asset.plot_asset()
 

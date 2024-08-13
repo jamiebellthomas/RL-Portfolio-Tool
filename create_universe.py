@@ -193,11 +193,11 @@ def asset_lookup(collection: AssetCollection, ticker: str) -> Asset:
     
 
 if __name__ == "__main__":
-    #main_create()
+    main_create()
     #main_read()
 
-    collection = read_collection('Collections/reduced_asset_universe.pkl')
-    extract_ticker_list_from_collection(collection)
+    #collection = read_collection('Collections/reduced_asset_universe.pkl')
+    #extract_ticker_list_from_collection(collection)
     #asset_lookup(collection, 'AAPL')
     pass
 
