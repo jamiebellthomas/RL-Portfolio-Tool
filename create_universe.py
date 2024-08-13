@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import numpy as np
 import pickle
+import datetime
 from drive_upload import upload
 
 
@@ -77,6 +78,21 @@ def create_collection(ticker_list: list) -> AssetCollection:
         asset_list.append(asset)
     return AssetCollection(asset_list)
 
+def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollection:
+    """
+    NEW: We're making a reduced version of the collection for testing purposes, as it's all taking far too long to run
+    We're going to take a sample of 300 tickers from the list. This can't be random as we need to be able to compare results
+    Input: asset_universe (AssetCollection) - the original asset universe
+    Output: reduced_collection (AssetCollection) - the reduced asset universe
+    """
+    reduced_asset_list = []
+    for index, asset in enumerate(asset_universe.asset_list):
+        if index % 10 == 0:
+            print(f"Processing asset {index}")
+            reduced_asset_list.append(asset)
+    
+    return AssetCollection(reduced_asset_list)
+
 def main_create():
     """
     This function will create a collection of assets from a list of ticker symbols and save it to a file.
@@ -86,25 +102,57 @@ def main_create():
     Output: None
     """
     
-    filename = 'Collections/asset_universe.pkl'
+    main_filename = 'Collections/asset_universe.pkl'
+    reduced_filename = 'Collections/reduced_asset_universe.pkl'
     # First check to see if the file already exists, if so, delete it
     try:
-        os.remove(filename)
+        os.remove(main_filename)
     except FileNotFoundError:
         pass
+
+    try:
+        os.remove(reduced_filename)
+    except FileNotFoundError:
+        pass
+
+
     ticker_list = extract_ticker(file_path)
     # for testing purposes, we will only use the first 5 tickers
     #ticker_list = ticker_list[:100]
     collection = create_collection(ticker_list)
+    reduced_collection = create_reduced_collection(collection)
     
 
     # Open the file with write-binary ('wb') mode and dump the object
-    with open(filename, 'wb') as file:
+    with open(main_filename, 'wb') as file:
         pickle.dump(collection, file)
+
+    with open(reduced_filename, 'wb') as file:
+        pickle.dump(reduced_collection, file)
     
     # upload the file to Google Drive
 
-    upload(filename,'Collections','asset_universe.pkl')
+    upload(main_filename,'Collections','asset_universe.pkl')
+    upload(reduced_filename,'Collections','reduced_asset_universe.pkl')
+
+
+def extract_ticker_list_from_collection(asset_collection: AssetCollection) -> list:
+    """
+    This function will extract the ticker symbols from a collection of assets. This is so I can keep track of what assets are 
+    in the reduced universe
+    Input: asset_collection (AssetCollection) - a collection of assets
+    Output: ticker_list (list) - a list of ticker symbols
+    """
+    ticker_list = []
+    for asset in asset_collection.asset_list:
+        ticker_list.append(asset.ticker)
+
+    # export reduced list as a txt file with the current date in the name
+    with open(f"Collections/Reduced-Assets-{datetime.datetime.now().strftime('%Y-%m-%d')}.txt", 'w') as file:
+        for ticker in ticker_list:
+            file.write(ticker + '\n')
+    print(len(ticker_list))
+    return ticker_list
 
 
 def read_collection(filename: str) -> AssetCollection:
@@ -148,7 +196,8 @@ if __name__ == "__main__":
     #main_create()
     #main_read()
 
-    collection = read_collection('Collections/asset_universe.pkl')
-    asset_lookup(collection, 'AAPL')
+    collection = read_collection('Collections/reduced_asset_universe.pkl')
+    extract_ticker_list_from_collection(collection)
+    #asset_lookup(collection, 'AAPL')
     pass
 

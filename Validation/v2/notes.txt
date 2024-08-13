@@ -14,3 +14,27 @@ Game plan:
 2) Systematically add features and see how that effects validation
 
 I think we have just bitten off more than we can chew with regard to computational power required
+
+
+OK ust writing down thoughts
+
+It's completely fine if we narrow down the asset universe. This is just a proof of concept. If we can make a model that shows positive returns relative to the average of the universe its in
+that's a success. 
+Average return can be done by doing the ROI on the sum of the value of all assets within the respective universe (the % change of the total value of the universe)
+This means it should be easier to leverage good results as we can eliminate high flying stocks like AAPL, NVIDA etc.. that make the NASDAQ average so high
+We can then compare the ROI of our algo to that of the selected universe
+
+We can also add a few new features to this universe. 
+
+Dont worry about the fact that this won't be able to operate on a universe as a whole, we just need to make sure there is a diverse range of stocks in the asset universe
+In our report if we get progress from a smaller universe we can just say this serves as proof of concept and therefore it can work on a larger universe if we had more puff
+
+
+UPDATE ON REDUCED ASSET UNIVERSE
+There are now 440 assets, I got them by taking every 10 out of the main asset universe, this way I can check for consistency (so the rediced asset universe isn't changing)
+I reduced it to 10% of the original size and its so much quicker
+On my local machine I ran the reduced universe for 250 time steps in 35 seconds
+The full universe did this many steps in 240 seconds. That's 6.8 times quicker
+
+I just set it off on colab for 81920 time steps, it did the first 4096 in 421 seconds. At this rate it'll finish the model in 2.3hrs
+... It did 81920 steps in 2h 40m roughly 

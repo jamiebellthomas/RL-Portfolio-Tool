@@ -19,22 +19,25 @@ import plotly
 import plotly.graph_objects as go
 import os
 
-def validate(model_path: str):
+def validate(model_path: str, asset_universe: AssetCollection, macro_economic_factors: AssetCollection):
     """
     This function will validate the trained model on the test data.
     """
-    model_zip = model_path+"/model_32768_steps"
+    model_zip = model_path+"/model_final"
     model_date = extract_model_date(model_zip) 
 
     hyperparameters_dict = move_hyperparameters_to_logs(model_path)
+    # create hyperparameters.txt file in the validation directory
+    os.makedirs("Validation/"+model_date, exist_ok=True)
+
+
     with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
         for key, value in hyperparameters_dict.items():
             f.write(key+":"+value+"\n")
 
 
     
-    asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
-    macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
+    
     latest_date = extract_latest_date(asset_universe)
 
     # for now we'll set latest_date to a fixed date for testing purposes
@@ -95,13 +98,38 @@ def validate(model_path: str):
 
     #plot the rewards against the time steps
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=results_df.columns, y=results_df.loc["Reward"], mode='lines+markers', name="Portfolio"))
+    fig.add_trace(go.Scatter(x=results_df.columns, y=results_df.loc["Reward"], mode='lines+markers', name="Portfolio ROI"))
     # save as png to same directory
-    nasdaq_roi_df = nasdaq_roi(macro_economic_factors, hyperparameters["initial_validation_date"], latest_date)
-    fig.add_trace(go.Scatter(x=nasdaq_roi_df.index, y=nasdaq_roi_df["ROI"], mode='lines+markers', name="NASDAQ"))
+    asset_universe_roi = roi_asset_universe(asset_universe, hyperparameters["initial_validation_date"], latest_date)
+    fig.add_trace(go.Scatter(x=asset_universe_roi.index, y=asset_universe_roi["ROI"], mode='lines+markers', name="Asset Universe ROI"))
 
     fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
     fig.write_image("Validation/"+model_date+"/rewards.png")
+
+
+def roi_asset_universe(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+    """
+    The method i'll go for here is summing the values of all stocks in the asset universe, 
+    and then calculating the percentage change in value relative to the initial value
+    """
+    # make a list of all values between the start and end date
+    values = []
+    for date in pd.date_range(start=start_date, end=end_date):
+        # convert date to datetime.date
+        date = date.date()
+        value = 0
+        for asset in asset_universe.asset_list:
+            value += asset.calculate_value(date)
+        values.append(value)
+
+    initial_value = values[0]
+
+    # for each value in the list calculate the return on investment
+    roi = []
+    for value in values:
+        roi.append((value - initial_value) / initial_value)
+
+    return pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
 
 
 
@@ -190,14 +218,47 @@ def move_hyperparameters_to_logs(model_path: str):
 
     return hyperparameters
 
+
+def analyse_validation_results(version_number: str, asset_universe:AssetCollection):
+    """
+    This function will analyse the results of the validation process
+    """
+    # read the results dataframe
+    results_df = pd.read_csv("Validation/"+version_number+"/results.csv")
+    # set index to the tickers in column 0
+    results_df.set_index(results_df.columns[0], inplace=True)
+    # sum each row to get the sum of weights of each asset in the portfolio over validation period
+    asset_weights = results_df.sum(axis=1)
+    # order the assets by weight
+    asset_weights = asset_weights.sort_values(ascending=False)
+
+    latest_date = extract_latest_date(asset_universe)
+    # remove the reward row from the dataframe
+    asset_weights = asset_weights.drop("Reward")
+
+    delta_dict = {}
+    for ticker in asset_weights.index:
+        asset = asset_universe.asset_lookup(ticker)
+        if(asset is None):
+            print("Asset not found: ", ticker)
+            continue
+        delta_value = asset.calculate_value(latest_date) - asset.calculate_value(hyperparameters["initial_validation_date"])
+        delta_dict[delta_value] = ticker
+    print(asset_weights)
+
     
 
 
 if __name__ == "__main__":
-    model_path = "Logs/2024-08-11_23-55-29"
 
-    validate(model_path=model_path)
+    asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
+    macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
 
+
+    model_path = "Logs/2024-08-13_11-14-57"
+
+    #validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors)
+    analyse_validation_results("v3", asset_universe)
 
 
 

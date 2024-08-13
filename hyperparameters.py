@@ -17,8 +17,6 @@ hyperparameters = {
                      "asset_feature_count": 4,
                       "macro_economic_feature_count": 4,
                       "portfolio_status_feature_count": 1,
-                      # Max number assets that can be held in the portfolio
-                      "max_portfolio_size": 50,
                       # Initial balance for the portfolio
                       "initial_balance": 1000000,
                       # Max steps that the model can run for
@@ -36,10 +34,10 @@ hyperparameters = {
 
                      # PPO hyperparameters
                      "n_envs": 4,
-                     "n_steps": 2048,
+                     "n_steps": 1024,
                      "batch_size": 64,
                      "n_epochs": 10,
-                     "learning_rate": 1e-6,
+                     "learning_rate": 1e-5,
                      # This needs to be multiple of n_steps or it will do a whole extra cycle.
                      "total_timesteps": 81920,
                      "clip_range": 0.05,

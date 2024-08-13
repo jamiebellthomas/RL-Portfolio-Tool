@@ -85,7 +85,7 @@ def run_model():
     model.set_logger(new_logger)
 
     checkpoint_callback = CheckpointCallback(save_freq=10, save_path=log_path, name_prefix='model')
-    model.learn(total_timesteps =50, callback=checkpoint_callback)
+    model.learn(total_timesteps =250, callback=checkpoint_callback)
 
     #model.learn(total_timesteps = hyperparameters["total_timesteps"])
     # save model to Trained-Models folder
