@@ -11,7 +11,7 @@ import datetime
 import subprocess
 from hyperparameters import hyperparameters
 
-asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
+asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
 macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
 model_date_and_time = datetime.datetime.now()
 model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -73,7 +73,7 @@ def run_model():
     # the model will run for n_steps and then update the policy, if n_steps is greater than total_timesteps then the model will run for total_timesteps and then update the policy every n_steps
 
     model = PPO("MultiInputPolicy", env, verbose=1, 
-            n_steps=5, 
+            n_steps=hyperparameters["n_steps"], 
             batch_size=hyperparameters["batch_size"], 
             n_epochs=hyperparameters["n_epochs"], 
             learning_rate=hyperparameters["learning_rate"], 
@@ -84,8 +84,8 @@ def run_model():
 
     model.set_logger(new_logger)
 
-    checkpoint_callback = CheckpointCallback(save_freq=10, save_path=log_path, name_prefix='model')
-    model.learn(total_timesteps =250, callback=checkpoint_callback)
+    checkpoint_callback = CheckpointCallback(save_freq=4096, save_path=log_path, name_prefix='model')
+    model.learn(total_timesteps=4096, callback=checkpoint_callback)
 
     #model.learn(total_timesteps = hyperparameters["total_timesteps"])
     # save model to Trained-Models folder
@@ -101,11 +101,59 @@ def run_command(command):
         print("Error:\n", result.stderr)
 
 
+def continue_model(model_file:str) -> None:
+    """
+    This function loads a model from the Logs folder and continues training it
+    """
+
+
+    new_model_file = model_file + "_continued"
+    # create new folder for the continued model
+    os.makedirs(new_model_file, exist_ok=True)
+
+    log_file = os.path.join(new_model_file, "log.csv")
+
+    # Setting up the logger
+    new_logger = configure(new_model_file, ["stdout", "csv", "tensorboard"])
+
+    # Make sure to set the logger correctly
+    new_logger.output_formats = [HumanOutputFormat(sys.stdout), CSVOutputFormat(log_file), TensorBoardOutputFormat(new_model_file)]
+
+
+
+
+
+    # FIrst get model path. This is model_file+model_final
+    model_path = model_file + "/model_final"
+    
+    env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
+    model = PPO.load(model_path, env)
+
+    model.set_logger(new_logger)
+
+    checkpoint_callback = CheckpointCallback(
+    save_freq=8192,
+    save_path=model_file,
+    name_prefix="model_v2"
+)
+
+    model.learn(total_timesteps = hyperparameters["total_timesteps"], callback=checkpoint_callback)
+    model.save(model_path + '/model_v2_final')
+
+
+
+
+
+
 if __name__ == '__main__':
     #reset_model(asset_universe, macro_economic_factors)
-    run_model()
+    #run_model()
 
-    #run_command("tensorboard --logdir=Logs/{}".format(model_date))
+    model_date = "2024-08-13_11-14-57"
+    model_path = "Logs/{}".format(model_date)
+    continue_model(model_path)
+    
+    #run_command("tensorboard --logdir={}".format(model_path))
 
     # Once model has finished running, run tensorboard --logdir=Logs/{model_date} to view the logs/tensorboard
 

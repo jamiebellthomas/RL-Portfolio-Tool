@@ -67,7 +67,7 @@ def create_collection(ticker_list: list) -> AssetCollection:
     Input: ticker_list (list) - a list of ticker symbols
     Output: collection (Collection) - a collection of assets
     """
-    asset_list = []
+    asset_list = {}
     for ticker in ticker_list:
         hist = extract_time_series(ticker)
         
@@ -75,7 +75,7 @@ def create_collection(ticker_list: list) -> AssetCollection:
             continue
         index_list,value_list, open_list, close_list, vol_list = time_series_edit(hist)
         asset = Asset(ticker,index_list,value_list,open_list,close_list,vol_list)
-        asset_list.append(asset)
+        asset_list[ticker] = asset
     return AssetCollection(asset_list)
 
 def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollection:
@@ -85,11 +85,11 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
     Input: asset_universe (AssetCollection) - the original asset universe
     Output: reduced_collection (AssetCollection) - the reduced asset universe
     """
-    reduced_asset_list = []
-    for index, asset in enumerate(asset_universe.asset_list):
+    reduced_asset_list = {}
+    for index, ticker in enumerate(asset_universe.asset_list.keys()):
         if index % 10 == 0:
-            print(f"Processing asset {index}")
-            reduced_asset_list.append(asset)
+            print(f"Processing asset {index} of {len(asset_universe.asset_list.keys())}")
+            reduced_asset_list[ticker] = asset_universe.asset_list.get(ticker)
     
     return AssetCollection(reduced_asset_list)
 
@@ -180,15 +180,6 @@ def main_read():
     for item in random_items:
         item.plot_asset()
 
-def asset_lookup(collection: AssetCollection, ticker: str) -> Asset:
-    """
-    This function will return the asset with the given ticker from the collection of assets.
-    Input: collection (Collection) - a collection of assets
-           ticker (str) - the ticker of the asset
-    Output: asset (Asset) - the asset with the given ticker
-    """
-    asset = collection.asset_lookup(ticker)
-    asset.plot_asset()
 
     
 

@@ -62,21 +62,21 @@ def generate_macro_economic_factors():
     '10 Year Treasury Bond' - the 10 Year Treasury Bond (DGS10) - Risk Free Rate for long term investments, leaving this here for now
     """
     macro_economic_factors_series_ids = ['GDP', 'UNRATE', 'FEDFUNDS', 'CPIAUCNS', 'DTB3', 'DGS10']
-    macro_economic_factors_list = []
+    macro_economic_factors_list = {}
 
     for series_id in macro_economic_factors_series_ids:
         series = fred.get_series(series_id)
         index, values = clean_dataset(series)
         asset = Asset(series_id, index, values, open_list=None, close_list=None, volume_list=None)
-        macro_economic_factors_list.append(asset)
+        macro_economic_factors_list[series_id] = asset
     
     index,values = extract_snp500()
     asset = Asset('SP500', index,values, open_list=None, close_list=None, volume_list=None)
-    macro_economic_factors_list.append(asset)
+    macro_economic_factors_list['SP500'] = asset
 
     index,values = extract_nasdaq()
     asset = Asset('NASDAQ', index,values, open_list=None, close_list=None, volume_list=None)
-    macro_economic_factors_list.append(asset)
+    macro_economic_factors_list['NASDAQ'] = asset
 
     return MacroEconomicCollection(macro_economic_factors_list)
 

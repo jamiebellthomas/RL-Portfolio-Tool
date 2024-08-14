@@ -10,7 +10,4 @@ class Collection:
         Input: ticker (str) - the ticker of the asset
         Output: asset (Asset) - the asset with the given ticker
         """
-        for asset in self.asset_list:
-            if asset.ticker == ticker:
-                return asset
-        return None
+        return self.asset_list.get(ticker)

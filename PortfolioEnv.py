@@ -120,7 +120,7 @@ class PortfolioEnv(gym.Env):
         
         self.current_date = self.initial_date
         self.portfolio_value = self.initial_balance
-        self.portfolio = PortfolioCollection(asset_list=[])
+        self.portfolio = PortfolioCollection(asset_list={})
         self.portfolio.portfolio_value = self.portfolio_value
 
 
@@ -199,20 +199,24 @@ class PortfolioEnv(gym.Env):
         next_date = self.current_date + datetime.timedelta(days=1)
         # Set weightings of assets that don't exist in the action vector to 0 (when the current date is before it's first date)
         #print(type(action))
+        values = list(self.asset_universe.asset_list.values())
         for i in range(len(action)):
-            if(self.current_date < self.asset_universe.asset_list[i].start_date):
+            if(self.current_date < values[i].start_date):
                 action[i] = 0.0
 
 
         # Normalise vector using softmax
-        action = np.exp(action) / np.sum(np.exp(action))
+        #action = np.exp(action) / np.sum(np.exp(action))
+        # NO. SOFTMAX NOT APPROPRIATE FOR ACTION SPACE NORMALISATION, WE NEED KEEP WEIGHTINGS OF 0 TO 0. 
+        # instead we'll just divide by the sum of the vector
+        action = action/np.sum(action)
 
         #STEP 1: Calculate how the transaction costs associated with the action vector will affect the portfolio value
         # We will calculate the absolute delta in the portfolio value due to the action vector
         current_portfolio_value = self.portfolio.portfolio_value
         absolute_delta = 0
         for i in range(len(action)):
-            asset = self.asset_universe.asset_list[i]
+            asset = values[i]
             current_weighting = asset.portfolio_weight
             new_weighting = action[i]
             if(type(new_weighting) == np.ndarray):
@@ -222,10 +226,10 @@ class PortfolioEnv(gym.Env):
         self.portfolio.portfolio_value = current_portfolio_value * (1-(self.transaction_cost * absolute_delta))
 
         #STEP 2 Adjust the portfolio object so only assets that have a non-zero weighting are included
-        new_asset_list = []
-        for asset in self.asset_universe.asset_list:
+        new_asset_list = {}
+        for asset in self.asset_universe.asset_list.values():
             if asset.portfolio_weight > 0.0:
-                new_asset_list.append(asset)
+                new_asset_list[asset.ticker] = asset
         self.portfolio.asset_list = new_asset_list
 
         #STEP 3: Calculate the new portfolio value at the next time step
@@ -237,8 +241,8 @@ class PortfolioEnv(gym.Env):
         if(roi < self.ROI_cutoff ):
             terminated = True
         
-        if(self.current_step % 250 == 0):
-            print("Step: ", self.current_step*self.n_envs)
+        if(self.current_step % 1000 == 0):
+            print("Step: ", self.current_step)
 
         #STEP 5: Update the environment variables
         self.current_date = next_date
@@ -274,7 +278,7 @@ class PortfolioEnv(gym.Env):
         This method will generate the info dictionary at the current time step. 
         """
         portfolio_weightings = {}
-        for asset in self.portfolio.asset_list:
+        for asset in self.portfolio.asset_list.values():
             portfolio_weightings[asset.ticker] = asset.portfolio_weight
         
 

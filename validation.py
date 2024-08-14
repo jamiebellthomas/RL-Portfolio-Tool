@@ -23,7 +23,7 @@ def validate(model_path: str, asset_universe: AssetCollection, macro_economic_fa
     """
     This function will validate the trained model on the test data.
     """
-    model_zip = model_path+"/model_final"
+    model_zip = model_path+"/model_65536_steps"
     model_date = extract_model_date(model_zip) 
 
     hyperparameters_dict = move_hyperparameters_to_logs(model_path)
@@ -257,8 +257,8 @@ if __name__ == "__main__":
 
     model_path = "Logs/2024-08-13_11-14-57"
 
-    #validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors)
-    analyse_validation_results("v3", asset_universe)
+    validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors)
+    #analyse_validation_results("v3", asset_universe)
 
 
 

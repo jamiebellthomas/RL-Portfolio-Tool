@@ -42,7 +42,7 @@ class PortfolioCollection(Collection):
         roi = (self.portfolio_value - initial_investment) / initial_investment
 
         # Calculate tje portion of assests that have been invested in
-        n_assets = len(self.asset_list)
+        n_assets = len(self.asset_list.values())
 
         # MORE FEATURES TO BE ADDED
 
@@ -59,11 +59,11 @@ class PortfolioCollection(Collection):
         This will also lead to a change in the weightings of the assets in the portfolio as their relative values change.
         """
         # Precompute old and new prices for all assets
-        old_prices = np.array([asset.calculate_value(old_date) for asset in self.asset_list])
-        new_prices = np.array([asset.calculate_value(new_date) for asset in self.asset_list])
+        old_prices = np.array([asset.calculate_value(old_date) for asset in self.asset_list.values()])
+        new_prices = np.array([asset.calculate_value(new_date) for asset in self.asset_list.values()])
 
         # Calculate the old investment values
-        old_investment_values = self.portfolio_value * np.array([asset.portfolio_weight for asset in self.asset_list])
+        old_investment_values = self.portfolio_value * np.array([asset.portfolio_weight for asset in self.asset_list.values()])
 
         # Calculate the new investment values
         new_investment_values = (new_prices / old_prices) * old_investment_values
@@ -72,7 +72,7 @@ class PortfolioCollection(Collection):
         new_portfolio_value = np.sum(new_investment_values)
 
         # Update the relative weightings of all assets in the portfolio
-        for i, asset in enumerate(self.asset_list):
+        for i, asset in enumerate(self.asset_list.values()):
             asset.portfolio_weight = new_investment_values[i] / new_portfolio_value
 
         self.portfolio_value = new_portfolio_value

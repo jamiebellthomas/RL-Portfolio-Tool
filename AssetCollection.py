@@ -18,7 +18,9 @@ class AssetCollection(Collection):
         The observation space will ne a np.array of shape (n_assets, n_features) where n_assets is the number of assets in the asset universe and n_features is the number of features for each asset.
         """
         observation_space = []
-        for asset in self.asset_list:
+        for asset in self.asset_list.values():
+            # asset_list is now a dictionary, so we need to use the values() method to get the values
+        
 
             observation = asset.get_observation(macro_economic_collection, date, 
                                                 CAPM_lookback_period, illiquidity_ratio_lookback_period, ARMA_lookback_period, 
