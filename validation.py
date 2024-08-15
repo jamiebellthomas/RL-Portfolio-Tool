@@ -19,21 +19,19 @@ import plotly
 import plotly.graph_objects as go
 import os
 
-def validate(model_path: str, asset_universe: AssetCollection, macro_economic_factors: AssetCollection):
+def validate(model_path: str, asset_universe: AssetCollection, macro_economic_factors: AssetCollection, create_folder: bool):
     """
     This function will validate the trained model on the test data.
     """
-    model_zip = model_path+"/model_65536_steps"
-    model_date = extract_model_date(model_zip) 
+    model_date = extract_model_date(model_path) 
 
-    hyperparameters_dict = move_hyperparameters_to_logs(model_path)
+    #hyperparameters_dict = move_hyperparameters_to_logs(model_path)
     # create hyperparameters.txt file in the validation directory
     os.makedirs("Validation/"+model_date, exist_ok=True)
 
-
-    with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
-        for key, value in hyperparameters_dict.items():
-            f.write(key+":"+value+"\n")
+    #with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
+    #    for key, value in hyperparameters_dict.items():
+    #        f.write(key+":"+value+"\n")
 
 
     
@@ -55,7 +53,7 @@ def validate(model_path: str, asset_universe: AssetCollection, macro_economic_fa
     print("Number of steps: ", num_days)
 
     # load model
-    model = PPO.load(model_zip)
+    model = PPO.load(model_path)
 
     # validate model by applying it to the environment
     obs,info = env.reset()
@@ -71,40 +69,42 @@ def validate(model_path: str, asset_universe: AssetCollection, macro_economic_fa
     print(len(results_df))
     print("Results dataframe created")
     rewards = []
-
+    print("Starting validation for model: ", model_path)
     while not done:
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env.step(action)
         weightings = extract_asset_weightings(env.asset_universe)
         rewards.append(reward)
         step += 1
-        print("Step: ", step)
-        print("Date", env.current_date)
-        print("Reward: ", reward)
-        print("\n")
+        #print("Step: ", step)
+        #print("Date", env.current_date)
+        #print("Reward: ", reward)
+        #print("\n")
         results_df[env.current_date] = weightings
 
     
     # create a row at the end of the dataframe to store the rewards
     results_df.loc["Reward"] = rewards
-
+    if(create_folder):
     #create directory if it doesn't exist
-    try:
-        os.makedirs("Validation/"+model_date)
-    except FileExistsError:
-        pass
+        try:
+            os.makedirs("Validation/"+model_date)
+        except FileExistsError:
+            pass
 
-    results_df.to_csv("Validation/"+model_date+"/results.csv")
+        results_df.to_csv("Validation/"+model_date+"/results.csv")
 
-    #plot the rewards against the time steps
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=results_df.columns, y=results_df.loc["Reward"], mode='lines+markers', name="Portfolio ROI"))
-    # save as png to same directory
-    asset_universe_roi = roi_asset_universe(asset_universe, hyperparameters["initial_validation_date"], latest_date)
-    fig.add_trace(go.Scatter(x=asset_universe_roi.index, y=asset_universe_roi["ROI"], mode='lines+markers', name="Asset Universe ROI"))
+        #plot the rewards against the time steps
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=results_df.columns, y=results_df.loc["Reward"], mode='lines+markers', name="Portfolio ROI"))
+        # save as png to same directory
+        asset_universe_roi = roi_asset_universe(asset_universe, hyperparameters["initial_validation_date"], latest_date)
+        fig.add_trace(go.Scatter(x=asset_universe_roi.index, y=asset_universe_roi["ROI"], mode='lines+markers', name="Asset Universe ROI"))
 
-    fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
-    fig.write_image("Validation/"+model_date+"/rewards.png")
+        fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
+        fig.write_image("Validation/"+model_date+"/rewards.png")
+
+    return results_df
 
 
 def roi_asset_universe(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
@@ -118,7 +118,7 @@ def roi_asset_universe(asset_universe: AssetCollection, start_date: datetime.dat
         # convert date to datetime.date
         date = date.date()
         value = 0
-        for asset in asset_universe.asset_list:
+        for asset in asset_universe.asset_list.values():
             value += asset.calculate_value(date)
         values.append(value)
 
@@ -146,7 +146,7 @@ def extract_latest_date(asset_universe: AssetCollection) -> datetime.date:
     Then we're going to get the earliest date from the set, this will guarantee that we have the latest data from all the assets
     """
     latest_dates = set()
-    for asset in asset_universe.asset_list:
+    for asset in asset_universe.asset_list.values():
         latest_dates.add(asset.index_list[-1])
     latest_date = min(latest_dates)
     return latest_date
@@ -163,7 +163,7 @@ def create_results_dataframe(asset_universe: AssetCollection)-> pd.DataFrame:
     This function will create a dataframe to store the results of the validation process
     """
     # Extract ticker list from the asset universe
-    ticker_list = [asset.ticker for asset in asset_universe.asset_list]
+    ticker_list = list(asset_universe.asset_list.keys())
     
     # Initialize DataFrame with tickers as index and dates as columns
     results_df = pd.DataFrame(index=ticker_list)
@@ -175,7 +175,7 @@ def extract_asset_weightings(asset_universe: AssetCollection) -> list:
     Extract the weightings of the assets in the asset universe at a given date
     """
     asset_weightings = []
-    for asset in asset_universe.asset_list:
+    for asset in asset_universe.asset_list.values():
         asset_weightings.append(asset.portfolio_weight)
     return asset_weightings
 
@@ -223,29 +223,103 @@ def analyse_validation_results(version_number: str, asset_universe:AssetCollecti
     """
     This function will analyse the results of the validation process
     """
+
+    
     # read the results dataframe
     results_df = pd.read_csv("Validation/"+version_number+"/results.csv")
     # set index to the tickers in column 0
     results_df.set_index(results_df.columns[0], inplace=True)
+    #calculate the cumulative reward
+    cumulative_reward = results_df.loc["Reward"].sum()
     # sum each row to get the sum of weights of each asset in the portfolio over validation period
-    asset_weights = results_df.sum(axis=1)
-    # order the assets by weight
-    asset_weights = asset_weights.sort_values(ascending=False)
+    analysis_df = results_df.sum(axis=1)
+    # convert it to a dataframe
+    analysis_df = pd.DataFrame(analysis_df, columns=["Sum of Weights"])
 
     latest_date = extract_latest_date(asset_universe)
     # remove the reward row from the dataframe
-    asset_weights = asset_weights.drop("Reward")
+    analysis_df = analysis_df.drop("Reward")
 
-    delta_dict = {}
-    for ticker in asset_weights.index:
-        asset = asset_universe.asset_lookup(ticker)
-        if(asset is None):
-            print("Asset not found: ", ticker)
-            continue
-        delta_value = asset.calculate_value(latest_date) - asset.calculate_value(hyperparameters["initial_validation_date"])
-        delta_dict[delta_value] = ticker
-    print(asset_weights)
+    # Now we want to work out the varience of each asset weighting over the validation period and add it as a column to the analysis dataframe
+    varience = []
+    average = []
+    for asset in analysis_df.index:
+        asset_weightings = results_df.loc[asset]
+        varience.append(asset_weightings.var())
+        average.append(asset_weightings.mean())
+    analysis_df["Average"] = average
+    analysis_df["Varience"] = varience
 
+    # sort the dataframe by the first column
+    analysis_df = analysis_df.sort_values(by="Sum of Weights", ascending=False)
+
+    # Now I want to export the mean and varience of the variance column 
+    # to a text file in the validation directory    
+    with open("Validation/"+version_number+"/analysis.txt", "w") as f:
+        f.write("Mean of Varience: "+str(analysis_df["Varience"].mean())+"\n")
+        f.write("Varience of Varience: "+str(analysis_df["Varience"].var())+"\n")
+        f.write("Mean of Average: "+str(analysis_df["Average"].mean())+"\n")
+        f.write("Varience of Average: "+str(analysis_df["Average"].var())+"\n")
+        f.write("Cumulated Reward: "+str(cumulative_reward)+"\n")
+
+
+    
+    # sort the dataframe by the first column
+    print(analysis_df)  
+
+
+def validate_loop(model_folder:str):
+    """
+    This function will validate all the models in the model folder so we can compare them over the course of the training period
+    """
+    # get a list of the zip files in the model folder
+    model_files = os.listdir(model_folder)
+    model_date = model_folder.split("/")[1]
+    #create directory if it doesn't exist
+    try:
+        os.makedirs("Validation/"+model_date+"_comparison")
+    except FileExistsError:
+        pass
+    # filter out the zip files
+    model_files = [file for file in model_files if file.endswith(".zip")]
+    # create a new figure
+    total_rewards = {}
+    fig = go.Figure()
+    for model_file in model_files:
+        model_path = os.path.join(model_folder, model_file)
+        model_iteration = extract_model_iteration(model_file)
+        if(model_iteration % 32768 == 0):
+            results = validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors, create_folder=False)
+            # save the results to a csv file
+            results.to_csv("Validation/"+model_date+"_comparison/"+str(model_iteration)+"_results.csv")
+            # plot the results against the time steps
+            fig.add_trace(go.Scatter(x=results.columns, y=results.loc["Reward"], mode='lines+markers', name=str(model_iteration)+" iterations"))
+            # save the total reward to a dictionary
+            total_rewards[model_iteration] = results.loc["Reward"].sum()
+            
+    
+    fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
+    fig.write_image("Validation/"+model_date+"_comparison/rewards.png")
+    # sort dictionary by values
+    total_rewards = dict(sorted(total_rewards.items(), key=lambda item: item[1]))
+    # plot total rewards against iterations as a scatter plot with no lines
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(total_rewards.keys()), y=list(total_rewards.values()), mode='markers'))
+    fig.update_layout(title='Total Reward vs Iterations', xaxis_title='Iterations', yaxis_title='Total Reward')
+    fig.write_image("Validation/"+model_date+"_comparison/total_rewards.png")
+    # also export the dictionary to a text file
+    with open("Validation/"+model_date+"_comparison/total_rewards.txt", "w") as f:
+        for key, value in total_rewards.items():
+            f.write(str(key)+":"+str(value)+"\n")
+
+def extract_model_iteration(model_path: str) -> int:
+    """
+    Extract the iteration number from the model path
+    """
+    iteration_number = model_path.split("_")
+    return int(iteration_number[1])
+        
     
 
 
@@ -254,11 +328,12 @@ if __name__ == "__main__":
     asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
     macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
 
+    model_path = "Logs/2024-08-14_15-33-56/model_327680_steps.zip"
 
-    model_path = "Logs/2024-08-13_11-14-57"
+    #validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors, create_folder=True)
+    validate_loop("Logs/2024-08-14_15-33-56")
 
-    validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors)
-    #analyse_validation_results("v3", asset_universe)
+    #analyse_validation_results("v4", asset_universe)
 
 
 

@@ -1,0 +1,1 @@
+this confirms that it was a case of overfitting, we can see that performance increases to a certain point and then it decreases after that point. (cool graphs!)

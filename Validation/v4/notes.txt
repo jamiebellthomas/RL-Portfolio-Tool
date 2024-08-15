@@ -1,0 +1,1 @@
+Only difference here was I quadrupled the number of time steps the model ran for, and it actually significantly hurt performance. This is likely due to overfitting (atleast that's what i'll put in the report) I'll look into this futher
