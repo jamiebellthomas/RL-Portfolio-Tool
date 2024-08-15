@@ -17,36 +17,6 @@ model_date_and_time = datetime.datetime.now()
 model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
 # Configure the logger to output to both stdout and files
 
-def reset_model(asset_universe, macro_economic_factors):
-    """
-    This function will test the reset method in the PortfolioEnv class
-    As I think it is sometimes causing the model to crash, it will do this by creating a new environment, running step a few times and then resetting it
-    """
-    env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
-    obs, info = env.reset()
-    done = False
-    step = 0
-    while not done:
-        action = env.action_space.sample()
-        obs, reward, done, truncated,info = env.step(action)
-        step += 1
-        if step % 10 == 0:
-            obs, info = env.reset()
-            print("Resetting environment")
-        
-        print("Step: ", step)
-        print("Obs: ", obs)
-
-        if step > 40:
-            break
-    
-
-
-    print("Reset method works")
-    
-
-
-
 def run_model():
     logs_path = "Logs"
     if not os.path.exists(logs_path):
@@ -66,7 +36,11 @@ def run_model():
     # Make sure to set the logger correctly
     new_logger.output_formats = [HumanOutputFormat(sys.stdout), CSVOutputFormat(log_file), TensorBoardOutputFormat(log_path)]
 
-
+    # export current hyperparameters to a txt file in the log folder
+    with open(f"{log_path}/hyperparameters.txt", 'w') as file:
+        for key, value in hyperparameters.items():
+            file.write(f"{key}: {value}\n")
+            
 
     env = PortfolioEnv(asset_universe, macro_economic_factors, initial_date=hyperparameters["initial_training_date"], final_date=hyperparameters["initial_validation_date"])
     # n_steps is the number of steps that the model will run for before updating the policy, if n_steps is less than total_timesteps then 
@@ -84,8 +58,8 @@ def run_model():
 
     model.set_logger(new_logger)
 
-    checkpoint_callback = CheckpointCallback(save_freq=4096, save_path=log_path, name_prefix='model')
-    model.learn(total_timesteps=4096, callback=checkpoint_callback)
+    checkpoint_callback = CheckpointCallback(save_freq=hyperparameters["timesteps_per_save"], save_path=log_path, name_prefix='model')
+    model.learn(total_timesteps=hyperparameters["total_timesteps"], callback=checkpoint_callback)
 
     #model.learn(total_timesteps = hyperparameters["total_timesteps"])
     # save model to Trained-Models folder
@@ -147,11 +121,11 @@ def continue_model(model_file:str) -> None:
 
 if __name__ == '__main__':
     #reset_model(asset_universe, macro_economic_factors)
-    #run_model()
+    run_model()
 
-    model_date = "2024-08-13_11-14-57"
-    model_path = "Logs/{}".format(model_date)
-    continue_model(model_path)
+    #model_date = "2024-08-13_11-14-57"
+    #model_path = "Logs/{}".format(model_date)
+    #continue_model(model_path)
     
     #run_command("tensorboard --logdir={}".format(model_path))
 

@@ -140,9 +140,7 @@ class PortfolioEnv(gym.Env):
         This method will return the next observation for the environment.
         """
         # We'll change it so that the asset universe is only evaluated every 7 days, this will reduce the computational load SIGNIFICANTLY
-        asset_obs = self.asset_universe.get_observation(self.macro_economic_data, date, 
-                                                self.CAPM_period, self.illiquidity_ratio_period, self.ARMA_period,
-                                                self.ar_term_limit, self.ma_term_limit)
+        asset_obs = self.asset_universe.get_observation(self.macro_economic_data, date)
 
 
         
@@ -241,8 +239,8 @@ class PortfolioEnv(gym.Env):
         if(roi < self.ROI_cutoff ):
             terminated = True
         
-        if(self.current_step % 1000 == 0):
-            print("Step: ", self.current_step)
+        if(self.current_step % hyperparameters["timesteps_per_save"] == 0):
+            print("Model Saved (", self.current_step, "steps)")
 
         #STEP 5: Update the environment variables
         self.current_date = next_date

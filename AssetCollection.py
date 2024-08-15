@@ -9,9 +9,7 @@ class AssetCollection(Collection):
         # Additional initialization for AssetCollection
         self.feature_count = 0
 
-    def get_observation(self, macro_economic_collection: MacroEconomicCollection, date: datetime.date,
-                        CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int,
-                        ar_term_limit, ma_term_limit) -> np.array:
+    def get_observation(self, macro_economic_collection: MacroEconomicCollection, date: datetime.date) -> np.array:
         """
         The get observation generates the asset universe component of the observation space.
         It will loop through each asset in the asset universe and generate the observation for each asset, appending it to the observation space.
@@ -22,9 +20,7 @@ class AssetCollection(Collection):
             # asset_list is now a dictionary, so we need to use the values() method to get the values
         
 
-            observation = asset.get_observation(macro_economic_collection, date, 
-                                                CAPM_lookback_period, illiquidity_ratio_lookback_period, ARMA_lookback_period, 
-                                                ar_term_limit, ma_term_limit)
+            observation = asset.get_observation(macro_economic_collection, date)
             self.feature_count = len(observation)
             observation_space.append(observation)
 

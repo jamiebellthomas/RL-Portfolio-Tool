@@ -33,6 +33,8 @@ class Asset:
         self.ARMA_model = None
         self.best_pq = None 
         self.ARMA_model_aic = None
+        self.volatility = None
+        self.linear_regression_slope = None
 
     def __str__(self):
         return self.ticker
@@ -243,6 +245,42 @@ class Asset:
         self.illiquidity_ratio = min(self.illiquidity_ratio, 1.0)
         return self.illiquidity_ratio
     
+    def calculate_volatility(self, date:datetime.date, period: int) -> float:
+        """
+        This method will calculate the volatility of the asset over a given period.
+        Another word for volatility is standard deviation.
+        """
+        start_date = date - datetime.timedelta(days=round(period*365))
+
+        # first we need the relevant subsection of the time series data
+        subsection,_,_,_,_,_ = self.extract_subsection(start_date, date)
+        # if subsection is too short, then we cannot perform the volatility calculation, set volatility to 0 and return
+        if(len(subsection) < 2):
+            return 0.0
+        
+        pct_change = self.pct_change(subsection, periods=1)
+        # calculate the standard deviation of the subsection
+        self.volatility = np.std(pct_change)
+        return self.volatility
+    
+    def calculate_linear_regression(self, date: datetime.date, period: int) -> float:
+        """
+        This method will calculate the linear regression of the asset over a given period.
+        and return it's slope so the model will have an idea of the pricing trend.
+        """
+        start_date = date - datetime.timedelta(days=round(period*365))
+        # first we need the relevant subsection of the time series data
+        subsection,_,_,_,_,_ = self.extract_subsection(start_date, date)
+        days = np.arange(0, len(subsection))
+        # if subsection is too short, then we cannot perform the linear regression calculation, set slope to 0 and return
+        if(len(subsection) < 5):
+            return 0.0
+        
+        # calculate the linear regression of the subsection
+        self.linear_regression_slope, intercept = np.polyfit(days, subsection, 1)
+        return self.linear_regression_slope
+
+    
     def stationarity_test(self, time_series: np.array) -> bool:
         """
         This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
@@ -335,14 +373,16 @@ class Asset:
     def calculate_value(self, date: datetime.date) -> float:
         """
         This function will calculate the value of the asset at a given date.
+
+        THIS NEEDS TO BE LOOKED AT. THIS WILL RETURN value[0] WHICH IS THE VALUE OF THE ASSET AT THE START DATE IF THE DATE IS BEFORE THE START DATE
+        WHICH IS NOT CORRECT. THIS NEEDS TO BE FIXED I THINK. WE'LL INVESTIGATE THIS LATER BY RUNNING THE ASSET_UNIVERSE_TOI FUNCTION ON THE WHOLE NASDAQ DATA
         """
         closest_date_index = self.closest_date_match(date)
+        
         return self.value_list[closest_date_index]
 
 
-    def get_observation(self, macro_economic_collection: Collection, date: datetime.date, 
-                        CAPM_lookback_period: int, illiquidity_ratio_lookback_period: int, ARMA_lookback_period: int,
-                        ar_term_limit: int, ma_term_limit: int) -> np.array:
+    def get_observation(self, macro_economic_collection: Collection, date: datetime.date) -> np.array:
         """
         This will generate the row of the observation space for the asset, this will be a numpy array of shape (1, n_features)
         It will combine all calculated features above into a single row. 
@@ -358,25 +398,26 @@ class Asset:
                 observation.append(0.0)
             return np.array(observation)
 
-        # Observation will be as follows:
-        # 1. Portfolio Weight
-        # 2. Expected Return
-        # 3. Beta
-        # 4. Illiquidity Ratio
-        # 5. ARMA Coefficients
-        # 6. ARMA Sigma2
+
 
         observation.append(self.portfolio_weight)
         #print("Portfolio Weight Type: " + str(type(self.portfolio_weight)))
         
-        self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=CAPM_lookback_period)
+        self.calculate_CAPM(macro_economic_collection=macro_economic_collection, date=date, period=hyperparameters["CAPM_period"])
         observation.append(self.expected_return)
         observation.append(self.beta)
         # append a random value for the expected return between 0 and 1
         #observation.append(np.random.uniform(0,1))
         
-        self.calculate_illiquidity_ratio(date=date, period=illiquidity_ratio_lookback_period)
+        self.calculate_illiquidity_ratio(date=date, period=hyperparameters["illiquidity_ratio_period"])
         observation.append(self.illiquidity_ratio)
+
+        self.calculate_volatility(date=date, period=hyperparameters["volatility_period"])
+        observation.append(self.volatility)
+
+        self.calculate_linear_regression(date=date, period=hyperparameters["linear_regression_period"])
+        observation.append(self.linear_regression_slope)
+
         
         # check if any values in the observation are NaN, if so, set them to zero
         observation = np.array(observation)
@@ -384,9 +425,9 @@ class Asset:
 
 
         
+     
         """
-
-        self.ARMA(date, ARMA_lookback_period, ar_term_limit, ma_term_limit)
+        self.ARMA(date, hyperparameters["ARMA_period"], hyperparameters["ARMA_ar_term_limit"], hyperparameters["ARMA_ma_term_limit"])
 
         if(self.ARMA_model == None):
             for i in range(1, ar_term_limit+1):
