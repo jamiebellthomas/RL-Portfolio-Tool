@@ -35,6 +35,7 @@ class Asset:
         self.ARMA_model_aic = None
         self.volatility = None
         self.linear_regression_slope = None
+        self.linear_regression_intercept = None
 
     def __str__(self):
         return self.ticker
@@ -112,6 +113,22 @@ class Asset:
 
         
         return pct_change_arr
+    
+    def cumulative_return(self, arr:np.array, periods=1):
+        """
+        Calculate the cumulative return between the current and a prior element in a numpy array.
+        
+        Parameters:
+        arr (numpy.ndarray): Input array.
+        periods (int): Periods to shift for forming the percent change. Default is 1.
+        
+        Returns:
+        numpy.ndarray: Array of cumulative returns.
+        """
+        pct_change_arr = self.pct_change(arr, periods)
+        # now we can calculate the cumulative return but summation
+        cum_return = np.cumsum(pct_change_arr)
+        return cum_return
     
 
 
@@ -256,29 +273,44 @@ class Asset:
         subsection,_,_,_,_,_ = self.extract_subsection(start_date, date)
         # if subsection is too short, then we cannot perform the volatility calculation, set volatility to 0 and return
         if(len(subsection) < 2):
-            return 0.0
+            self.volatility = 0.0
+            return self.volatility
         
         pct_change = self.pct_change(subsection, periods=1)
         # calculate the standard deviation of the subsection
         self.volatility = np.std(pct_change)
+
+        if np.isnan(self.volatility) or np.isinf(self.volatility) or self.volatility is None: 
+            self.volatility = 0.0
         return self.volatility
     
     def calculate_linear_regression(self, date: datetime.date, period: int) -> float:
         """
         This method will calculate the linear regression of the asset over a given period.
-        and return it's slope so the model will have an idea of the pricing trend.
+        and return it's slope so the model will have an idea of the pricing trend. This will be applied to the returns of the asset.
         """
         start_date = date - datetime.timedelta(days=round(period*365))
         # first we need the relevant subsection of the time series data
         subsection,_,_,_,_,_ = self.extract_subsection(start_date, date)
-        days = np.arange(0, len(subsection))
+        pct_change = self.cumulative_return(subsection, periods=1)
+        days = np.arange(0, len(pct_change))
         # if subsection is too short, then we cannot perform the linear regression calculation, set slope to 0 and return
-        if(len(subsection) < 5):
-            return 0.0
+        if(len(pct_change) < 5):
+            self.linear_regression_slope = 0.0
+            self.linear_regression_intercept = 0.0
+            return self.linear_regression_slope, self.linear_regression_intercept, pct_change
         
         # calculate the linear regression of the subsection
-        self.linear_regression_slope, intercept = np.polyfit(days, subsection, 1)
-        return self.linear_regression_slope
+        self.linear_regression_slope, self.linear_regression_intercept = np.polyfit(days, pct_change, 1)
+        if(np.isnan(self.linear_regression_slope) or 
+           np.isinf(self.linear_regression_slope) or 
+           self.linear_regression_slope is None or 
+           np.isnan(self.linear_regression_intercept) or 
+           np.isinf(self.linear_regression_intercept) or 
+           self.linear_regression_intercept is None):
+            self.linear_regression_slope = 0.0
+            self.linear_regression_intercept = 0.0
+        return self.linear_regression_slope, self.linear_regression_intercept, pct_change
 
     
     def stationarity_test(self, time_series: np.array) -> bool:
@@ -417,6 +449,7 @@ class Asset:
 
         self.calculate_linear_regression(date=date, period=hyperparameters["linear_regression_period"])
         observation.append(self.linear_regression_slope)
+        observation.append(self.linear_regression_intercept)
 
         
         # check if any values in the observation are NaN, if so, set them to zero

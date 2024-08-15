@@ -16,7 +16,7 @@ hyperparameters = {
                      # The number of features for each asset in the asset universe
                      # asset_universe_feature_count needs to be calculated as a function of ARMA_ar_term_limit & ARMA_ma_term_limit
                      # These terms will need to be managed manually unfortunately, until we can find a way to calculate them
-                     "asset_feature_count": 6,
+                     "asset_feature_count": 7,
                       "macro_economic_feature_count": 4,
                       "portfolio_status_feature_count": 1,
                       # Initial balance for the portfolio
@@ -41,7 +41,7 @@ hyperparameters = {
                      "n_epochs": 10,
                      "learning_rate": 1e-5,
                      # This needs to be multiple of n_steps or it will do a whole extra cycle.
-                     "total_timesteps": 163840,
+                     "total_timesteps": 196608,
                      "timesteps_per_save": 16384,
                      "clip_range": 0.05,
 

@@ -184,12 +184,12 @@ def main_read():
     
 
 if __name__ == "__main__":
-    #main_create()
+    main_create()
     #main_read()
 
-    collection = read_collection('Collections/reduced_asset_universe.pkl')
+    #collection = read_collection('Collections/reduced_asset_universe.pkl')
     #extract_ticker_list_from_collection(collection)
-    asset = collection.asset_lookup("ABVX")
-    asset.plot_asset()
+    #asset = collection.asset_lookup("ABVX")
+    #asset.plot_asset()
     pass
 
