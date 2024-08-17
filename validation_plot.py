@@ -7,7 +7,12 @@ from macro_economic_factors import open_macro_economic_file
 import pickle
 from validation import roi_asset_universe
 
-def plot_stats(csv_list: list, macro_economic_collection: MacroEconomicCollection, asset_universe: AssetCollection):
+
+def plot_stats(
+    csv_list: list,
+    macro_economic_collection: MacroEconomicCollection,
+    asset_universe: AssetCollection,
+):
     """
     This function will plot the rewards against the time steps for each model on the same plot so we can compare them
     """
@@ -28,17 +33,29 @@ def plot_stats(csv_list: list, macro_economic_collection: MacroEconomicCollectio
         version = extract_version_number(csv)
         rewards_sum[version] = rewards.sum()
         # plot the rewards against the time steps
-        fig.add_trace(go.Scatter(x=dates, y=rewards, mode='lines+markers', name=version))
+        fig.add_trace(
+            go.Scatter(x=dates, y=rewards, mode="lines+markers", name=version)
+        )
         start_date = datetime.strptime(dates[0], "%Y-%m-%d")
         end_date = datetime.strptime(dates[-1], "%Y-%m-%d")
     print(rewards_sum)
-    market_roi = roi_asset_universe(asset_universe , start_date, end_date)
-    fig.add_trace(go.Scatter(x=market_roi.index, y=market_roi["ROI"], mode='lines+markers', name="Market Average"))
+    market_roi = roi_asset_universe(asset_universe, start_date, end_date)
+    fig.add_trace(
+        go.Scatter(
+            x=market_roi.index,
+            y=market_roi["ROI"],
+            mode="lines+markers",
+            name="Market Average",
+        )
+    )
 
     # save as png to same directory
-    fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
+    fig.update_layout(
+        title="Return on Investment vs Time Step",
+        xaxis_title="Time Step",
+        yaxis_title="ROI",
+    )
     fig.write_image("Validation/rewards_comparison.png")
-
 
 
 def extract_version_number(csv: str) -> str:
@@ -50,11 +67,19 @@ def extract_version_number(csv: str) -> str:
 
 
 def main():
-    csv_list = ["Validation/v3/results.csv", "Validation/v4/results.csv", "Validation/v5/results.csv"]
+    csv_list = [
+        "Validation/v3/results.csv",
+        "Validation/v4/results.csv",
+        "Validation/v5/results.csv",
+    ]
     macro_economic_collection = open_macro_economic_file()
-    asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
-    plot_stats(csv_list, macro_economic_collection=macro_economic_collection, asset_universe=asset_universe)
+    asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))
+    plot_stats(
+        csv_list,
+        macro_economic_collection=macro_economic_collection,
+        asset_universe=asset_universe,
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
-

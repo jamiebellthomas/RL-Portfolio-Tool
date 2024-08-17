@@ -2,6 +2,7 @@ from Collection import Collection
 import numpy as np
 import datetime
 
+
 class MacroEconomicCollection(Collection):
     def __init__(self, asset_list):
         super().__init__(asset_list=asset_list)
@@ -21,6 +22,6 @@ class MacroEconomicCollection(Collection):
 
         for ticker in macro_economic_tickers:
             asset = self.asset_lookup(ticker)
-            observation_space.append((asset.calculate_value(date)/100))
+            observation_space.append((asset.calculate_value(date) / 100))
 
         return np.array(observation_space)

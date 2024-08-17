@@ -1,2 +1,2 @@
 initial notes, no sign of over-fitting. We need to raise timesteps again, I'll run it over night
-Difference: Expanded to 7 features 
+Difference: Expanded to 7 features and expanded range to 2015

@@ -1,4 +1,4 @@
-file_path = "NASDAQ-List.txt"
+
 import yfinance as yf
 from Asset import Asset
 from AssetCollection import AssetCollection
@@ -7,21 +7,21 @@ import pandas as pd
 import numpy as np
 import pickle
 import datetime
-from drive_upload import upload
+file_path = "NASDAQ-List.txt"
 
-
-def extract_ticker(file_path: str) -> list: 
+def extract_ticker(file_path: str) -> list:
     """
     This function will extract the ticker symbols from a file containing all stocks listed on NASDAQ and return a list of them.
     Input: file_path (str) - the path to the file containing the ticker symbols
     Output: ticker_list (list) - a list of ticker symbols
     """
     ticker_list = []
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         for line in file:
-            first_word = line.split('|')[0]
+            first_word = line.split("|")[0]
             ticker_list.append(first_word)
     return ticker_list
+
 
 def extract_time_series(ticker: str) -> pd.DataFrame:
     """
@@ -33,9 +33,10 @@ def extract_time_series(ticker: str) -> pd.DataFrame:
     hist = stock.history(period="max", interval="1d")
     return hist
 
+
 def time_series_edit(hist: pd.DataFrame) -> np.array:
     """
-    This function will edit the time series data and handle all formatting 
+    This function will edit the time series data and handle all formatting
     Input: hist (pandas DataFrame) - the complete time series data for the given ticker symbol
     Output: np.array - the edited time series data
     """
@@ -43,7 +44,7 @@ def time_series_edit(hist: pd.DataFrame) -> np.array:
     hist = hist.dropna()
 
     # create a new column for average price, this is the average of the 'High' and 'Low' columns
-    hist.loc[:,"value"] = (hist["High"] + hist["Low"]) / 2
+    hist.loc[:, "value"] = (hist["High"] + hist["Low"]) / 2
 
     # edit the Date column so it only contains the date and not the time
     hist.index = hist.index.date
@@ -54,11 +55,12 @@ def time_series_edit(hist: pd.DataFrame) -> np.array:
 
     open_list = np.array(hist["Open"].tolist())
 
-    close_list = np.array(hist["Close"].tolist())  
+    close_list = np.array(hist["Close"].tolist())
 
-    volume_list = np.array(hist["Volume"].tolist()) 
+    volume_list = np.array(hist["Volume"].tolist())
 
     return index_list, value_list, open_list, close_list, volume_list
+
 
 def create_collection(ticker_list: list) -> AssetCollection:
     """
@@ -70,13 +72,14 @@ def create_collection(ticker_list: list) -> AssetCollection:
     asset_list = {}
     for ticker in ticker_list:
         hist = extract_time_series(ticker)
-        
+
         if hist.empty:
             continue
-        index_list,value_list, open_list, close_list, vol_list = time_series_edit(hist)
-        asset = Asset(ticker,index_list,value_list,open_list,close_list,vol_list)
+        index_list, value_list, open_list, close_list, vol_list = time_series_edit(hist)
+        asset = Asset(ticker, index_list, value_list, open_list, close_list, vol_list)
         asset_list[ticker] = asset
     return AssetCollection(asset_list)
+
 
 def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollection:
     """
@@ -90,17 +93,16 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
 
     # take all assets with atleast 20 years of data (20*252 trading days)
     for asset in asset_universe.asset_list.values():
-        if len(asset.index_list) >= 20*252:
+        if len(asset.index_list) >= 20 * 252:
             ticker_list.append(asset.ticker)
-    
+
     # collect every third ticker
     for i in range(0, len(ticker_list), 3):
         ticker = ticker_list[i]
         reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
 
-
-    
     return AssetCollection(reduced_asset_list)
+
 
 def main_create():
     """
@@ -110,9 +112,9 @@ def main_create():
     Input: None
     Output: None
     """
-    
-    main_filename = 'Collections/asset_universe.pkl'
-    reduced_filename = 'Collections/reduced_asset_universe.pkl'
+
+    main_filename = "Collections/asset_universe.pkl"
+    reduced_filename = "Collections/reduced_asset_universe.pkl"
     # First check to see if the file already exists, if so, delete it
     try:
         os.remove(main_filename)
@@ -124,30 +126,28 @@ def main_create():
     except FileNotFoundError:
         pass
 
-
     ticker_list = extract_ticker(file_path)
-    #for testing purposes, we will only use the first 5 tickers
+    # for testing purposes, we will only use the first 5 tickers
     ticker_list = ticker_list[:100]
     collection = create_collection(ticker_list)
     reduced_collection = create_reduced_collection(collection)
-    
 
     # Open the file with write-binary ('wb') mode and dump the object
-    with open(main_filename, 'wb') as file:
+    with open(main_filename, "wb") as file:
         pickle.dump(collection, file)
 
-    with open(reduced_filename, 'wb') as file:
+    with open(reduced_filename, "wb") as file:
         pickle.dump(reduced_collection, file)
-    
+
     # upload the file to Google Drive
 
-    #upload(main_filename,'Collections','asset_universe.pkl')
-    #upload(reduced_filename,'Collections','reduced_asset_universe.pkl')
+    # upload(main_filename,'Collections','asset_universe.pkl')
+    # upload(reduced_filename,'Collections','reduced_asset_universe.pkl')
 
 
 def extract_ticker_list_from_collection(asset_collection: AssetCollection) -> list:
     """
-    This function will extract the ticker symbols from a collection of assets. This is so I can keep track of what assets are 
+    This function will extract the ticker symbols from a collection of assets. This is so I can keep track of what assets are
     in the reduced universe
     Input: asset_collection (AssetCollection) - a collection of assets
     Output: ticker_list (list) - a list of ticker symbols
@@ -157,9 +157,12 @@ def extract_ticker_list_from_collection(asset_collection: AssetCollection) -> li
         ticker_list.append(asset)
 
     # export reduced list as a txt file with the current date in the name
-    with open(f"Collections/Reduced-Assets-{datetime.datetime.now().strftime('%Y-%m-%d')}.txt", 'w') as file:
+    with open(
+        f"Collections/Reduced-Assets-{datetime.datetime.now().strftime('%Y-%m-%d')}.txt",
+        "w",
+    ) as file:
         for ticker in ticker_list:
-            file.write(ticker + '\n')
+            file.write(ticker + "\n")
     print(len(ticker_list))
     return ticker_list
 
@@ -170,9 +173,10 @@ def read_collection(filename: str) -> AssetCollection:
     Input: filename (str) - the name of the file containing the collection
     Output: collection (Collection) - a collection of assets
     """
-    with open (filename, 'rb') as file:
+    with open(filename, "rb") as file:
         collection = pickle.load(file)
     return collection
+
 
 def main_read():
     """
@@ -181,24 +185,22 @@ def main_read():
     Input: None
     Output: None
     """
-    filename = 'Collections/asset_universe.pkl'
+    filename = "Collections/asset_universe.pkl"
     collection = read_collection(filename)
     # select 5 random items from collection.asset_list and plot them
     import random
+
     random_items = random.sample(collection.asset_list, 5)
     for item in random_items:
         item.plot_asset()
 
 
-    
-
 if __name__ == "__main__":
-    #main_create()
-    #main_read()
+    # main_create()
+    # main_read()
 
-    collection = read_collection('Collections/reduced_asset_universe.pkl')
-    #extract_ticker_list_from_collection(collection)
+    collection = read_collection("Collections/reduced_asset_universe.pkl")
+    # extract_ticker_list_from_collection(collection)
     asset = collection.asset_lookup("AYRO")
     asset.plot_asset()
     pass
-

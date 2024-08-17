@@ -1,5 +1,5 @@
 
-import numpy as np
+
 class Collection:
     def __init__(self, asset_list):
         self.asset_list = asset_list
