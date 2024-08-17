@@ -127,8 +127,7 @@ def main_create():
         pass
 
     ticker_list = extract_ticker(file_path)
-    # for testing purposes, we will only use the first 5 tickers
-    ticker_list = ticker_list[:100]
+
     collection = create_collection(ticker_list)
     reduced_collection = create_reduced_collection(collection)
 

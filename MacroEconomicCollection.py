@@ -1,13 +1,13 @@
 from Collection import Collection
 import numpy as np
 import datetime
-
+from functools import cache
 
 class MacroEconomicCollection(Collection):
     def __init__(self, asset_list):
         super().__init__(asset_list=asset_list)
         # Additional initialization for AssetCollection
-
+    @cache
     def get_observation(self, date: datetime.date) -> np.array:
         """
         This generates the observation space component of the macro economic data.

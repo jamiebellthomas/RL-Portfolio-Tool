@@ -1,3 +1,4 @@
+from functools import cache
 import plotly.graph_objects as go
 import Collection
 import datetime
@@ -65,7 +66,7 @@ class Asset:
         )
         # save the plot to a png file
         plot.write_image("Investigations/Value_Plots/" + self.ticker + ".png")
-
+    @cache
     def closest_date_match(self, date: datetime.date) -> int:
         """
         This function will find the closest date match in the index list to the given date.
@@ -83,7 +84,7 @@ class Asset:
             return pos
         else:
             return pos - 1
-
+    @cache
     def extract_subsection(
         self, start_date: datetime.date, end_date: datetime.date
     ) -> np.array:
@@ -151,7 +152,7 @@ class Asset:
         # now we can calculate the cumulative return but summation
         cum_return = np.cumsum(pct_change_arr)
         return cum_return
-
+    @cache
     def calculate_CAPM(
         self, macro_economic_collection: Collection, date: datetime.date, period: int
     ) -> float:
@@ -253,7 +254,7 @@ class Asset:
         # print("\n")
 
         return self.expected_return
-
+    @cache
     def calculate_illiquidity_ratio(self, date: datetime.date, period: int) -> float:
         """
         This function will calculate the Illiquidity Ratio for the asset.
@@ -291,7 +292,7 @@ class Asset:
             return self.illiquidity_ratio
         self.illiquidity_ratio = min(self.illiquidity_ratio, 1.0)
         return self.illiquidity_ratio
-
+    @cache
     def calculate_volatility(self, date: datetime.date, period: int) -> float:
         """
         This method will calculate the volatility of the asset over a given period.
@@ -318,7 +319,7 @@ class Asset:
         ):
             self.volatility = 0.0
         return self.volatility
-
+    @cache
     def calculate_linear_regression(self, date: datetime.date, period: int) -> float:
         """
         This method will calculate the linear regression of the asset over a given period.
@@ -365,7 +366,7 @@ class Asset:
 
     def GARCH():
         pass
-
+    @cache
     def calculate_value(self, date: datetime.date) -> float:
         """
         This function will calculate the value of the asset at a given date.
