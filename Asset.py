@@ -27,15 +27,18 @@ class Asset:
         self.start_date = index_list[0]
         self.end_date = index_list[-1]
         self.portfolio_weight = 0.0
-        self.expected_return = None
-        self.beta = None
-        self.illiquidity_ratio = None
-        self.ARMA_model = None
-        self.best_pq = None 
-        self.ARMA_model_aic = None
-        self.volatility = None
-        self.linear_regression_slope = None
-        self.linear_regression_intercept = None
+        self.expected_return = 0.0
+        self.beta = 0.0
+        self.illiquidity_ratio = 0.0
+        self.ARMA_model = 0.0
+        self.best_pq = 0.0
+        self.ARMA_model_aic = 0.0
+        self.volatility = 0.0
+        self.linear_regression_slope = 0.0
+        self.linear_regression_intercept = 0.0
+        self.pc = np.array([])
+        self.cr = np.array([])
+        self.risk_free_rate = 0.0
 
     def __str__(self):
         return self.ticker
@@ -93,7 +96,7 @@ class Asset:
         return value_sub_section, close_sub_section, open_sub_section, volume_sub_section, start_date_index, end_date_index
     
 
-    def pct_change(self,arr:np.array, periods=1):
+    def pct_change(self,arr:np.array, periods=1) -> np.array:
         """
         Calculate the percentage change between the current and a prior element in a numpy array.
         
@@ -111,10 +114,11 @@ class Asset:
         # remove first 'periods' elements as they are NaN
         pct_change_arr = pct_change_arr[periods:]
 
+
         
         return pct_change_arr
     
-    def cumulative_return(self, arr:np.array, periods=1):
+    def cumulative_return(self, arr:np.array, periods=1) -> np.array:
         """
         Calculate the cumulative return between the current and a prior element in a numpy array.
         
@@ -161,7 +165,7 @@ class Asset:
         risk_free_rate = macro_economic_collection.asset_lookup('DTB3')
         # convert the risk free rate to a decimal, the values are stored in a np.array so we need to extract self.value_list array and convert to a decimal
         risk_free_rate_at_time = risk_free_rate.value_list[risk_free_rate.closest_date_match(date)]
-        risk_free_rate_at_time = risk_free_rate_at_time / 100
+        self.risk_free_rate = risk_free_rate_at_time / 100
         #print("Risk Free Rate", risk_free_rate_at_time)
         
         # Now we need the percenrage change in the asset value over the period each day
@@ -215,7 +219,12 @@ class Asset:
 
 
 
-        self.expected_return = (risk_free_rate_at_time + self.beta * (expected_annual_market_return - risk_free_rate_at_time))
+        self.expected_return = (self.risk_free_rate + self.beta * (expected_annual_market_return - self.risk_free_rate))
+        if np.isnan(self.expected_return) or np.isinf(self.expected_return):
+            self.expected_return = 0.0
+            self.beta = 0.0
+            return self.expected_return
+            
 
         #print("Expected Return", self.expected_return)
         #print("Beta", self.beta)
@@ -277,6 +286,7 @@ class Asset:
             return self.volatility
         
         pct_change = self.pct_change(subsection, periods=1)
+        self.pc = pct_change
         # calculate the standard deviation of the subsection
         self.volatility = np.std(pct_change)
 
@@ -293,6 +303,7 @@ class Asset:
         # first we need the relevant subsection of the time series data
         subsection,_,_,_,_,_ = self.extract_subsection(start_date, date)
         pct_change = self.cumulative_return(subsection, periods=1)
+        self.cr = pct_change
         days = np.arange(0, len(pct_change))
         # if subsection is too short, then we cannot perform the linear regression calculation, set slope to 0 and return
         if(len(pct_change) < 5):
@@ -313,91 +324,8 @@ class Asset:
         return self.linear_regression_slope, self.linear_regression_intercept, pct_change
 
     
-    def stationarity_test(self, time_series: np.array) -> bool:
-        """
-        This function will ese the Augmented Dickey-Fuller (ADF) test to check if the series is stationary.
-        IM GOING TO LEAVE THE REST OF THE ARMA CALCS FOR NOW AS I MAY SWITCH TO A DIFFERNET MODEL, SO DONT WANT TO REFACTOR UNNECESSARILY
-        """
-        try:
-            result = adfuller(time_series)
-        except:
-            print(time_series)
-            return False
-        if result[1] > 0.05:
-            return False
-        else:
-            return True
-        
-    def differencing(self, time_series: pandas.Series) -> pandas.Series:
-        """
-        This function will difference the time series data.
-        """
-        log_differenced_time_series = (time_series).diff().dropna()
-
-        return log_differenced_time_series
-
-    def ARMA_model_select(self, time_series: pandas.Series, ar_term_limit: int, ma_term_limit: int) -> tuple:
-        """
-        This function will evaluate the p and q values for the ARMA model.
-        """
-        # generate tuples of p and q values
-        p_values = range(0, ar_term_limit+1)
-        q_values = range(0, ma_term_limit+1)
-        pq_values = list(itertools.product(p_values, q_values))
-        best_aic = np.inf
-        best_bic = np.inf
-        best_pq = None
-        best_model = None
-
-        for pq in pq_values:
-            try:
-                model = ARIMA(time_series, order=(pq[0], 0, pq[1]))
-                model_fit = model.fit()
-                aic = model_fit.aic
-                bic = model_fit.bic
-                if aic < best_aic:
-                    best_aic = aic
-                    best_pq = pq
-                    best_model = model_fit
-                if bic < best_bic:
-                    best_bic = bic
-            except:
-                continue
-        return best_pq, best_model, best_aic
-        
-    
-    
-    def ARMA(self, date: datetime.date, period: int, ar_term_limit: int, ma_term_limit: int) -> None:
-        """
-        This function will calculate the Autoregressive Moving Average (ARMA) model for the asset.
-        This model is used to forecast future values of the asset.
-        It is a combination of the Autoregressive (AR) and Moving Average (MA) model.
-        """
-        warnings.filterwarnings("ignore")
-        start_date = date - datetime.timedelta(days=round(period*365))
-        start_date = self.closest_date_match(self.time_series, start_date)
-
-        subsection = self.extract_subsection(self.time_series, 
-                                             start_date, 
-                                             self.closest_date_match(self.time_series, date))
-        
-        transformed_subsection = self.differencing(subsection['value'])
-        # if transformed_subsection is too short, then we cannot perform the ARMA model, set model to None and return
-        if(len(transformed_subsection) < 25):
-            self.ARMA_model = None
-            return 
-        if(not self.stationarity_test(transformed_subsection)):
-            # create an ARMA model where p,q = 0,0
-            self.best_pq = (0,0)
-            self.ARMA_model = ARIMA(transformed_subsection, order=(0,0,0))
-            self.ARMA_model = self.ARMA_model.fit()
-            self.ARMA_model_aic = self.ARMA_model.aic
-            return
-
-        # convert the time series data to a numpy array
-
-        self.best_pq, self.ARMA_model, self.ARMA_model_aic = self.ARMA_model_select(transformed_subsection, ar_term_limit, ma_term_limit)
-
+    def ARMA():
+        pass
 
     def GARCH():
         pass
@@ -455,44 +383,6 @@ class Asset:
         # check if any values in the observation are NaN, if so, set them to zero
         observation = np.array(observation)
         observation = np.nan_to_num(observation, nan=0.0, posinf=1.0, neginf=0.0)
-
-
-        
-     
-        """
-        self.ARMA(date, hyperparameters["ARMA_period"], hyperparameters["ARMA_ar_term_limit"], hyperparameters["ARMA_ma_term_limit"])
-
-        if(self.ARMA_model == None):
-            for i in range(1, ar_term_limit+1):
-                observation.append(0.0)
-            for i in range(1, ma_term_limit+1):
-                observation.append(0.0)
-            observation.append(0.0)
-            return np.array(observation)
-
-        # extract ARMA coefficients
-        ARMA_params = self.ARMA_model.params
-        for i in range(1, ar_term_limit+1):
-            coefficient = "ar.L"+str(i)
-            if(coefficient in ARMA_params.keys().tolist()):
-                observation.append(ARMA_params.get(coefficient))
-            else:
-                observation.append(0.0)
-        for i in range(1, ma_term_limit+1):
-            coefficient = "ma.L"+str(i)
-            if(coefficient in ARMA_params.keys().tolist()):
-                observation.append(ARMA_params.get(coefficient))
-            else:
-                observation.append(0.0)
-        observation.append(ARMA_params.get("sigma2"))
-
-        try: 
-            np.array(observation)
-        except:
-            print(observation)
-        
-        """
-
 
 
 
