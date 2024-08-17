@@ -91,7 +91,7 @@ def generate_macro_economic_file():
     with open(file, 'wb') as f:
         pickle.dump(macro_economic_factors, f)
 
-    upload(file,'Collections','macro_economic_factors.pkl')
+    #upload(file,'Collections','macro_economic_factors.pkl')
 
 
 def plot_pickle_data():

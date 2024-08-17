@@ -86,10 +86,19 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
     Output: reduced_collection (AssetCollection) - the reduced asset universe
     """
     reduced_asset_list = {}
-    for index, ticker in enumerate(asset_universe.asset_list.keys()):
-        if index % 10 == 0:
-            print(f"Processing asset {index} of {len(asset_universe.asset_list.keys())}")
-            reduced_asset_list[ticker] = asset_universe.asset_list.get(ticker)
+    ticker_list = []
+
+    # take all assets with atleast 20 years of data (20*252 trading days)
+    for asset in asset_universe.asset_list.values():
+        if len(asset.index_list) >= 20*252:
+            ticker_list.append(asset.ticker)
+    
+    # collect every third ticker
+    for i in range(0, len(ticker_list), 3):
+        ticker = ticker_list[i]
+        reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
+
+
     
     return AssetCollection(reduced_asset_list)
 
@@ -117,8 +126,8 @@ def main_create():
 
 
     ticker_list = extract_ticker(file_path)
-    # for testing purposes, we will only use the first 5 tickers
-    #ticker_list = ticker_list[:100]
+    #for testing purposes, we will only use the first 5 tickers
+    ticker_list = ticker_list[:100]
     collection = create_collection(ticker_list)
     reduced_collection = create_reduced_collection(collection)
     
@@ -132,8 +141,8 @@ def main_create():
     
     # upload the file to Google Drive
 
-    upload(main_filename,'Collections','asset_universe.pkl')
-    upload(reduced_filename,'Collections','reduced_asset_universe.pkl')
+    #upload(main_filename,'Collections','asset_universe.pkl')
+    #upload(reduced_filename,'Collections','reduced_asset_universe.pkl')
 
 
 def extract_ticker_list_from_collection(asset_collection: AssetCollection) -> list:
@@ -144,8 +153,8 @@ def extract_ticker_list_from_collection(asset_collection: AssetCollection) -> li
     Output: ticker_list (list) - a list of ticker symbols
     """
     ticker_list = []
-    for asset in asset_collection.asset_list:
-        ticker_list.append(asset.ticker)
+    for asset in asset_collection.asset_list.keys():
+        ticker_list.append(asset)
 
     # export reduced list as a txt file with the current date in the name
     with open(f"Collections/Reduced-Assets-{datetime.datetime.now().strftime('%Y-%m-%d')}.txt", 'w') as file:
@@ -184,12 +193,12 @@ def main_read():
     
 
 if __name__ == "__main__":
-    main_create()
+    #main_create()
     #main_read()
 
-    #collection = read_collection('Collections/reduced_asset_universe.pkl')
+    collection = read_collection('Collections/reduced_asset_universe.pkl')
     #extract_ticker_list_from_collection(collection)
-    #asset = collection.asset_lookup("ABVX")
-    #asset.plot_asset()
+    asset = collection.asset_lookup("AYRO")
+    asset.plot_asset()
     pass
 
