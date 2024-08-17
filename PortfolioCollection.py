@@ -7,7 +7,15 @@ class PortfolioCollection(Collection):
     def __init__(self, asset_list):
         super().__init__(asset_list=asset_list)
         # Additional initialization for AssetCollection
-        self.portfolio_value = 0
+        self.portfolio_value = 0.0
+        self.expected_return = 0.0
+        self.portdolio_std = 0.0
+        self.returns_array = np.array([])
+        self.weights_array = np.array([])
+        self.expected_returns_array = np.array([])
+        self.sharpe_ratio = 0.0
+        self.risk_free_rate = 0.0
+
 
 
     """
@@ -51,7 +59,7 @@ class PortfolioCollection(Collection):
 
         return np.array([roi])
 
-        pass
+    
 
     def calculate_portfolio_value(self, old_date: datetime.date, new_date: datetime.date) -> float:
         """
@@ -61,6 +69,7 @@ class PortfolioCollection(Collection):
         # Precompute old and new prices for all assets
         old_prices = np.array([asset.calculate_value(old_date) for asset in self.asset_list.values()])
         new_prices = np.array([asset.calculate_value(new_date) for asset in self.asset_list.values()])
+        
 
         # Calculate the old investment values
         old_investment_values = self.portfolio_value * np.array([asset.portfolio_weight for asset in self.asset_list.values()])
@@ -71,13 +80,90 @@ class PortfolioCollection(Collection):
         # Calculate the new portfolio value
         new_portfolio_value = np.sum(new_investment_values)
 
+
+        returns_list = []
+        weights_list = []
+        expected_returns_list = []
+
         # Update the relative weightings of all assets in the portfolio
         for i, asset in enumerate(self.asset_list.values()):
             asset.portfolio_weight = new_investment_values[i] / new_portfolio_value
 
+            returns_list.append(asset.pc)
+            weights_list.append(asset.portfolio_weight)
+            expected_returns_list.append(asset.expected_return)
+            self.risk_free_rate = max(asset.risk_free_rate, self.risk_free_rate)
+
+        
+        self.returns_array = np.column_stack(returns_list)
+        self.weights_array = np.array(weights_list)
+        self.expected_returns_array = np.array(expected_returns_list)
+        # print the size of returns array
+        #print(self.returns_array.shape)
+        #print(self.weights_array.shape)
+        #print(self.expected_returns_array.shape)
+
         self.portfolio_value = new_portfolio_value
+        self.calculate_expected_return()
+        self.calculate_portfolio_returns_std()
+        self.calculate_sharpe_ratio()
 
         return self.portfolio_value
+    
+    def calculate_expected_return(self) -> None:
+        """
+        This method will calculate the expected return of the portfolio over a given period.
+        This will be calculated as the weighted average of the expected returns of the assets in the portfolio.
+        """
+        
+        # THIS IS WRONG. SHARPE RATIO SHOULD BE EVALUATED WITH ACTUAL RETURNS, NOT EXPECTED RETURNS
+        # I DONT KNOW HOW BADLY THIS WILL AFFECT THE MODEL BUT IT IS A MISTAKE
+        # actually it may not be a mistake: 
+        """
+        Reward Functions: It’s common to use expected returns as part of the reward function to guide 
+        the learning algorithm towards strategies that are predicted to yield higher returns. 
+        This is because RL models are inherently predictive and forward-looking, making decisions 
+        based on the expected outcomes of actions taken in an environment. However, it’s important 
+        to note that the expected returns used in the reward function are not the same as the actual 
+        returns that the model will experience in the environment. The actual returns will depend on 
+        the realized outcomes of the actions taken by the model, which may differ from the expected 
+        outcomes due to randomness in the environment, model errors, or other factors.
+
+        So Sharpe Ratio relating to actual returns, is more of a performance metric than a reward function(?)
+        """
+
+        self.expected_return = np.dot(self.weights_array, self.expected_returns_array)
+    
+
+        
+
+
+    
+    def calculate_portfolio_returns_std(self) -> None:
+        """
+        This method will calculate the standard deviation of the returns of the portfolio over a given period.
+        This will be calculated as the weighted average of the standard deviations of the returns of the assets in the portfolio.
+        """
+        # Calculate the standard deviation of the returns of the portfolio
+        covariance = np.cov(self.returns_array, rowvar=False)
+        contribution = np.dot(covariance, self.weights_array)
+        varience = np.dot(self.weights_array, contribution)
+        
+        self.portfolio_std = np.sqrt(varience)
+        # Annualise the standard deviation (as expected returns are annualised in CAPM calculation)
+        self.portfolio_std = self.portfolio_std * np.sqrt(252)
+
+    def calculate_sharpe_ratio(self) -> None:
+        """
+        This method will calculate the Sharpe ratio of the portfolio.
+        This will be calculated as the ratio of the expected return of the portfolio to the standard deviation of the returns of the portfolio.
+        """
+        self.sharpe_ratio = (self.expected_return - self.risk_free_rate) / self.portfolio_std
+
+        #print("Portfolio Value:", self.portfolio_value)
+        #print("Expected Return:", self.expected_return)
+        #print("Portfolio Standard Deviation:", self.portfolio_std)
+        #print("Risk Free Rate:", self.risk_free_rate)
 
 
 

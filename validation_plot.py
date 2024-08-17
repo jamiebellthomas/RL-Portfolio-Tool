@@ -50,7 +50,7 @@ def extract_version_number(csv: str) -> str:
 
 
 def main():
-    csv_list = ["Validation/v3/results.csv", "Validation/v4/results.csv"]
+    csv_list = ["Validation/v3/results.csv", "Validation/v4/results.csv", "Validation/v5/results.csv"]
     macro_economic_collection = open_macro_economic_file()
     asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
     plot_stats(csv_list, macro_economic_collection=macro_economic_collection, asset_universe=asset_universe)

@@ -22,7 +22,7 @@ def plot_linear_regression(asset: Asset, date: datetime.date) -> None:
     
     # plot the linear regression model
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=x, y=pct_change, mode='lines+markers', name="Close Price"))
+    fig.add_trace(go.Scatter(x=x, y=pct_change, mode='lines+markers', name="ROI from t(0)"))
     fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name="Linear Regression Model"))
     fig.update_layout(title='Linear Regression Model', xaxis_title='Time Step', yaxis_title='Cumalative Pct Change from t(0)')
     fig.write_image("Investigations/linear_regression/" + asset.ticker + "_linear_regression.png")

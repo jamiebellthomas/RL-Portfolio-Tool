@@ -10,6 +10,7 @@
 
 from stable_baselines3 import PPO
 from PortfolioEnv import PortfolioEnv
+from PortfolioCollection import PortfolioCollection
 import pickle
 import datetime
 import pandas as pd
@@ -25,13 +26,16 @@ def validate(model_path: str, asset_universe: AssetCollection, macro_economic_fa
     """
     model_date = extract_model_date(model_path) 
 
-    #hyperparameters_dict = move_hyperparameters_to_logs(model_path)
-    # create hyperparameters.txt file in the validation directory
-    os.makedirs("Validation/"+model_date, exist_ok=True)
+    if(create_folder):
+        model_folder = "Logs/"+model_date
 
-    #with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
-    #    for key, value in hyperparameters_dict.items():
-    #        f.write(key+":"+value+"\n")
+        hyperparameters_dict = move_hyperparameters_to_logs(model_folder)
+        # create hyperparameters.txt file in the validation directory
+        os.makedirs("Validation/"+model_date, exist_ok=True)
+
+        with open("Validation/"+model_date+"/hyperparameters.txt", "w") as f:
+            for key, value in hyperparameters_dict.items():
+                f.write(key+":"+value+"\n")
 
 
     
@@ -74,8 +78,10 @@ def validate(model_path: str, asset_universe: AssetCollection, macro_economic_fa
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, truncated, info = env.step(action)
         weightings = extract_asset_weightings(env.asset_universe)
-        rewards.append(reward)
+        rewards.append(env.roi)
         step += 1
+        if(step % 100 == 0):
+            print("Step: ", step)
         #print("Step: ", step)
         #print("Date", env.current_date)
         #print("Reward: ", reward)
@@ -111,26 +117,41 @@ def roi_asset_universe(asset_universe: AssetCollection, start_date: datetime.dat
     """
     The method i'll go for here is summing the values of all stocks in the asset universe, 
     and then calculating the percentage change in value relative to the initial value
+
+    UPDATE: this has to be change in cumulative ROI each step not absolute price, otherwise large assets dominate the smaller ones
+    To solve this I am going to create a new portfolio object and add all the assets to it, and invest equal amounts in each asset
     """
+    # create a new portfolio object
+    portfolio = PortfolioCollection(asset_list=asset_universe.asset_list)
+    # invest equal amounts in each asset
+    equal_weight = 1/len(portfolio.asset_list)
+    for asset in portfolio.asset_list.values():
+        asset.portfolio_weight = equal_weight
+    
+    portfolio.portfolio_value = 1
+
     # make a list of all values between the start and end date
     values = []
+    prev_date = None
     for date in pd.date_range(start=start_date, end=end_date):
         # convert date to datetime.date
         date = date.date()
-        value = 0
-        for asset in asset_universe.asset_list.values():
-            value += asset.calculate_value(date)
-        values.append(value)
-
+        prev_date = date - datetime.timedelta(days=1)
+        
+        values.append(portfolio.calculate_portfolio_value(prev_date,date))
+    
+    # now we need to calculate the ROI for each time step
     initial_value = values[0]
-
-    # for each value in the list calculate the return on investment
     roi = []
     for value in values:
         roi.append((value - initial_value) / initial_value)
-
-    return pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
-
+    
+    # create a dataframe with the ROI values
+    results = pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
+    # add the values as column
+    results["Value"] = values
+    # return the dataframe
+    return results
 
 
     
@@ -198,7 +219,11 @@ def nasdaq_roi(macroeconomic_collection: AssetCollection, start_date: datetime.d
     for value in values:
         roi.append((value - initial_value) / initial_value)
 
-    return pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
+    results = pd.DataFrame(data=roi, index=pd.date_range(start=start_date, end=end_date), columns=["ROI"])
+    # add the values as column
+    results["Value"] = values
+
+    return results
 
 def move_hyperparameters_to_logs(model_path: str):
     """
@@ -288,7 +313,7 @@ def validate_loop(model_folder:str):
     for model_file in model_files:
         model_path = os.path.join(model_folder, model_file)
         model_iteration = extract_model_iteration(model_file)
-        if(model_iteration % 32768 == 0):
+        if(model_iteration % 16384 == 0):
             results = validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors, create_folder=False)
             # save the results to a csv file
             results.to_csv("Validation/"+model_date+"_comparison/"+str(model_iteration)+"_results.csv")
@@ -319,6 +344,44 @@ def extract_model_iteration(model_path: str) -> int:
     """
     iteration_number = model_path.split("_")
     return int(iteration_number[1])
+
+def sense_check(asset_universe:AssetCollection):
+    """
+    This function compares the first and last value of each asset in the validation period and counts the number of winners and losers
+    """
+    latest_date = extract_latest_date(asset_universe)
+    winners = 0
+    losers = 0
+    net_change = 0
+    loser_record = {}
+    winner_record = {}
+
+    for asset in asset_universe.asset_list.values():
+        initial_value = asset.calculate_value(hyperparameters["initial_validation_date"])
+        final_value = asset.calculate_value(latest_date)
+        net_change += (final_value - initial_value)
+        if final_value > initial_value:
+            winners += 1
+            winner_record[asset.ticker] = final_value - initial_value
+        else:
+            losers += 1
+            loser_record[asset.ticker] = final_value - initial_value
+    print("Winners: ", winners)
+    print("Loosers: ", losers)
+    print("Net Change: ", net_change)
+    # sort the loser record by value (smaller losses first)
+    loser_record = dict(sorted(loser_record.items(), key=lambda item: item[1]))
+    # sort the winner record by value (larger wins first)
+    winner_record = dict(sorted(winner_record.items(), key=lambda item: item[1], reverse=True))
+    # print the top 10 of each
+    print("Top 10 Losers: ")
+    for key, value in list(loser_record.items())[:10]:
+        print(key, value)
+    print("Top 10 Winners: ")
+    for key, value in list(winner_record.items())[:10]:
+        print(key, value)
+
+
         
     
 
@@ -328,12 +391,46 @@ if __name__ == "__main__":
     asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
     macro_economic_factors = pickle.load(open('Collections/macro_economic_factors.pkl', 'rb'))
 
-    model_path = "Logs/2024-08-14_15-33-56/model_327680_steps.zip"
+    model_path = "Logs/2024-08-16_13-06-40/model_98304_steps.zip"
 
-    #validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors, create_folder=True)
-    validate_loop("Logs/2024-08-14_15-33-56")
+    
+    #sense_check(asset_universe)
+
+
+    validate(model_path=model_path, asset_universe=asset_universe, macro_economic_factors=macro_economic_factors, create_folder=True)
+    #validate_loop("Logs/2024-08-16_13-06-40")
 
     #analyse_validation_results("v4", asset_universe)
+
+    """
+    # playing around with plots
+    latest_date = extract_latest_date(asset_universe)
+    print("Latest Date: ", latest_date)
+    roi_df = roi_asset_universe(asset_universe, hyperparameters["initial_validation_date"], latest_date)
+    # Extract the rewards from the results dataframe
+    roi = roi_df["ROI"]
+    # set roi index to datetime.date
+    roi.index = pd.to_datetime(roi.index)
+
+
+    # read in the results dataframe
+    results_df = pd.read_csv("Validation/2024-08-16_13-06-40/results.csv")
+    # set the index to the tickers
+    results_df.set_index(results_df.columns[0], inplace=True)
+    # extract the Reward Row
+    rewards = results_df.loc["Reward"]
+
+
+    # plot the rewards against the time steps 
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=results_df.columns, y=rewards, mode='lines+markers', name="Portfolio ROI"))
+    fig.add_trace(go.Scatter(x=results_df.columns, y=roi, mode='lines+markers', name="Asset Universe ROI"))
+    fig.update_layout(title='Return on Investment vs Time Step', xaxis_title='Time Step', yaxis_title='ROI')
+    fig.write_image("Validation/2024-08-16_13-06-40/long-term-rewards.png")
+    """
+    
+
+
 
 
 

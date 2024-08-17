@@ -98,8 +98,8 @@ def plot_volatility(asset: Asset, date: datetime.date, period: int):
 
 if __name__ == "__main__":
     # load the asset universe
-    asset_universe = pickle.load(open('Collections/reduced_asset_universe.pkl', 'rb'))
-    asset = asset_universe.asset_lookup("AACG")
+    asset_universe = pickle.load(open('Collections/asset_universe.pkl', 'rb'))
+    asset = asset_universe.asset_lookup("AAPL")
     start_date = datetime.date(2024, 7, 1)
     plot_volatility(asset, start_date, hyperparameters["volatility_period"])
         

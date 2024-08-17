@@ -63,16 +63,12 @@ class PortfolioEnv(gym.Env):
         # Read in hyper parameters
         self.CAPM_period = hyperparameters["CAPM_period"]
         self.illiquidity_ratio_period = hyperparameters["illiquidity_ratio_period"]
-        self.ARMA_period = hyperparameters["ARMA_period"]
         self.initial_balance = hyperparameters["initial_balance"]
-        #self.max_portfolio_size = hyperparameters["max_portfolio_size"]
         self.max_steps = hyperparameters["max_steps"]
         self.transaction_cost = hyperparameters["transaction_cost"]
         self.asset_feature_count = hyperparameters["asset_feature_count"]
         self.macro_economic_feature_count = hyperparameters["macro_economic_feature_count"]
         self.portfolio_status_feature_count = hyperparameters["portfolio_status_feature_count"]
-        self.ar_term_limit = hyperparameters["ARMA_ar_term_limit"]
-        self.ma_term_limit = hyperparameters["ARMA_ma_term_limit"]
         self.episode_length = hyperparameters["episode_length"]
         self.ROI_cutoff = hyperparameters["ROI_cutoff"]
         self.n_envs = hyperparameters["n_envs"]
@@ -85,6 +81,7 @@ class PortfolioEnv(gym.Env):
         self.portfolio.portfolio_value = self.portfolio_value
         self.universe_size = len(self.asset_universe.asset_list)
         self.current_observation = None
+        self.roi = 0.0
 
 
         # Define the observation space
@@ -122,6 +119,7 @@ class PortfolioEnv(gym.Env):
         self.portfolio_value = self.initial_balance
         self.portfolio = PortfolioCollection(asset_list={})
         self.portfolio.portfolio_value = self.portfolio_value
+        self.roi = 0.0
 
 
         obs = self._next_observation(self.initial_date)
@@ -227,7 +225,7 @@ class PortfolioEnv(gym.Env):
         new_asset_list = {}
         for asset in self.asset_universe.asset_list.values():
             if asset.portfolio_weight > 0.0:
-                new_asset_list[asset.ticker] = asset
+                new_asset_list[asset.ticker] = asset 
         self.portfolio.asset_list = new_asset_list
 
         #STEP 3: Calculate the new portfolio value at the next time step
@@ -235,12 +233,12 @@ class PortfolioEnv(gym.Env):
         self.portfolio_value = new_portfolio_value
 
         #STEP 4: Calculate the REWARD at the next time step (current just the ROI)
-        roi = ((new_portfolio_value - self.initial_balance) / self.initial_balance)
-        if(roi < self.ROI_cutoff ):
+        self.roi = ((new_portfolio_value - self.initial_balance) / self.initial_balance)
+        if(self.roi < self.ROI_cutoff ):
             terminated = True
         
-        if(self.current_step % hyperparameters["timesteps_per_save"] == 0):
-            print("Model Saved (", self.current_step, "steps)")
+        if(self.current_step % hyperparameters["timesteps_per_save"] == 0 and self.current_step != 0):
+            print("Model Saved (", self.current_step, "steps )")
 
         #STEP 5: Update the environment variables
         self.current_date = next_date
@@ -260,7 +258,7 @@ class PortfolioEnv(gym.Env):
         #STEP 8: Check if the episode is truncated (not sure how this works yet)
         truncated = False
 
-        reward = roi
+        reward = self.portfolio.sharpe_ratio
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 
