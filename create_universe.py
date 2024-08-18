@@ -200,6 +200,6 @@ if __name__ == "__main__":
 
     collection = read_collection("Collections/reduced_asset_universe.pkl")
     # extract_ticker_list_from_collection(collection)
-    asset = collection.asset_lookup("AYRO")
+    asset = collection.asset_lookup("CRIS")
     asset.plot_asset()
     pass

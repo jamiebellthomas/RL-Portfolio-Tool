@@ -1,3 +1,10 @@
 Reduced asset universe yielded fantastic results. Actually managed to beat average market performance which is awesome. Not much more to say here other than we'll continue with a reduced asset universe from here on out
 Reward function :ROI
-Only 4 features Systematically
+Only 4 features 
+
++ original v4 notes
+
+Only difference here was I quadrupled the number of time steps the model ran for, and it actually significantly hurt performance. This is likely due to overfitting (atleast that's what i'll put in the report) I'll look into this futher
+(went from 81920 to 327680)
+Reward function :ROI
+Only 4 features here, CAPM, Beta, Old weighting, and illquidity ratio

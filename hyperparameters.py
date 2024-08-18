@@ -28,7 +28,7 @@ hyperparameters = {
     # Date the model will start training from
     "initial_training_date": datetime.date(2015, 1, 1),
     # Date the model will start validating from (probably shouldn't change this)
-    "initial_validation_date": datetime.date(2023, 1, 1),
+    "initial_validation_date": datetime.date(2010, 1, 1),
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
     # PPO hyperparameters
