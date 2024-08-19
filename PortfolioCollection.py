@@ -2,12 +2,12 @@ from Collection import Collection
 import numpy as np
 import datetime
 from numba import njit
+from hyperparameters import hyperparameters
 
 class PortfolioCollection(Collection):
-    def __init__(self, asset_list, reward_function: str):
+    def __init__(self, asset_list: dict):
         super().__init__(asset_list=asset_list)
         # Additional initialization for AssetCollection
-        self.reward_function = reward_function
         self.portfolio_value = 0.0
         self.expected_return = 0.0
         self.portdolio_std = 0.0
@@ -108,16 +108,15 @@ class PortfolioCollection(Collection):
 
         self.portfolio_value = new_portfolio_value
         self.calculate_expected_return()
-        if(self.reward_function == "sharpe"):
-            self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
-            self.calculate_sharpe_ratio()
-            self.reward = self.sharpe_ratio
-        
-        if(self.reward_function == "treynor"):
-            self.betas_array = np.array(betas_list)
-            self.portfolio_beta = PortfolioCollection.calculate_portfolio_beta(self.betas_array, self.weights_array)
-            self.calculate_treynor_ratio()
-            self.reward = self.treynor_ratio
+        self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
+        self.calculate_sharpe_ratio()
+
+        self.betas_array = np.array(betas_list)
+        self.portfolio_beta = PortfolioCollection.calculate_portfolio_beta(self.betas_array, self.weights_array)
+        self.calculate_treynor_ratio()
+
+
+        self.reward = (hyperparameters["treynor_weight"] * self.treynor_ratio) + (hyperparameters["sharpe_weight"] * self.sharpe_ratio)
 
         return self.portfolio_value
 

@@ -462,9 +462,9 @@ if __name__ == "__main__":
 
     # sense_check(asset_universe)
     
-    validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
+    #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
-    #validate_loop("Logs/2024-08-19_11-50-34")
+    validate_loop("Logs/2024-08-19_15-25-00")
 
     # analyse_validation_results("v4", asset_universe)
 

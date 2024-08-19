@@ -62,8 +62,7 @@ class PortfolioEnv(gym.Env):
         # Load in the asset universe and macro economic data, and create the portfolio
         self.asset_universe = asset_universe
         self.macro_economic_data = macro_economic_data
-        self.portfolio = PortfolioCollection(asset_list={}, 
-                                             reward_function = hyperparameters["reward_function"])
+        self.portfolio = PortfolioCollection(asset_list={})
 
         # Read in hyper parameters
         self.CAPM_period = hyperparameters["CAPM_period"]
@@ -147,8 +146,7 @@ class PortfolioEnv(gym.Env):
 
         self.current_date = self.initial_date
         self.portfolio_value = self.initial_balance
-        self.portfolio = PortfolioCollection(asset_list={}, 
-                                             reward_function = hyperparameters["reward_function"])
+        self.portfolio = PortfolioCollection(asset_list={})
         self.portfolio.portfolio_value = self.portfolio_value
         self.roi = 0.0
 
@@ -293,7 +291,8 @@ class PortfolioEnv(gym.Env):
         # STEP 8: Check if the episode is truncated (not sure how this works yet)
         truncated = False
 
-        reward = self.portfolio.reward
+
+        reward = self.portfolio.reward + (hyperparameters["roi_weight"] * self.roi)
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 
