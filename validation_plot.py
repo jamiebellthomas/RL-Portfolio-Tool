@@ -42,7 +42,7 @@ def plot_stats(
         rewards_sum[version] = rewards.sum()
         # plot the rewards against the time steps
         fig.add_trace(
-            go.Scatter(x=dates, y=rewards, mode="lines+markers", name=version)
+            go.Scatter(x=dates, y=rewards, mode="lines", name=version)
         )
         start_date = datetime.strptime(dates[0], "%Y-%m-%d")
         end_date = datetime.strptime(dates[-1], "%Y-%m-%d")
@@ -52,7 +52,7 @@ def plot_stats(
         go.Scatter(
             x=market_roi.index,
             y=market_roi["ROI"],
-            mode="lines+markers",
+            mode="lines",
             name="Market Average",
         )
     )
@@ -113,6 +113,7 @@ def main():
         "Validation/v5/results.csv",
         "Validation/v6/results.csv",
         "Validation/v7/results.csv",
+        "Validation/v8/results.csv",
     ]
     macro_economic_collection = open_macro_economic_file()
     asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))
