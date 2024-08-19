@@ -7,6 +7,7 @@ class MacroEconomicCollection(Collection):
     def __init__(self, asset_list):
         super().__init__(asset_list=asset_list)
         # Additional initialization for AssetCollection
+        
     @cache
     def get_observation(self, date: datetime.date) -> np.array:
         """
@@ -16,12 +17,12 @@ class MacroEconomicCollection(Collection):
         """
 
         # Let's get the current unemployment rate, interest rate, 3 month treasury rate, and 10 year treasury rate
-        observation_space = []
-
         macro_economic_tickers = ["UNRATE", "FEDFUNDS", "DTB3", "DGS10"]
 
-        for ticker in macro_economic_tickers:
-            asset = self.asset_lookup(ticker)
-            observation_space.append((asset.calculate_value(date) / 100))
-
+        observation_space = [
+            self.asset_lookup(ticker).calculate_value(date) / 100
+            for ticker in macro_economic_tickers
+        ]
         return np.array(observation_space)
+
+

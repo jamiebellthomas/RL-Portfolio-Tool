@@ -1,4 +1,6 @@
 from functools import cache
+from numba import njit
+import math
 import plotly.graph_objects as go
 import Collection
 import datetime
@@ -11,7 +13,8 @@ Asset class
 Ticker is the ticker symbol of the asset e.g Apple is AAPL
 time_series is a data frame containing the time series data for the asset. Time series increment as you go down the rows
 """
-
+neg_inf = float("-inf")
+pos_inf = float("inf")
 
 class Asset:
     def __init__(
@@ -66,6 +69,7 @@ class Asset:
         )
         # save the plot to a png file
         plot.write_image("Investigations/Value_Plots/" + self.ticker + ".png")
+        
     @cache
     def closest_date_match(self, date: datetime.date) -> int:
         """
@@ -84,6 +88,7 @@ class Asset:
             return pos
         else:
             return pos - 1
+        
     @cache
     def extract_subsection(
         self, start_date: datetime.date, end_date: datetime.date
@@ -116,8 +121,11 @@ class Asset:
             start_date_index,
             end_date_index,
         )
-
-    def pct_change(self, arr: np.array, periods=1) -> np.array:
+    
+    
+    @staticmethod
+    @njit(nogil=True)
+    def pct_change(arr: np.array, periods=1) -> np.array:
         """
         Calculate the percentage change between the current and a prior element in a numpy array.
 
@@ -136,8 +144,9 @@ class Asset:
         pct_change_arr = pct_change_arr[periods:]
 
         return pct_change_arr
-
-    def cumulative_return(self, arr: np.array, periods=1) -> np.array:
+    
+    @staticmethod
+    def cumulative_return(arr: np.array, periods=1) -> np.array:
         """
         Calculate the cumulative return between the current and a prior element in a numpy array.
 
@@ -148,10 +157,11 @@ class Asset:
         Returns:
         numpy.ndarray: Array of cumulative returns.
         """
-        pct_change_arr = self.pct_change(arr, periods)
+        pct_change_arr = Asset.pct_change(arr, periods)
         # now we can calculate the cumulative return but summation
         cum_return = np.cumsum(pct_change_arr)
         return cum_return
+    
     @cache
     def calculate_CAPM(
         self, macro_economic_collection: Collection, date: datetime.date, period: int
@@ -194,13 +204,13 @@ class Asset:
         # print("Risk Free Rate", risk_free_rate_at_time)
 
         # Now we need the percenrage change in the asset value over the period each day
-        asset_return = self.pct_change(subsection, periods=1)
+        asset_return = Asset.pct_change(subsection, periods=1)
         # print("Asset Return Length", len(subsection))
 
         # We need to make a minimum number of points threshold for the variance and covariance calculations
         # Also maybe look at varience/co-variance over different periods (e.g. 1 month, 3 months, 1 year)
 
-        market_return = self.pct_change(sp500_subsection, periods=1)
+        market_return = Asset.pct_change(sp500_subsection, periods=1)
         # print("Market Return Length", len(sp500_subsection))
 
         if len(asset_return) < 25 or len(market_return) < 25:
@@ -254,6 +264,7 @@ class Asset:
         # print("\n")
 
         return self.expected_return
+    
     @cache
     def calculate_illiquidity_ratio(self, date: datetime.date, period: int) -> float:
         """
@@ -292,6 +303,7 @@ class Asset:
             return self.illiquidity_ratio
         self.illiquidity_ratio = min(self.illiquidity_ratio, 1.0)
         return self.illiquidity_ratio
+    
     @cache
     def calculate_volatility(self, date: datetime.date, period: int) -> float:
         """
@@ -307,7 +319,7 @@ class Asset:
             self.volatility = 0.0
             return self.volatility
 
-        pct_change = self.pct_change(subsection, periods=1)
+        pct_change = Asset.pct_change(subsection, periods=1)
         self.pc = pct_change
         # calculate the standard deviation of the subsection
         self.volatility = np.std(pct_change)
@@ -319,6 +331,7 @@ class Asset:
         ):
             self.volatility = 0.0
         return self.volatility
+    
     @cache
     def calculate_linear_regression(self, date: datetime.date, period: int) -> float:
         """
@@ -328,7 +341,7 @@ class Asset:
         start_date = date - datetime.timedelta(days=round(period * 365))
         # first we need the relevant subsection of the time series data
         subsection, _, _, _, _, _ = self.extract_subsection(start_date, date)
-        pct_change = self.cumulative_return(subsection, periods=1)
+        pct_change = Asset.cumulative_return(subsection, periods=1)
         self.cr = pct_change
         days = np.arange(0, len(pct_change))
         # if subsection is too short, then we cannot perform the linear regression calculation, set slope to 0 and return
@@ -361,11 +374,12 @@ class Asset:
             pct_change,
         )
 
-    def ARMA():
+    def ARMA(self):
         pass
 
-    def GARCH():
+    def GARCH(self):
         pass
+
     @cache
     def calculate_value(self, date: datetime.date) -> float:
         """
@@ -377,6 +391,18 @@ class Asset:
         closest_date_index = self.closest_date_match(date)
 
         return self.value_list[closest_date_index]
+    
+    @staticmethod
+    def nan_to_num(num) -> float:
+        if math.isnan(num):
+            return 0.0
+        elif num == pos_inf:
+            return 1.0
+        elif num == neg_inf:
+           return 0.0
+        return num
+
+
 
     def get_observation(
         self, macro_economic_collection: Collection, date: datetime.date
@@ -386,8 +412,6 @@ class Asset:
         It will combine all calculated features above into a single row.
         """
 
-        # create a list to store the observation
-        observation = []
 
         # If date is before the start date of the time series data, return a row of zeros, of size n_features
 
@@ -396,37 +420,35 @@ class Asset:
                 observation.append(0.0)
             return np.array(observation)
 
-        observation.append(self.portfolio_weight)
-        # print("Portfolio Weight Type: " + str(type(self.portfolio_weight)))
 
         self.calculate_CAPM(
             macro_economic_collection=macro_economic_collection,
             date=date,
             period=hyperparameters["CAPM_period"],
         )
-        observation.append(self.expected_return)
-        observation.append(self.beta)
-        # append a random value for the expected return between 0 and 1
-        # observation.append(np.random.uniform(0,1))
+
 
         self.calculate_illiquidity_ratio(
             date=date, period=hyperparameters["illiquidity_ratio_period"]
         )
-        observation.append(self.illiquidity_ratio)
 
         self.calculate_volatility(
             date=date, period=hyperparameters["volatility_period"]
         )
-        observation.append(self.volatility)
+
 
         self.calculate_linear_regression(
             date=date, period=hyperparameters["linear_regression_period"]
         )
-        observation.append(self.linear_regression_slope)
-        observation.append(self.linear_regression_intercept)
+
+        observation = [self.portfolio_weight, 
+                       self.expected_return, 
+                       self.beta, 
+                       self.illiquidity_ratio, 
+                       self.volatility, 
+                       self.linear_regression_slope, 
+                       self.linear_regression_intercept]
+
 
         # check if any values in the observation are NaN, if so, set them to zero
-        observation = np.array(observation)
-        observation = np.nan_to_num(observation, nan=0.0, posinf=1.0, neginf=0.0)
-
-        return observation
+        return np.array([Asset.nan_to_num(obs) for obs in observation])

@@ -1,7 +1,7 @@
 from Collection import Collection
 import numpy as np
 import datetime
-
+from numba import njit
 
 class PortfolioCollection(Collection):
     def __init__(self, asset_list):
@@ -102,7 +102,7 @@ class PortfolioCollection(Collection):
 
         self.portfolio_value = new_portfolio_value
         self.calculate_expected_return()
-        self.calculate_portfolio_returns_std()
+        self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
         self.calculate_sharpe_ratio()
 
         return self.portfolio_value
@@ -130,20 +130,23 @@ class PortfolioCollection(Collection):
         """
 
         self.expected_return = np.dot(self.weights_array, self.expected_returns_array)
-
-    def calculate_portfolio_returns_std(self) -> None:
+        
+    @staticmethod
+    @njit(nogil=True)
+    def calculate_portfolio_returns_std(returns_array:np.array, weights_array: np.array) -> np.array:
         """
         This method will calculate the standard deviation of the returns of the portfolio over a given period.
         This will be calculated as the weighted average of the standard deviations of the returns of the assets in the portfolio.
         """
         # Calculate the standard deviation of the returns of the portfolio
-        covariance = np.cov(self.returns_array, rowvar=False)
-        contribution = np.dot(covariance, self.weights_array)
-        varience = np.dot(self.weights_array, contribution)
+        covariance = np.cov(returns_array, rowvar=False)
+        contribution = np.dot(covariance, weights_array)
+        varience = np.dot(weights_array, contribution)
 
-        self.portfolio_std = np.sqrt(varience)
+        portfolio_std = np.sqrt(varience)
         # Annualise the standard deviation (as expected returns are annualised in CAPM calculation)
-        self.portfolio_std = self.portfolio_std * np.sqrt(252)
+        portfolio_std = portfolio_std * np.sqrt(252)
+        return portfolio_std
 
     def calculate_sharpe_ratio(self) -> None:
         """

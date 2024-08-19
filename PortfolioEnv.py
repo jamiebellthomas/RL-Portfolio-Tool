@@ -294,7 +294,7 @@ class PortfolioEnv(gym.Env):
         # STEP 8: Check if the episode is truncated (not sure how this works yet)
         truncated = False
 
-        reward = self.portfolio.sharpe_ratio
+        reward = self.portfolio.sharpe_ratio + self.roi
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 

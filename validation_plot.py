@@ -6,7 +6,8 @@ from AssetCollection import AssetCollection
 from macro_economic_factors import open_macro_economic_file
 import pickle
 from validation import roi_asset_universe
-
+from hyperparameters import hyperparameters
+import numpy as np
 
 def plot_stats(
     csv_list: list,
@@ -20,6 +21,8 @@ def plot_stats(
     start_date = None
     end_date = None
     rewards_sum = {}
+    max_reward = 0
+    min_reward = 0
     for csv in csv_list:
         # read the csv file
         results_df = pd.read_csv(csv)
@@ -29,6 +32,11 @@ def plot_stats(
         dates = dates[1:]
         rewards = rewards[1:]
         rewards = rewards.to_numpy()
+        if max(rewards) > max_reward:
+            max_reward = max(rewards)
+        if min(rewards) < min_reward:
+            min_reward = min(rewards)
+
         # extract the version number from the csv file
         version = extract_version_number(csv)
         rewards_sum[version] = rewards.sum()
@@ -55,6 +63,38 @@ def plot_stats(
         xaxis_title="Time Step",
         yaxis_title="ROI",
     )
+
+    # if hyperparameters[ "initial_validation_date" ] is before hyperparameters[ "initial_training_date" ]
+    # add lines showing the training period (01/01/2015 - 01/01/2023)
+    if(start_date.date() < hyperparameters["initial_training_date"]):
+        print("Training period is after validation period")
+        hardcoded_end_training_date = pd.Timestamp(datetime(2023, 1, 1))
+        hardcoded_start_training_date = pd.Timestamp(datetime(2015, 1, 1))
+
+        # make 2 lines manually
+        x = np.array([hardcoded_end_training_date, hardcoded_end_training_date])
+        y = np.array([min_reward, max_reward])
+        fig.add_trace(go.Scatter(
+            x=x, 
+            y=y, 
+            mode="markers+lines", 
+            line=dict(color="green", dash="dash"),
+            marker=dict(size=10),  
+            name="Training Period"  
+            ))
+
+        x = np.array([hardcoded_start_training_date, hardcoded_start_training_date])
+        fig.add_trace(go.Scatter(
+            x=x, 
+            y=y, 
+            mode="markers+lines", 
+            line=dict(color="green", dash="dash"),
+            marker=dict(size=10),  
+            name="Training Period",  
+            showlegend=False  # This will hide the trace from the legend
+        ))
+
+    
     fig.write_image("Validation/rewards_comparison.png")
 
 
@@ -71,6 +111,7 @@ def main():
         "Validation/v3/results.csv",
         "Validation/v4/results.csv",
         "Validation/v5/results.csv",
+        "Validation/v6/results.csv",
     ]
     macro_economic_collection = open_macro_economic_file()
     asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))
