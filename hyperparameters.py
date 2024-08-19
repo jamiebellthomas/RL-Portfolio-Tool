@@ -47,7 +47,7 @@ hyperparameters = {
     "learning_rate": 1e-5,
     # This needs to be multiple of n_steps or it will do a whole extra cycle.
     "total_timesteps": 1966080,
-    "timesteps_per_save": 163834,
+    "timesteps_per_save": 16384,
     "clip_range": 0.05,
     # PPO parameters to look into for model:
     # gamma=hyperparameters["gamma"],
