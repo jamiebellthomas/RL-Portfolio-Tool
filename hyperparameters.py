@@ -31,6 +31,8 @@ hyperparameters = {
     "initial_validation_date": datetime.date(2023, 1, 1),
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
+    # Reward function choice
+    "reward_function": "treynor",
     # PPO hyperparameters
     "n_envs": 4,
     "n_steps": 1024,

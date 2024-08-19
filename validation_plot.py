@@ -112,6 +112,7 @@ def main():
         "Validation/v4/results.csv",
         "Validation/v5/results.csv",
         "Validation/v6/results.csv",
+        "Validation/v7/results.csv",
     ]
     macro_economic_collection = open_macro_economic_file()
     asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))

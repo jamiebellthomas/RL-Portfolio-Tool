@@ -62,13 +62,13 @@ class PortfolioEnv(gym.Env):
         # Load in the asset universe and macro economic data, and create the portfolio
         self.asset_universe = asset_universe
         self.macro_economic_data = macro_economic_data
-        self.portfolio = PortfolioCollection(asset_list=[])
+        self.portfolio = PortfolioCollection(asset_list={}, 
+                                             reward_function = hyperparameters["reward_function"])
 
         # Read in hyper parameters
         self.CAPM_period = hyperparameters["CAPM_period"]
         self.illiquidity_ratio_period = hyperparameters["illiquidity_ratio_period"]
         self.initial_balance = hyperparameters["initial_balance"]
-        self.max_steps = hyperparameters["max_steps"]
         self.transaction_cost = hyperparameters["transaction_cost"]
         self.asset_feature_count = hyperparameters["asset_feature_count"]
         self.macro_economic_feature_count = hyperparameters[
@@ -147,7 +147,8 @@ class PortfolioEnv(gym.Env):
 
         self.current_date = self.initial_date
         self.portfolio_value = self.initial_balance
-        self.portfolio = PortfolioCollection(asset_list={})
+        self.portfolio = PortfolioCollection(asset_list={}, 
+                                             reward_function = hyperparameters["reward_function"])
         self.portfolio.portfolio_value = self.portfolio_value
         self.roi = 0.0
 
@@ -249,9 +250,7 @@ class PortfolioEnv(gym.Env):
                 new_weighting = new_weighting[0]
             absolute_delta += abs(current_weighting - new_weighting)
             asset.portfolio_weight = new_weighting
-        self.portfolio.portfolio_value = current_portfolio_value * (
-            1 - (self.transaction_cost * absolute_delta)
-        )
+        self.portfolio.portfolio_value = current_portfolio_value * (1 - (self.transaction_cost * absolute_delta))
 
         # STEP 2 Adjust the portfolio object so only assets that have a non-zero weighting are included
         new_asset_list = {}
@@ -294,7 +293,8 @@ class PortfolioEnv(gym.Env):
         # STEP 8: Check if the episode is truncated (not sure how this works yet)
         truncated = False
 
-        reward = self.portfolio.sharpe_ratio + self.roi
+        reward = self.portfolio.reward
+        print("Reward: ", reward)
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 

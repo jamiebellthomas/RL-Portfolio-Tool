@@ -4,17 +4,21 @@ import datetime
 from numba import njit
 
 class PortfolioCollection(Collection):
-    def __init__(self, asset_list):
+    def __init__(self, asset_list, reward_function: str):
         super().__init__(asset_list=asset_list)
         # Additional initialization for AssetCollection
+        self.reward_function = reward_function
         self.portfolio_value = 0.0
         self.expected_return = 0.0
         self.portdolio_std = 0.0
         self.returns_array = np.array([])
         self.weights_array = np.array([])
         self.expected_returns_array = np.array([])
+        self.betas_array = np.array([])
+        self.portfolio_beta = 0.0
         self.sharpe_ratio = 0.0
         self.risk_free_rate = 0.0
+        self.reward = 0.0
 
     """
     Current phased out code
@@ -82,6 +86,7 @@ class PortfolioCollection(Collection):
         returns_list = []
         weights_list = []
         expected_returns_list = []
+        betas_list = []
 
         # Update the relative weightings of all assets in the portfolio
         for i, asset in enumerate(self.asset_list.values()):
@@ -89,6 +94,7 @@ class PortfolioCollection(Collection):
 
             returns_list.append(asset.pc)
             weights_list.append(asset.portfolio_weight)
+            betas_list.append(asset.beta)
             expected_returns_list.append(asset.expected_return)
             self.risk_free_rate = max(asset.risk_free_rate, self.risk_free_rate)
 
@@ -102,8 +108,16 @@ class PortfolioCollection(Collection):
 
         self.portfolio_value = new_portfolio_value
         self.calculate_expected_return()
-        self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
-        self.calculate_sharpe_ratio()
+        if(self.reward_function == "sharpe"):
+            self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
+            self.calculate_sharpe_ratio()
+            self.reward = self.sharpe_ratio
+        
+        if(self.reward_function == "treynor"):
+            self.betas_array = np.array(betas_list)
+            self.portfolio_beta = PortfolioCollection.calculate_portfolio_beta(self.betas_array, self.weights_array)
+            self.calculate_treynor_ratio()
+            self.reward = self.treynor_ratio
 
         return self.portfolio_value
 
@@ -157,7 +171,21 @@ class PortfolioCollection(Collection):
             self.expected_return - self.risk_free_rate
         ) / self.portfolio_std
 
-        # print("Portfolio Value:", self.portfolio_value)
-        # print("Expected Return:", self.expected_return)
-        # print("Portfolio Standard Deviation:", self.portfolio_std)
-        # print("Risk Free Rate:", self.risk_free_rate)
+
+    @staticmethod
+    @njit(nogil=True)
+    def calculate_portfolio_beta(betas_array: np.array, weights_array: np.array) -> float:
+        """
+        This method will calculate the beta of the portfolio.
+        This will be calculated as the weighted average of the betas of the assets in the portfolio.
+        """
+        portfolio_beta = np.dot(weights_array, betas_array)
+        return portfolio_beta
+    
+
+    def calculate_treynor_ratio(self) -> None:
+        """
+        This method will calculate the Treynor ratio of the portfolio.
+        This will be calculated as the ratio of the expected return of the portfolio to the beta of the portfolio.
+        """
+        self.treynor_ratio = (self.expected_return - self.risk_free_rate) / self.portfolio_beta
