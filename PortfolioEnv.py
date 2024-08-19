@@ -294,7 +294,6 @@ class PortfolioEnv(gym.Env):
         truncated = False
 
         reward = self.portfolio.reward
-        print("Reward: ", reward)
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 
