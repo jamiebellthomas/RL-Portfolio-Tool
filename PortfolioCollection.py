@@ -13,6 +13,7 @@ class PortfolioCollection(Collection):
         self.portdolio_std = 0.0
         self.returns_array = np.array([])
         self.weights_array = np.array([])
+
         self.expected_returns_array = np.array([])
         self.betas_array = np.array([])
         self.portfolio_beta = 0.0
@@ -91,8 +92,12 @@ class PortfolioCollection(Collection):
         # Update the relative weightings of all assets in the portfolio
         for i, asset in enumerate(self.asset_list.values()):
             asset.portfolio_weight = new_investment_values[i] / new_portfolio_value
-
+            if(len(asset.pc) != 0):
+                asset.pc = asset.pc[:240]   
             returns_list.append(asset.pc)
+            # We need to make sure all assets have the same length pc
+            
+
             weights_list.append(asset.portfolio_weight)
             betas_list.append(asset.beta)
             expected_returns_list.append(asset.expected_return)

@@ -1,11 +1,10 @@
 from functools import cache
-from Asset import Asset
 class Collection:
     def __init__(self, asset_list):
         self.asset_list = asset_list
         
     @cache
-    def asset_lookup(self, ticker: str) -> Asset:
+    def asset_lookup(self, ticker: str):
         """
         This function will return the asset with the given ticker.
         Input: ticker (str) - the ticker of the asset
