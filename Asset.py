@@ -52,16 +52,26 @@ class Asset:
     def __str__(self):
         return self.ticker
 
-    def plot_asset(self):
+    def plot_asset(self, start_date: datetime.date, end_date: datetime.date):
         """
         This function will plot the time series data for the asset.
         """
         plot = go.Figure()
+        # extract the subsection of the time series data
+        value_sub_section, _, _, _, start_date_index, end_date_index = self.extract_subsection(
+            start_date, end_date
+        )
+        # add a scatter plot of the subsection
+
         plot.add_trace(
             go.Scatter(
-                x=self.index_list, y=self.value_list, mode="lines", name="Asset Value"
+                x=self.index_list[start_date_index : end_date_index + 1],
+                y=value_sub_section,
+                mode="lines",
+                name="Asset Value",
             )
         )
+
         plot.update_layout(
             title="Asset Value for " + self.ticker,
             xaxis_title="Date",
@@ -447,7 +457,8 @@ class Asset:
                        self.illiquidity_ratio, 
                        self.volatility, 
                        self.linear_regression_slope, 
-                       self.linear_regression_intercept]
+                       #self.linear_regression_intercept
+                       ]
 
 
         # check if any values in the observation are NaN, if so, set them to zero

@@ -14,7 +14,7 @@ hyperparameters = {
     # The number of features for each asset in the asset universe
     # asset_universe_feature_count needs to be calculated as a function of ARMA_ar_term_limit & ARMA_ma_term_limit
     # These terms will need to be managed manually unfortunately, until we can find a way to calculate them
-    "asset_feature_count": 7,
+    "asset_feature_count": 6,
     "macro_economic_feature_count": 4,
     "portfolio_status_feature_count": 1,
     # Initial balance for the portfolio

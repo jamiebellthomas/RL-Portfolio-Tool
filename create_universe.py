@@ -95,13 +95,16 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
     for asset in asset_universe.asset_list.values():
         if len(asset.index_list) >= 20 * 252:
             ticker_list.append(asset.ticker)
-            if(asset.ticker == "CRIS"):
-                print("CRIS is here")
+            
 
     # collect every third ticker
     for i in range(0, len(ticker_list), 3):
         ticker = ticker_list[i]
         reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
+        if(ticker == 'CRIS'):
+            # remove CRIS from the list
+            reduced_asset_list.pop(ticker)
+
 
     return AssetCollection(reduced_asset_list)
 
@@ -198,11 +201,11 @@ def main_read():
 
 
 if __name__ == "__main__":
-    main_create()
+    #main_create()
     # main_read()
 
     collection = read_collection("Collections/reduced_asset_universe.pkl")
     # extract_ticker_list_from_collection(collection)
-    asset = collection.asset_lookup("CRIS")
-    asset.plot_asset()
+    #asset = collection.asset_lookup("CRIS")
+    #asset.plot_asset()
     pass

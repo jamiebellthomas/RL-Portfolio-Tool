@@ -126,18 +126,54 @@ def CAPM_over_time(
         expected_returns.append(expected_return)
         betas.append(asset.beta)
     # plot the expected returns against the date
-    returns_fig = go.Figure()
+    returns_fig = make_subplots(rows=1, cols=3,
+                    subplot_titles=(f"Expected Returns of {asset.ticker}", f"Stock Price of {asset.ticker}", "Value of the NASDAQ Composite Index"))
     returns_fig.add_trace(
-        go.Scatter(x=date_range, y=expected_returns, mode="lines+markers")
+        go.Scatter(x=date_range, y=expected_returns, mode="lines", name="Expected Returns"), row=1, col=1
     )
-    returns_fig.update_layout(
-        title="Expected Returns Over Time for " + asset.ticker,
-        xaxis_title="Date",
-        yaxis_title="Expected Return",
+    # Now we need the value of the asset bwteen the init_date and end_date
+    new_time_series = asset.value_list[
+        (asset.index_list >= init_date) & (asset.index_list <= end_date)
+    ]
+    new_index = asset.index_list[
+        (asset.index_list >= init_date) & (asset.index_list <= end_date)
+    ]
+    returns_fig.add_trace(
+        go.Scatter(x=new_index, y=new_time_series, mode="lines", name="Asset Value"), row=1, col=2
     )
+
+    # Now we need the value of the NASDAQ bwteen the init_date and end_date
+    sp500 = macro_economic_collection.asset_lookup("NASDAQ")
+    new_sp500_values = sp500.value_list[
+        (sp500.index_list >= init_date) & (sp500.index_list <= end_date)
+    ]
+    new_sp500_index = sp500.index_list[
+        (sp500.index_list >= init_date) & (sp500.index_list <= end_date)
+    ]
+    returns_fig.add_trace(
+        go.Scatter(x=new_sp500_index, y=new_sp500_values, mode="lines", name="NASDAQ"), row=1, col=3
+    )
+
+    returns_fig.update_yaxes(title_text="Expected Return", row=1, col=1)
+    returns_fig.update_xaxes(title_text="Date", row=1, col=1)
+    returns_fig.update_yaxes(title_text="Asset Value", row=1, col=2)
+    returns_fig.update_xaxes(title_text="Date", row=1, col=2)
+    returns_fig.update_yaxes(title_text="NASDAQ Composite Index Value", row=1, col=3)
+    returns_fig.update_xaxes(title_text="Date", row=1, col=3)
+    # remove legend
+    returns_fig.update_layout(showlegend=False)
+
+    # make the plot very wide
+    returns_fig.update_layout(height=500, width=1500)
     returns_fig.write_image(
         "Investigations/CAPM_period/" + asset.ticker + "/expected_returns.png"
     )
+
+
+
+
+
+
 
     # plot the betas against the date
     betas_fig = go.Figure()

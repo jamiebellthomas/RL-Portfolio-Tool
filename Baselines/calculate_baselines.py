@@ -305,4 +305,4 @@ if __name__ == "__main__":
     macro_economic_data = pickle.load(open("Collections/macro_economic_factors.pkl", "rb"))
     start_date = hyperparameters["initial_validation_date"]
     latest_date = extract_latest_date(asset_universe)
-    plot_baselines(asset_universe, start_date, latest_date)
+    #plot_baselines(asset_universe, start_date, latest_date)
