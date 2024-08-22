@@ -108,14 +108,12 @@ def extract_version_number(csv: str) -> str:
 
 def main():
     csv_list = [
-        #"Validation/v3/results.csv",
+        "Validation/v3/results.csv",
         "Validation/v4/results.csv",
         "Validation/v5/results.csv",
         "Validation/v6/results.csv",
-        #"Validation/v7/results.csv",
-        #"Validation/v8/results.csv",
-        "Validation/v9/results.csv",
-        "Validation/v10/results.csv",
+        "Validation/v7/results.csv",
+        "Validation/v8/results.csv",
     ]
     macro_economic_collection = open_macro_economic_file()
     asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))

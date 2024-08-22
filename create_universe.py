@@ -93,7 +93,7 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
 
     # take all assets with atleast 20 years of data (20*252 trading days)
     for asset in asset_universe.asset_list.values():
-        if len(asset.index_list) >= 20 * 252 and asset.ticker != "CRIS":
+        if len(asset.index_list) >= 20 * 252:
             ticker_list.append(asset.ticker)
 
     # collect every third ticker
@@ -130,7 +130,6 @@ def main_create():
 
     collection = create_collection(ticker_list)
     reduced_collection = create_reduced_collection(collection)
-    extract_ticker_list_from_collection(reduced_collection)
 
     # Open the file with write-binary ('wb') mode and dump the object
     with open(main_filename, "wb") as file:
@@ -196,11 +195,11 @@ def main_read():
 
 
 if __name__ == "__main__":
-    #main_create()
+    # main_create()
     # main_read()
 
     collection = read_collection("Collections/reduced_asset_universe.pkl")
     # extract_ticker_list_from_collection(collection)
-    asset = collection.asset_lookup("RYAAY")
+    asset = collection.asset_lookup("CRIS")
     asset.plot_asset()
     pass
