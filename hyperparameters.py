@@ -32,11 +32,11 @@ hyperparameters = {
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
     # Reward function hyperparameters
-    "treynor_weight": 0.1,
+    "treynor_weight": 0.0,
     "sharpe_weight": 0.8,
     "sortino_weight": 0.0,
     "max_drawdown_weight": 0.0,
-    "roi_weight": 0.1,
+    "roi_weight": 0.2,
 
 
     # PPO hyperparameters

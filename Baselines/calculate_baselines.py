@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../"
 import PortfolioCollection as PortfolioCollection
 from AssetCollection import AssetCollection
 from PortfolioEnv import PortfolioEnv
+from Asset import Asset
 from hyperparameters import hyperparameters
 import pandas as pd
 import datetime
@@ -155,19 +156,24 @@ def calcualte_ftw(asset_universe: AssetCollection, start_date: datetime.date, en
     """
     This calcualtes the folow the winner strategy for the financial model.
     """
-    # First we need to make a 2D array of the ROI for each asset over each time step in the period
-    roi_matrix = np.zeros((len(asset_universe.asset_list), len(pd.date_range(start=start_date, end=end_date))))
+    # First we need to make a 2D array showing the ROI of each asset over the last 10 days for each asset at each time step
+    pct_change_matrix = np.zeros((len(asset_universe.asset_list), len(pd.date_range(start=start_date, end=end_date))))
     for index, asset in enumerate(asset_universe.asset_list.values()):
-        initial_value = asset.calculate_value(start_date)
         for i, date in enumerate(pd.date_range(start=start_date, end=end_date)):
             date = date.date()
+            initial_value = asset.calculate_value(date - datetime.timedelta(days=60))
             final_value = asset.calculate_value(date)
-            roi_matrix[index][i] = (final_value - initial_value) / initial_value
+            roi = min(((final_value - initial_value) / initial_value),2.6)
+            pct_change_matrix[index][i] = roi
 
-    # Now we need to turn that array into a series of weightings arrays by normalising each column using softmax (e^x / sum(e^x))
+    # print 20 largest values in the matrix
+    print(np.sort(pct_change_matrix.flatten())[-20:])
+                            
     weightings = np.zeros((len(asset_universe.asset_list), len(pd.date_range(start=start_date, end=end_date))))
     for i in range(len(pd.date_range(start=start_date, end=end_date))):
-        weightings[:,i] = np.exp(roi_matrix[:,i]) / np.sum(np.exp(roi_matrix[:,i]))
+        weightings[:,i] = np.exp(pct_change_matrix[:,i]) / np.sum(np.exp(pct_change_matrix[:,i]))
+    
+
 
 
     # Now we need to initialise a PortfolioEnv, loop through each time step, setting the action to the next column of weightings and taking a step
@@ -193,22 +199,27 @@ def calculate_ftl(asset_universe: AssetCollection, start_date: datetime.date, en
     """
     This calculates the follow the loser strategy for the financial model.
     """
-    # First we need to make a 2D array of the ROI for each asset over each time step in the period
-    roi_matrix = np.zeros((len(asset_universe.asset_list), len(pd.date_range(start=start_date, end=end_date))))
+    # First we need to make a 2D array showing the ROI of each asset over the last 10 days for each asset at each time step
+    pct_change_matrix = np.zeros((len(asset_universe.asset_list), len(pd.date_range(start=start_date, end=end_date))))
     for index, asset in enumerate(asset_universe.asset_list.values()):
-        initial_value = asset.calculate_value(start_date)
         for i, date in enumerate(pd.date_range(start=start_date, end=end_date)):
             date = date.date()
+            initial_value = asset.calculate_value(date - datetime.timedelta(days=60))
             final_value = asset.calculate_value(date)
-            roi_matrix[index][i] = (final_value - initial_value) / initial_value
+            roi = min(((final_value - initial_value) / initial_value),2.6)
+            pct_change_matrix[index][i] = roi
 
-    # Now we need to turn that array into a series of weightings arrays by normalising each column using softmax (e^x / sum(e^x))
+    # print 20 largest values in the matrix
+    print(np.sort(pct_change_matrix.flatten())[-20:])
+
+    # now adjust it so the lowest roi os normalised to the highest weighting
+    pct_change_matrix = np.abs(pct_change_matrix - np.max(pct_change_matrix))
+                            
     weightings = np.zeros((len(asset_universe.asset_list), len(pd.date_range(start=start_date, end=end_date))))
     for i in range(len(pd.date_range(start=start_date, end=end_date))):
-        weightings[:,i] = np.exp(-roi_matrix[:,i]) / np.sum(np.exp(-roi_matrix[:,i]))
+        weightings[:,i] = np.exp(pct_change_matrix[:,i]) / np.sum(np.exp(pct_change_matrix[:,i]))
+
     
-    # now we do 1-softmax to get the weightings for the follow the loser strategy
-    weightings = 1 - weightings
 
     # Now we need to initialise a PortfolioEnv, loop through each time step, setting the action to the next column of weightings and taking a step
     env = PortfolioEnv(asset_universe = asset_universe, macro_economic_data = macro_economic_data, initial_date = start_date, final_date = end_date)
@@ -258,7 +269,7 @@ def plot_baselines(asset_universe: AssetCollection, start_date: datetime.date, l
     fig.add_trace(go.Scatter(x=ftw.index, y=ftw["ROI"], mode="lines", name="FtW"))
     fig.add_trace(go.Scatter(x=ftl.index, y=ftl["ROI"], mode="lines", name="FtL"))
     # add title and labels
-    fig.update_layout(title="Baselines", xaxis_title="Date", yaxis_title="Portfolio Value")
+    fig.update_layout(title="Baselines Comparison", xaxis_title="Date", yaxis_title="Portfolio Value")
     # save the plot as an png
     fig.write_image("Baselines/Baselines.png")
 
@@ -272,7 +283,7 @@ def plot_weighting_progression(weightings_array:np.array, start_date: datetime.d
     fig = go.Figure()
     for i in range(weightings_array.shape[0]):
         fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=end_date), y=weightings_array[i], mode="lines"))
-    fig.update_layout(title="Weightings Progression", xaxis_title="Date", yaxis_title="Weighting")
+    fig.update_layout(title=f"Weighting Progression - {series}", xaxis_title="Date", yaxis_title="Weighting")
     # remove legend
     fig.update_layout(showlegend=False)
     fig.write_image(f"Baselines/{series}_weighting_progression.png")
