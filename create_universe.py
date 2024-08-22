@@ -95,6 +95,8 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
     for asset in asset_universe.asset_list.values():
         if len(asset.index_list) >= 20 * 252:
             ticker_list.append(asset.ticker)
+            if(asset.ticker == "CRIS"):
+                print("CRIS is here")
 
     # collect every third ticker
     for i in range(0, len(ticker_list), 3):
@@ -130,6 +132,7 @@ def main_create():
 
     collection = create_collection(ticker_list)
     reduced_collection = create_reduced_collection(collection)
+    extract_ticker_list_from_collection(reduced_collection)
 
     # Open the file with write-binary ('wb') mode and dump the object
     with open(main_filename, "wb") as file:
@@ -195,7 +198,7 @@ def main_read():
 
 
 if __name__ == "__main__":
-    # main_create()
+    main_create()
     # main_read()
 
     collection = read_collection("Collections/reduced_asset_universe.pkl")

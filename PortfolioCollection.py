@@ -22,8 +22,6 @@ class PortfolioCollection(Collection):
         self.expected_treynor_ratio = 0.0
         self.risk_free_rate = 0.0
         self.reward = 0.0
-        self.cash_holdings = 0.0
-        self.daily_interest_rate = (1+hyperparameters["interest_rate"])**(1/365)
         self.cash_return = 0.0
 
     """
@@ -72,28 +70,16 @@ class PortfolioCollection(Collection):
         """
 
         # first work out the cash holding weighting of the portfolio by doing 1 - sum of all asset weightings
-        #cash_weighting = 1 - np.sum(
-        #    [asset.portfolio_weight for asset in self.asset_list.values()]
-        #)
-        # Precompute old and new prices for all assets
-        #old_prices = np.array(
-        #    [asset.calculate_value(old_date) for asset in self.asset_list.values()]
-        #)
-        #new_prices = np.array(
-        #    [asset.calculate_value(new_date) for asset in self.asset_list.values()]
-        #)
-        # let's merge the 3 for loops above into one
-
-        old_prices = []
-        new_prices = []
-        total_weight = 0
-        for asset in self.asset_list.values():
-            old_prices.append(asset.calculate_value(old_date))
-            new_prices.append(asset.calculate_value(new_date))
-            total_weight += asset.portfolio_weight
-        old_prices = np.array(old_prices)
-        new_prices = np.array(new_prices)
-        cash_weighting = 1 - total_weight
+        cash_weighting = 1 - np.sum(
+            [asset.portfolio_weight for asset in self.asset_list.values()]
+        )
+         #Precompute old and new prices for all assets
+        old_prices = np.array(
+            [asset.calculate_value(old_date) for asset in self.asset_list.values()]
+        )
+        new_prices = np.array(
+            [asset.calculate_value(new_date) for asset in self.asset_list.values()]
+        )
 
         # Calculate the old investment values
         old_investment_values = self.portfolio_value * np.array(
@@ -105,13 +91,10 @@ class PortfolioCollection(Collection):
 
         self.actual_returns_array = (new_investment_values - old_investment_values) / old_investment_values
 
-        new_cash_value = cash_weighting * self.portfolio_value * self.daily_interest_rate
-        self.cash_return = new_cash_value - cash_weighting * self.portfolio_value
 
 
         # Calculate the new portfolio value
-        new_portfolio_value = np.sum(new_investment_values) + new_cash_value
-        self.cash_holdings = new_cash_value/self.portfolio_value
+        new_portfolio_value = np.sum(new_investment_values)
 
         returns_list = []
         weights_list = []
@@ -156,7 +139,7 @@ class PortfolioCollection(Collection):
         This method will calculate the actual return of the portfolio over a given period.
         This will be calculated as the change in the value of the portfolio over the period.
         """
-        self.actual_return = np.dot(self.weights_array, self.actual_returns_array) + (self.cash_holdings * self.cash_return)
+        self.actual_return = np.dot(self.weights_array, self.actual_returns_array)
 
     
 
@@ -179,7 +162,7 @@ class PortfolioCollection(Collection):
         So Sharpe Ratio relating to actual returns, is more of a performance metric than a reward function(?)
         """
 
-        self.expected_return = np.dot(self.weights_array, self.expected_returns_array) + (self.cash_holdings * self.cash_return)
+        self.expected_return = np.dot(self.weights_array, self.expected_returns_array)
         
     @staticmethod
     @njit(nogil=True)

@@ -103,12 +103,6 @@ class PortfolioEnv(gym.Env):
                     ),
                     dtype=np.float64,
                 ),
-                "cash_holding": spaces.Box(
-                    low=0,
-                    high=1,
-                    shape=(1, 1),
-                    dtype=np.float64,
-                ),
                 "macro_economic_data": spaces.Box(
                     low=0,
                     high=1,
@@ -131,7 +125,7 @@ class PortfolioEnv(gym.Env):
         self.action_space = spaces.Box(
             low=0,
             high=1,
-            shape=((len(self.asset_universe.asset_list)+1), 1),
+            shape=((len(self.asset_universe.asset_list)), 1),
             dtype=np.float64,
         )
 
@@ -157,12 +151,12 @@ class PortfolioEnv(gym.Env):
         self.roi = 0.0
 
         # generate a set of random weights for the initial portfolio
-        weights = np.random.rand((len(self.asset_universe.asset_list)+1), 1)
+        weights = np.random.rand((len(self.asset_universe.asset_list)), 1)
         weights = weights / np.sum(weights)
 
         obs = self._next_observation(self.initial_date)
         # set first column of asset universe observation to weights except the last value which is the cash holding
-        obs['asset_universe'][:,0] = weights[:-1].flatten()
+        obs['asset_universe'][:,0] = weights.flatten()
 
         # print(obs)
         info = {}
@@ -176,8 +170,6 @@ class PortfolioEnv(gym.Env):
         """
         # We'll change it so that the asset universe is only evaluated every 7 days, this will reduce the computational load SIGNIFICANTLY
         asset_obs = self.asset_universe.get_observation(self.macro_economic_data, date)
-
-        cash_holdings = 1.0 - np.sum(asset_obs[:,0])
 
         portfolio_status_obs = self.portfolio.get_status_observation(
             date, self.initial_balance
@@ -196,7 +188,6 @@ class PortfolioEnv(gym.Env):
 
         return {
             "asset_universe": asset_obs,
-            "cash_holding": np.array([cash_holdings]),
             "macro_economic_data": macro_economic_obs,
             "portfolio_status": portfolio_status_obs,
         }
@@ -234,7 +225,7 @@ class PortfolioEnv(gym.Env):
         # Set weightings of assets that don't exist in the action vector to 0 (when the current date is before it's first date)
         # print(type(action))
         values = list(self.asset_universe.asset_list.values())
-        for i in range(len(action)-1):
+        for i in range(len(action)):
             if self.current_date < values[i].start_date:
                 action[i] = 0.0
 
@@ -248,7 +239,7 @@ class PortfolioEnv(gym.Env):
         # We will calculate the absolute delta in the portfolio value due to the action vector
         current_portfolio_value = self.portfolio.portfolio_value
         absolute_delta = 0
-        for i in range(len(action) - 1):
+        for i in range(len(action)):
             asset = values[i]
             current_weighting = asset.portfolio_weight
             new_weighting = action[i]
