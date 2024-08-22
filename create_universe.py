@@ -59,6 +59,8 @@ def time_series_edit(hist: pd.DataFrame) -> np.array:
 
     volume_list = np.array(hist["Volume"].tolist())
 
+
+
     return index_list, value_list, open_list, close_list, volume_list
 
 
