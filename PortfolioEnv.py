@@ -270,7 +270,6 @@ class PortfolioEnv(gym.Env):
             self.current_date, next_date
         )
         self.portfolio_value = new_portfolio_value
-        print("Actual Sharpe Ratio: " , self.portfolio.actual_sharpe_ratio)
 
         # STEP 4: Calculate the REWARD at the next time step (current just the ROI)
         self.roi = (new_portfolio_value - self.initial_balance) / self.initial_balance
