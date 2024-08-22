@@ -10,16 +10,21 @@ class PortfolioCollection(Collection):
         # Additional initialization for AssetCollection
         self.portfolio_value = 0.0
         self.expected_return = 0.0
-        self.portdolio_std = 0.0
+        self.portfolio_std = 0.0
         self.returns_array = np.array([])
         self.weights_array = np.array([])
-
+        self.actual_returns_array = np.array([])
+        self.actual_return = 0.0
         self.expected_returns_array = np.array([])
         self.betas_array = np.array([])
         self.portfolio_beta = 0.0
-        self.sharpe_ratio = 0.0
+        self.expected_sharpe_ratio = 0.0
+        self.expected_treynor_ratio = 0.0
         self.risk_free_rate = 0.0
         self.reward = 0.0
+        self.cash_holdings = 0.0
+        self.daily_interest_rate = (1+hyperparameters["interest_rate"])**(1/365)
+        self.cash_return = 0.0
 
     """
     Current phased out code
@@ -65,13 +70,30 @@ class PortfolioCollection(Collection):
         This method determines the change in the portfolio value as a result of the change in asset prices.
         This will also lead to a change in the weightings of the assets in the portfolio as their relative values change.
         """
+
+        # first work out the cash holding weighting of the portfolio by doing 1 - sum of all asset weightings
+        #cash_weighting = 1 - np.sum(
+        #    [asset.portfolio_weight for asset in self.asset_list.values()]
+        #)
         # Precompute old and new prices for all assets
-        old_prices = np.array(
-            [asset.calculate_value(old_date) for asset in self.asset_list.values()]
-        )
-        new_prices = np.array(
-            [asset.calculate_value(new_date) for asset in self.asset_list.values()]
-        )
+        #old_prices = np.array(
+        #    [asset.calculate_value(old_date) for asset in self.asset_list.values()]
+        #)
+        #new_prices = np.array(
+        #    [asset.calculate_value(new_date) for asset in self.asset_list.values()]
+        #)
+        # let's merge the 3 for loops above into one
+
+        old_prices = []
+        new_prices = []
+        total_weight = 0
+        for asset in self.asset_list.values():
+            old_prices.append(asset.calculate_value(old_date))
+            new_prices.append(asset.calculate_value(new_date))
+            total_weight += asset.portfolio_weight
+        old_prices = np.array(old_prices)
+        new_prices = np.array(new_prices)
+        cash_weighting = 1 - total_weight
 
         # Calculate the old investment values
         old_investment_values = self.portfolio_value * np.array(
@@ -81,8 +103,15 @@ class PortfolioCollection(Collection):
         # Calculate the new investment values
         new_investment_values = (new_prices / old_prices) * old_investment_values
 
+        self.actual_returns_array = (new_investment_values - old_investment_values) / old_investment_values
+
+        new_cash_value = cash_weighting * self.portfolio_value * self.daily_interest_rate
+        self.cash_return = new_cash_value - cash_weighting * self.portfolio_value
+
+
         # Calculate the new portfolio value
-        new_portfolio_value = np.sum(new_investment_values)
+        new_portfolio_value = np.sum(new_investment_values) + new_cash_value
+        self.cash_holdings = new_cash_value/self.portfolio_value
 
         returns_list = []
         weights_list = []
@@ -113,6 +142,7 @@ class PortfolioCollection(Collection):
 
         self.portfolio_value = new_portfolio_value
         self.calculate_expected_return()
+        self.calculate_actual_return()
         self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
         self.calculate_sharpe_ratio()
 
@@ -121,9 +151,18 @@ class PortfolioCollection(Collection):
         self.calculate_treynor_ratio()
 
 
-        self.reward = (hyperparameters["treynor_weight"] * self.treynor_ratio) + (hyperparameters["sharpe_weight"] * self.sharpe_ratio)
+        self.reward = (hyperparameters["treynor_weight"] * self.expected_treynor_ratio) + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio)
 
         return self.portfolio_value
+    
+    def calculate_actual_return(self) -> None:
+        """
+        This method will calculate the actual return of the portfolio over a given period.
+        This will be calculated as the change in the value of the portfolio over the period.
+        """
+        self.actual_return = np.dot(self.weights_array, self.actual_returns_array) + (self.cash_holdings * self.cash_return)
+
+    
 
     def calculate_expected_return(self) -> None:
         """
@@ -131,9 +170,6 @@ class PortfolioCollection(Collection):
         This will be calculated as the weighted average of the expected returns of the assets in the portfolio.
         """
 
-        # THIS IS WRONG. SHARPE RATIO SHOULD BE EVALUATED WITH ACTUAL RETURNS, NOT EXPECTED RETURNS
-        # I DONT KNOW HOW BADLY THIS WILL AFFECT THE MODEL BUT IT IS A MISTAKE
-        # actually it may not be a mistake:
         """
         Reward Functions: It’s common to use expected returns as part of the reward function to guide 
         the learning algorithm towards strategies that are predicted to yield higher returns. 
@@ -147,7 +183,7 @@ class PortfolioCollection(Collection):
         So Sharpe Ratio relating to actual returns, is more of a performance metric than a reward function(?)
         """
 
-        self.expected_return = np.dot(self.weights_array, self.expected_returns_array)
+        self.expected_return = np.dot(self.weights_array, self.expected_returns_array) + (self.cash_holdings * self.cash_return)
         
     @staticmethod
     @njit(nogil=True)
@@ -171,8 +207,12 @@ class PortfolioCollection(Collection):
         This method will calculate the Sharpe ratio of the portfolio.
         This will be calculated as the ratio of the expected return of the portfolio to the standard deviation of the returns of the portfolio.
         """
-        self.sharpe_ratio = (
+        self.expected_sharpe_ratio = (
             self.expected_return - self.risk_free_rate
+        ) / self.portfolio_std
+
+        self.actual_sharpe_ratio = (
+            self.actual_return - self.risk_free_rate
         ) / self.portfolio_std
 
 
@@ -192,4 +232,5 @@ class PortfolioCollection(Collection):
         This method will calculate the Treynor ratio of the portfolio.
         This will be calculated as the ratio of the expected return of the portfolio to the beta of the portfolio.
         """
-        self.treynor_ratio = (self.expected_return - self.risk_free_rate) / self.portfolio_beta
+        self.expected_treynor_ratio = (self.expected_return - self.risk_free_rate) / self.portfolio_beta
+        self.actual_treynor_ratio = (self.actual_return - self.risk_free_rate) / self.portfolio_beta

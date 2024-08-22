@@ -31,6 +31,8 @@ hyperparameters = {
     "initial_validation_date": datetime.date(2023, 1, 1),
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
+    # Interest rates for cash holdings (annual)
+    "interest_rate": 0.05,
     # Reward function hyperparameters
     "treynor_weight": 0.0,
     "sharpe_weight": 0.8,
