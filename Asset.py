@@ -424,8 +424,9 @@ class Asset:
 
 
         # If date is before the start date of the time series data, return a row of zeros, of size n_features
-
+        
         if date < self.start_date:
+            observation = []
             for i in range(hyperparameters["asset_feature_count"]):
                 observation.append(0.0)
             return np.array(observation)
