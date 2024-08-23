@@ -22,7 +22,7 @@ def plot_linear_regression(asset_list: list, date: datetime.date) -> None:
         raise ValueError("This function only supports 3 assets at a time.")
     
 
-    fig = make_subplots(rows=1, cols=len(asset_list), subplot_titles=(f"Trajectory of {asset_list[0].ticker}", f"Trajectory of {asset_list[1].ticker}", f"Trajectory of {asset_list[2].ticker}") )
+    fig = make_subplots(rows=1, cols=len(asset_list), subplot_titles=(r'$\text{Trajectory of AAPL}$', r'$\text{Trajectory of CNVS}$', r'$\text{Trajectory of ACIW}$') )
     for index,asset in enumerate(asset_list):
 
         slope, intercept, pct_change = asset.calculate_linear_regression(
@@ -34,22 +34,14 @@ def plot_linear_regression(asset_list: list, date: datetime.date) -> None:
         print("Intercept: ", intercept)
 
         # plot the linear regression model
-        if index == 0:
 
-        
-            fig.add_trace(
-                go.Scatter(x=x, y=pct_change, mode="lines", name=f"ROI from {date}", line=dict(color="red"), showlegend=False), row=1, col=index+1
-            )
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Linear Regression Model",line=dict(color="blue"), showlegend=False), row=1, col=index+1)
-        
-        else:
-            fig.add_trace(
-                go.Scatter(x=x, y=pct_change, mode="lines", name=f"ROI from {date}", line=dict(color="red"), showlegend=False), row=1, col=index+1
-            )
-            fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Linear Regression Model",line=dict(color="blue"), showlegend=False), row=1, col=index+1)
+        fig.add_trace(
+           go.Scatter(x=x, y=pct_change, mode="lines", line=dict(color="red"), showlegend=False), row=1, col=index+1
+        )
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines",line=dict(color="blue"), showlegend=False), row=1, col=index+1)
         # for this subplot, make the x-axis the date and the y-axis the pct_change
-        fig.update_xaxes(title_text="Days", row=1, col=index+1)
-        fig.update_yaxes(title_text="ROI", row=1, col=index+1)
+        fig.update_xaxes(title_text=r'$\text{Days}$', row=1, col=index+1)
+        fig.update_yaxes(title_text=r'$\text{ROI}$', row=1, col=index+1)
 
  
     fig.update_layout(height=500, width=1500)

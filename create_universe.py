@@ -30,6 +30,9 @@ def extract_time_series(ticker: str) -> pd.DataFrame:
     Output: hist (pandas DataFrame) - the complete time series data for the given ticker symbol
     """
     stock = yf.Ticker(ticker)
+    info = stock.info
+    if "ask" not in info:
+        return pd.DataFrame()
     hist = stock.history(period="max", interval="1d")
     return hist
 
@@ -96,20 +99,27 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
     # take all assets with atleast 20 years of data (20*252 trading days)
     for asset in asset_universe.asset_list.values():
         if len(asset.index_list) >= 20 * 252:
+            if asset.ticker == 'SVA':
+                print("SVA is here :(")
+                continue
             ticker_list.append(asset.ticker)
             
-    """
-    # collect every third ticker
-    for i in range(0, len(ticker_list), 3):
+    
+    # collect every other ticker
+    for i in range(0, len(ticker_list)):
+        if(i % 3 != 0):
+            continue
         ticker = ticker_list[i]
         reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
         if(ticker == 'CRIS'):
             # remove CRIS from the list
             reduced_asset_list.pop(ticker)
-    """
+        
+    
+    
 
-    for ticker in ticker_list:
-        reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
+    #for ticker in ticker_list:
+    #    reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
 
 
     return AssetCollection(reduced_asset_list)
@@ -124,29 +134,33 @@ def main_create():
     Output: None
     """
 
-    main_filename = "Collections/asset_universe.pkl"
-    reduced_filename = "Collections/bigger_reduced_asset_universe.pkl"
+    main_filename = "Collections/test_asset_universe.pkl"
+    reduced_filename = "Collections/test_reduced_asset_universe.pkl"
     # First check to see if the file already exists, if so, delete it
-    #try:
-    #    os.remove(main_filename)
-    #except FileNotFoundError:
-    #    pass
+    try:
+        os.remove(main_filename)
+    except FileNotFoundError:
+        pass
 
-    #try:
-    #    os.remove(reduced_filename)
-    #except FileNotFoundError:
-    #    pass
+    try:
+        os.remove(reduced_filename)
+    except FileNotFoundError:
+        pass
 
-    #ticker_list = extract_ticker(file_path)
+    ticker_list = extract_ticker(file_path)
 
-    #collection = create_collection(ticker_list)
-    collection = pickle.load(open("Collections/asset_universe.pkl", "rb"))
+    collection = create_collection(ticker_list)
+    
+    #collection = pickle.load(open(main_filename, "rb"))
+    #print(len(collection.asset_list.keys()))
+
     reduced_collection = create_reduced_collection(collection)
+    #print(len(reduced_collection.asset_list.keys()))
     extract_ticker_list_from_collection(reduced_collection)
 
     # Open the file with write-binary ('wb') mode and dump the object
-    #with open(main_filename, "wb") as file:
-    #    pickle.dump(collection, file)
+    with open(main_filename, "wb") as file:
+        pickle.dump(collection, file)
 
     with open(reduced_filename, "wb") as file:
         pickle.dump(reduced_collection, file)

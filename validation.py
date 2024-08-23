@@ -347,7 +347,7 @@ def validate_loop(model_folder: str):
     fig = go.Figure()
     for model_file in model_files:
         model_path = os.path.join(model_folder, model_file)
-        model_iteration = extract_model_iteration(model_file)
+        model_iteration = extract_model_iteration(model_file)  
         if model_iteration % (it_divider) == 0:
             results = validate(
                 model_path=model_path,
@@ -453,18 +453,18 @@ def sense_check(asset_universe: AssetCollection):
 
 
 if __name__ == "__main__":
-    asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))
+    asset_universe = pickle.load(open("Collections/bigger_reduced_asset_universe.pkl", "rb"))
     macro_economic_factors = pickle.load(
         open("Collections/macro_economic_factors.pkl", "rb")
     )
 
-    model_path = "Logs/2024-08-23_12-22-25/model_1966080_steps.zip"
+    model_path = "Logs/2024-08-23_14-58-39/model_1916928_steps.zip"
 
     # sense_check(asset_universe)
     
-    validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
+    #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
-    #validate_loop("Logs/2024-08-23_12-22-25")
+    validate_loop("Logs/2024-08-23_16-51-57")
 
     # analyse_validation_results("v4", asset_universe)
 

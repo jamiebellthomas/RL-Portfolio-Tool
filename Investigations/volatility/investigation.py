@@ -91,14 +91,14 @@ def plot_volatility(asset: Asset, date: datetime.date, period: int):
     )
 
 
-    fig.update_yaxes(title_text=asset.ticker + " Stock Price", row=1, col=1)
-    fig.update_xaxes(title_text="Date", row=1, col=1)
+    fig.update_yaxes(title_text=r'$\text{AAPL Stock Price}$', row=1, col=1)
+    fig.update_xaxes(title_text=r'$\text{Date}$', row=1, col=1)
 
-    fig.update_yaxes(title_text=asset.ticker + " Daily Percentage Price Change", row=1, col=2)
-    fig.update_xaxes(title_text="Date", row=1, col=2)
+    fig.update_yaxes(title_text=r'$\text{AAPL Daily Percentage Price Change}$', row=1, col=2)
+    fig.update_xaxes(title_text=r'$\text{Date}$', row=1, col=2)
 
-    fig.update_yaxes(title_text=asset.ticker + " Volatility", row=1, col=3)
-    fig.update_xaxes(title_text="Date", row=1, col=3)
+    fig.update_yaxes(title_text=r'$\text{AAPL Price Volatility}$', row=1, col=3)
+    fig.update_xaxes(title_text=r'$\text{Date}$', row=1, col=3)
 
     fig.update_layout(height=500, width=1500)
     #remove legend

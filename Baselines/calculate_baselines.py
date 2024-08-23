@@ -247,8 +247,8 @@ def plot_baselines(asset_universe: AssetCollection, start_date: datetime.date, l
     # if the baselines csv files don't exist, then we need to calculate them
     if not os.path.exists("Baselines/UBAH.csv"):
         calculate_ubah(asset_universe, start_date, latest_date)
-    if not os.path.exists("Baselines/BSS.csv"):
-        calculate_bss(asset_universe, start_date, latest_date)
+    #if not os.path.exists("Baselines/BSS.csv"):
+    #    calculate_bss(asset_universe, start_date, latest_date)
     if not os.path.exists("Baselines/UCRP.csv"):
         calulate_ucrp(asset_universe, start_date, latest_date)
     if not os.path.exists("Baselines/FTW.csv"):
@@ -257,23 +257,23 @@ def plot_baselines(asset_universe: AssetCollection, start_date: datetime.date, l
         calculate_ftl(asset_universe, start_date, latest_date)
 
     ubah = pd.read_csv("Baselines/UBAH.csv")
-    bss = pd.read_csv("Baselines/BSS.csv")
+    #bss = pd.read_csv("Baselines/BSS.csv")
     ucrp = pd.read_csv("Baselines/UCRP.csv")
     ftw = pd.read_csv("Baselines/FTW.csv")
     ftl = pd.read_csv("Baselines/FTL.csv")
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=ubah.index, y=ubah["ROI"], mode="lines", name="UBAH"))
+    fig.add_trace(go.Scatter(x=ubah.index, y=ubah["ROI"], mode="lines", name=r'$\text{UBAH}$'))
     #fig.add_trace(go.Scatter(x=bss.index, y=bss["ROI"], mode="lines", name="BSS"))
-    fig.add_trace(go.Scatter(x=ucrp.index, y=ucrp["ROI"], mode="lines", name="UCRP"))
-    fig.add_trace(go.Scatter(x=ftw.index, y=ftw["ROI"], mode="lines", name="FtW"))
-    fig.add_trace(go.Scatter(x=ftl.index, y=ftl["ROI"], mode="lines", name="FtL"))
+    fig.add_trace(go.Scatter(x=ucrp.index, y=ucrp["ROI"], mode="lines", name=r'$\text{UCRP}$'))
+    fig.add_trace(go.Scatter(x=ftw.index, y=ftw["ROI"], mode="lines", name=r'$\text{FtW}$'))
+    fig.add_trace(go.Scatter(x=ftl.index, y=ftl["ROI"], mode="lines", name=r'$\text{FtL}$'))
     # add title and labels
-    fig.update_layout(title="Baselines Comparison", xaxis_title="Date", yaxis_title="Portfolio Value")
+    fig.update_layout(title="Baselines Comparison", xaxis_title=r'$\text{Date}$', yaxis_title=r'$\text{Portfolio ROI}$')
     # save the plot as an png
     fig.write_image("Baselines/Baselines.png")
 
-    return ubah, bss, ucrp, ftw, ftl
+    return ubah, ucrp, ftw, ftl
 
 def plot_weighting_progression(weightings_array:np.array, start_date: datetime.date, end_date: datetime.date, series: str) -> None:
     """
@@ -283,7 +283,7 @@ def plot_weighting_progression(weightings_array:np.array, start_date: datetime.d
     fig = go.Figure()
     for i in range(weightings_array.shape[0]):
         fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=end_date), y=weightings_array[i], mode="lines"))
-    fig.update_layout(title=f"Weighting Progression - {series}", xaxis_title="Date", yaxis_title="Weighting")
+    fig.update_layout(xaxis_title=r'$\text{Date}$', yaxis_title=r'$\text{Weighting}$')
     # remove legend
     fig.update_layout(showlegend=False)
     fig.write_image(f"Baselines/{series}_weighting_progression.png")
@@ -305,4 +305,4 @@ if __name__ == "__main__":
     macro_economic_data = pickle.load(open("Collections/macro_economic_factors.pkl", "rb"))
     start_date = hyperparameters["initial_validation_date"]
     latest_date = extract_latest_date(asset_universe)
-    #plot_baselines(asset_universe, start_date, latest_date)
+    plot_baselines(asset_universe, start_date, latest_date)

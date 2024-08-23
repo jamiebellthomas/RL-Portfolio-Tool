@@ -25,8 +25,9 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
     fig = go.Figure()
 
     dud_count = 0
-    for asset in asset_universe.asset_list:
+    for asset in asset_universe.asset_list.values():
         asset.calculate_illiquidity_ratio(date, period)
+        print(asset.ticker, asset.illiquidity_ratio)
 
         # get subsection for the asset over the period
         start_date = date - datetime.timedelta(days=period * 365)
@@ -76,14 +77,15 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
 
     # add titles
     fig.update_layout(
-        title="Illiquidity Ratio vs Mean Volume Traded (2019-present)",
-        xaxis_title="Mean Volume Traded",
-        yaxis_title="Illiquidity Ratio",
+        
+        title=r'$\text{Illiquidity Ratio vs Mean Volume Traded (2019-present)}$',
+        xaxis_title=r'$\text{Mean Volume Traded}$',
+        yaxis_title=r'$\text{Illiquidity Ratio}$',
     )
     # remove legend
     fig.update_layout(showlegend=False)
     # save as a png
-    fig.write_image("Illiquidity_Ratio_vs_Mean_Volume_Traded.png")
+    fig.write_image("Investigations/illiquidity_ratio/Illiquidity_Ratio_vs_Mean_Volume_Traded.png")
     print("duds:", dud_count)
 
 
@@ -120,14 +122,14 @@ def illiquidity_over_time(
 
 def main():
     asset_universe = read_collection(filename)
-    # illiquidity_sense_check_investigation(asset_universe=asset_universe)
+    illiquidity_sense_check_investigation(asset_universe=asset_universe)
     tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "AZTA", "SCYX", "CROX", "PSTV", "SSSS"]
     for ticker in tickers:
         asset = asset_universe.asset_lookup(ticker)
 
-        illiquidity_over_time(
-            asset, datetime.date(2000, 1, 1), datetime.date(2021, 1, 1), period=3
-        )
+        #illiquidity_over_time(
+        #    asset, datetime.date(2000, 1, 1), datetime.date(2021, 1, 1), period=3
+        #)
 
 
 if __name__ == "__main__":
