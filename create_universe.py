@@ -98,7 +98,7 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
         if len(asset.index_list) >= 20 * 252:
             ticker_list.append(asset.ticker)
             
-
+    """
     # collect every third ticker
     for i in range(0, len(ticker_list), 3):
         ticker = ticker_list[i]
@@ -106,6 +106,10 @@ def create_reduced_collection(asset_universe: AssetCollection) -> AssetCollectio
         if(ticker == 'CRIS'):
             # remove CRIS from the list
             reduced_asset_list.pop(ticker)
+    """
+
+    for ticker in ticker_list:
+        reduced_asset_list[ticker] = asset_universe.asset_list[ticker]
 
 
     return AssetCollection(reduced_asset_list)
@@ -121,27 +125,28 @@ def main_create():
     """
 
     main_filename = "Collections/asset_universe.pkl"
-    reduced_filename = "Collections/reduced_asset_universe.pkl"
+    reduced_filename = "Collections/bigger_reduced_asset_universe.pkl"
     # First check to see if the file already exists, if so, delete it
-    try:
-        os.remove(main_filename)
-    except FileNotFoundError:
-        pass
+    #try:
+    #    os.remove(main_filename)
+    #except FileNotFoundError:
+    #    pass
 
-    try:
-        os.remove(reduced_filename)
-    except FileNotFoundError:
-        pass
+    #try:
+    #    os.remove(reduced_filename)
+    #except FileNotFoundError:
+    #    pass
 
-    ticker_list = extract_ticker(file_path)
+    #ticker_list = extract_ticker(file_path)
 
-    collection = create_collection(ticker_list)
+    #collection = create_collection(ticker_list)
+    collection = pickle.load(open("Collections/asset_universe.pkl", "rb"))
     reduced_collection = create_reduced_collection(collection)
     extract_ticker_list_from_collection(reduced_collection)
 
     # Open the file with write-binary ('wb') mode and dump the object
-    with open(main_filename, "wb") as file:
-        pickle.dump(collection, file)
+    #with open(main_filename, "wb") as file:
+    #    pickle.dump(collection, file)
 
     with open(reduced_filename, "wb") as file:
         pickle.dump(reduced_collection, file)
@@ -203,7 +208,7 @@ def main_read():
 
 
 if __name__ == "__main__":
-    #main_create()
+    main_create()
     # main_read()
 
     collection = read_collection("Collections/reduced_asset_universe.pkl")

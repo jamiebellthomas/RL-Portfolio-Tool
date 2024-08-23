@@ -17,7 +17,7 @@ import datetime
 import subprocess
 from hyperparameters import hyperparameters
 
-asset_universe = pickle.load(open("Collections/asset_universe.pkl", "rb"))
+asset_universe = pickle.load(open("Collections/bigger_reduced_asset_universe.pkl", "rb"))
 macro_economic_factors = pickle.load(
     open("Collections/macro_economic_factors.pkl", "rb")
 )
