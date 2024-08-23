@@ -257,8 +257,6 @@ class PortfolioEnv(gym.Env):
                 new_asset_list[asset.ticker] = asset
         self.portfolio.asset_list = new_asset_list
         self.proportion_invested_in = len(new_asset_list) / len(self.asset_universe.asset_list)
-        print("Proportion Invested In: ", self.proportion_invested_in)
-
         # STEP 3: Calculate the new portfolio value at the next time step
         new_portfolio_value = self.portfolio.calculate_portfolio_value(
             self.current_date, next_date
