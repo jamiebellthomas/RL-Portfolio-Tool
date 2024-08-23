@@ -458,13 +458,13 @@ if __name__ == "__main__":
         open("Collections/macro_economic_factors.pkl", "rb")
     )
 
-    model_path = "Logs/2024-08-22_23-49-49/model_2424832_steps.zip"
+    model_path = "Logs/2024-08-23_12-22-25/model_1966080_steps.zip"
 
     # sense_check(asset_universe)
     
     validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
-    #validate_loop("Logs/2024-08-22_23-49-49")
+    #validate_loop("Logs/2024-08-23_12-22-25")
 
     # analyse_validation_results("v4", asset_universe)
 

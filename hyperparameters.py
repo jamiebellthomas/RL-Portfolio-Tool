@@ -35,7 +35,7 @@ hyperparameters = {
     "interest_rate": 0.05,
     # Reward function hyperparameters
     "treynor_weight": 0.1,
-    "sharpe_weight": 0.8,
+    "sharpe_weight": 0.6,
     "sortino_weight": 0.0,
     "max_drawdown_weight": 0.0,
     "roi_weight": 0.1,
