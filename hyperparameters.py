@@ -48,7 +48,7 @@ hyperparameters = {
     "n_epochs": 10,
     "learning_rate": 1e-5,
     # This needs to be multiple of n_steps or it will do a whole extra cycle.
-    "total_timesteps": 5898240,
+    "total_timesteps": 3932160,
     "timesteps_per_save": 16384,
     "clip_range": 0.05,
     # PPO parameters to look into for model:

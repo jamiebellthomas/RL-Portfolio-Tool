@@ -88,6 +88,7 @@ class PortfolioEnv(gym.Env):
         self.universe_size = len(self.asset_universe.asset_list)
         self.current_observation = None
         self.roi = 0.0
+        self.portion_invested_in = 0.0
 
         # Define the observation space
         # The np.infs will need to be changed but for now we will leave them as is, we'll change them when we proceed to data normalisation
@@ -255,6 +256,8 @@ class PortfolioEnv(gym.Env):
             if asset.portfolio_weight > 0.0:
                 new_asset_list[asset.ticker] = asset
         self.portfolio.asset_list = new_asset_list
+        self.proportion_invested_in = len(new_asset_list) / len(self.asset_universe.asset_list)
+        print("Proportion Invested In: ", self.proportion_invested_in)
 
         # STEP 3: Calculate the new portfolio value at the next time step
         new_portfolio_value = self.portfolio.calculate_portfolio_value(
@@ -291,7 +294,7 @@ class PortfolioEnv(gym.Env):
         truncated = False
 
 
-        reward = self.portfolio.reward + (hyperparameters["roi_weight"] * self.roi)
+        reward = self.portfolio.reward + (hyperparameters["roi_weight"] * self.roi) + self.portion_invested_in
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 
