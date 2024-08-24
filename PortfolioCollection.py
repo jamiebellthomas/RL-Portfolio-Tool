@@ -137,8 +137,7 @@ class PortfolioCollection(Collection):
         self.entropy_penalty = -np.sum(self.weights_array * np.log(self.weights_array))
 
 
-
-        self.reward = (hyperparameters["treynor_weight"] * self.expected_treynor_ratio) + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio) + self.entropy_penalty
+        self.reward = (hyperparameters["treynor_weight"] * self.expected_treynor_ratio) + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio) + (self.entropy_penalty*hyperparameters["entropy_weight"])
 
         return self.portfolio_value
     

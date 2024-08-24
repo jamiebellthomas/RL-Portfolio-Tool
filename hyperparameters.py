@@ -34,11 +34,12 @@ hyperparameters = {
     # Interest rates for cash holdings (annual)
     "interest_rate": 0.05,
     # Reward function hyperparameters
-    "treynor_weight": 0.0,
-    "sharpe_weight": 1.0,
+    "treynor_weight": 0.1,
+    "sharpe_weight": 0.9,
     "sortino_weight": 0.0,
     "max_drawdown_weight": 0.0,
     "roi_weight": 0.0,
+    "entropy_weight": 0.2,
 
 
     # PPO hyperparameters
