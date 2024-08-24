@@ -23,6 +23,7 @@ class PortfolioCollection(Collection):
         self.risk_free_rate = 0.0
         self.reward = 0.0
         self.cash_return = 0.0
+        self.entropy_penalty = 0.0
 
     """
     Current phased out code
@@ -132,8 +133,12 @@ class PortfolioCollection(Collection):
         self.portfolio_beta = PortfolioCollection.calculate_portfolio_beta(self.betas_array, self.weights_array)
         self.calculate_treynor_ratio()
 
+        # Calculate the entropy penalty
+        self.entropy_penalty = -np.sum(self.weights_array * np.log(self.weights_array))
 
-        self.reward = (hyperparameters["treynor_weight"] * self.expected_treynor_ratio) + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio)
+
+
+        self.reward = (hyperparameters["treynor_weight"] * self.expected_treynor_ratio) + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio) + self.entropy_penalty
 
         return self.portfolio_value
     

@@ -510,19 +510,19 @@ if __name__ == "__main__":
         open("Collections/macro_economic_factors.pkl", "rb")
     )
 
-    asset = asset_universe.asset_lookup("NVDA")
-    today = datetime.date.today()
-    asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
+    #asset = asset_universe.asset_lookup("NVDA")
+    #today = datetime.date.today()
+    #asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
 
-    model_path = "Logs/2024-08-23_23-45-04/model_2719744_steps.zip"
+    model_path = "Logs/2024-08-24_12-17-32/model_3932160_steps.zip"
 
     #manual_plot("Validation/2024-08-23_16-51-57_comparison")
 
     # sense_check(asset_universe)
     
-    #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
+    validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
-    #validate_loop("Logs/2024-08-23_23-45-04")
+    #validate_loop("Logs/2024-08-24_12-17-32")
 
     # analyse_validation_results("v4", asset_universe)
 

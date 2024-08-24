@@ -257,6 +257,7 @@ class PortfolioEnv(gym.Env):
                 new_asset_list[asset.ticker] = asset
         self.portfolio.asset_list = new_asset_list
         self.proportion_invested_in = len(new_asset_list) / len(self.asset_universe.asset_list)
+        print(self.proportion_invested_in)
         # STEP 3: Calculate the new portfolio value at the next time step
         new_portfolio_value = self.portfolio.calculate_portfolio_value(
             self.current_date, next_date
@@ -292,7 +293,7 @@ class PortfolioEnv(gym.Env):
         truncated = False
 
 
-        reward = self.portfolio.reward + (hyperparameters["roi_weight"] * self.roi) + self.portion_invested_in
+        reward = self.portfolio.reward + (hyperparameters["roi_weight"] * self.roi)
         # STEP 8: Generate the info dictionary from this step (Later)
         info = self.generate_info()
 
