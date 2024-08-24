@@ -301,7 +301,7 @@ def plot_weighting_progression(weightings_array:np.array, start_date: datetime.d
 
 
 if __name__ == "__main__":
-    asset_universe = pickle.load(open("Collections/reduced_asset_universe.pkl", "rb"))
+    asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
     macro_economic_data = pickle.load(open("Collections/macro_economic_factors.pkl", "rb"))
     start_date = hyperparameters["initial_validation_date"]
     latest_date = extract_latest_date(asset_universe)

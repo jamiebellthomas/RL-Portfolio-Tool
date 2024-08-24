@@ -452,19 +452,77 @@ def sense_check(asset_universe: AssetCollection):
         print(key, value)
 
 
+def manual_plot(validation_folder):
+    """
+    This function loops through the rewards csv files in the comparison validation folder and plots the rewards against the time steps on one graph
+    It also plots the cumulative rewards against the training iterations on a separate graph
+    """
+    #1 get a list of the csv files in the validation folder
+    csv_files = os.listdir(validation_folder)
+    # filter out the csv files
+    csv_files = [file for file in csv_files if file.endswith(".csv")]
+    # create a new figure
+    fig = go.Figure()
+    # total rewards dictionary
+    total_rewards = {}
+    for csv_file in csv_files:
+        number = int(csv_file.split("_")[0])
+        results_df = pd.read_csv(os.path.join(validation_folder, csv_file))
+        # set index to the tickers in column 0
+        results_df.set_index(results_df.columns[0], inplace=True)
+        # extract the rewards from the last row
+        rewards = results_df.loc["Reward"]
+        dates = results_df.columns
+        dates = dates[1:]
+        rewards = rewards[1:]
+        rewards = rewards.to_numpy()
+        # plot the rewards against the time steps
+        fig.add_trace(go.Scatter(x=dates, y=rewards, mode="lines", name=str(number) + " iterations"))
+        # save the total reward to a dictionary
+        total_rewards[number] = rewards.sum()
+    fig.update_layout(title="Return on Investment vs Time Step", xaxis_title="Time Step", yaxis_title="ROI")
+
+    fig.write_image(validation_folder + "/rewards.png")
+
+    # sort dictionary by values
+    total_rewards = dict(sorted(total_rewards.items(), key=lambda item: item[1]))
+    # plot total rewards against iterations as a scatter plot with no lines
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(total_rewards.keys()), y=list(total_rewards.values()), mode="markers"))
+    fig.update_layout(title="Total Reward vs Iterations", xaxis_title="Iterations", yaxis_title="Total Reward")
+    fig.write_image(validation_folder + "/total_rewards.png")
+    # also export the dictionary to a text file
+    with open(validation_folder + "/total_rewards.txt", "w") as f:
+        for key, value in total_rewards.items():
+            f.write(str(key) + ":" + str(value) + "\n")
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
-    asset_universe = pickle.load(open("Collections/bigger_reduced_asset_universe.pkl", "rb"))
+    asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
     macro_economic_factors = pickle.load(
         open("Collections/macro_economic_factors.pkl", "rb")
     )
 
-    model_path = "Logs/2024-08-23_14-58-39/model_1916928_steps.zip"
+    asset = asset_universe.asset_lookup("NVDA")
+    today = datetime.date.today()
+    asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
+
+    model_path = "Logs/2024-08-23_23-45-04/model_2719744_steps.zip"
+
+    #manual_plot("Validation/2024-08-23_16-51-57_comparison")
 
     # sense_check(asset_universe)
     
     #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
-    validate_loop("Logs/2024-08-23_16-51-57")
+    #validate_loop("Logs/2024-08-23_23-45-04")
 
     # analyse_validation_results("v4", asset_universe)
 
