@@ -16,6 +16,7 @@ import pandas as pd
 from hyperparameters import hyperparameters
 from AssetCollection import AssetCollection
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import os
 
 
@@ -497,6 +498,46 @@ def manual_plot(validation_folder):
             f.write(str(key) + ":" + str(value) + "\n")
 
 
+def validation_multiplot(model_folder:str, iteration_list: list, asset_universe: AssetCollection,
+    macro_economic_factors: AssetCollection):
+    """
+    This function takes in a model directory, and 4 iteration numbers and plots the rewards against the time steps for each model on one graph
+    in a 2x2 grid. 
+    """
+    if(len(iteration_list) != 4):
+        raise ValueError("The iteration list must contain 4 iteration numbers")
+    episode_length = hyperparameters["timesteps_per_save"]
+        
+    fig = make_subplots(rows=2, cols=2, subplot_titles=(f'$\\text{{Iteration }} {iteration_list[0]/episode_length}$', 
+                                                        f'$\\text{{Iteration }} {iteration_list[1]/episode_length}$', 
+                                                        f'$\\text{{Iteration }} {iteration_list[2]/episode_length}$', 
+                                                        f'$\\text{{Iteration }} {iteration_list[3]/episode_length}$'))
+    for i, iteration in enumerate(iteration_list):
+        if(iteration % episode_length != 0):
+            raise ValueError("The iteration numbers must be multiples of the episode length")
+
+        model_path = os.path.join(model_folder, f"model_{iteration}_steps.zip")
+        results_df = validate(
+            model_path=model_path,
+            asset_universe=asset_universe,
+            macro_economic_factors=macro_economic_factors,
+            create_folder=False,
+        )
+        rewards = results_df.loc["Reward"]
+        dates = results_df.columns
+        dates = dates[1:]
+        rewards = rewards[1:]
+        rewards = rewards.to_numpy()
+        fig.add_trace(go.Scatter(x=dates, y=rewards, mode="lines", name=f"Iteration {iteration/episode_length}"), row=(i//2)+1, col=(i%2)+1)
+        # set x and y axis titles
+        fig.update_xaxes(title_text='$\text{Time Step}$', row=(i//2)+1, col=(i%2)+1)
+        fig.update_yaxes(title_text='$\text{ROI}$', row=(i//2)+1, col=(i%2)+1)
+
+    # save the figure
+    fig.write_image(model_folder + "/rewards_multiplot.png")
+        
+
+
 
 
 
@@ -520,11 +561,15 @@ if __name__ == "__main__":
 
     # sense_check(asset_universe)
     
-    validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
+    #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
     #validate_loop("Logs/2024-08-24_12-17-32")
 
     # analyse_validation_results("v4", asset_universe)
+
+    model_list = [32768, 491520, 1540096, 2277376]
+    model_folder = "Logs/2024-08-24_12-17-32"
+    validation_multiplot(model_folder, model_list, asset_universe, macro_economic_factors)
 
     """
     # playing around with plots

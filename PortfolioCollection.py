@@ -118,10 +118,7 @@ class PortfolioCollection(Collection):
         self.returns_array = np.column_stack(returns_list)
         self.weights_array = np.array(weights_list)
         self.expected_returns_array = np.array(expected_returns_list)
-        # print the size of returns array
-        # print(self.returns_array.shape)
-        # print(self.weights_array.shape)
-        # print(self.expected_returns_array.shape)
+ 
 
         self.portfolio_value = new_portfolio_value
         self.calculate_expected_return()
