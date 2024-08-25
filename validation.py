@@ -502,9 +502,9 @@ def validation_multiplot(validation_folder:str, iteration_list: list, asset_univ
     macro_economic_factors: AssetCollection):
     """
     This function takes in a model directory, and 4 iteration numbers and plots the rewards against the time steps for each model on one graph
-    in a 2x2 grid. 
+    in a 3x2 grid. 
     """
-    if(len(iteration_list) != 4):
+    if(len(iteration_list) != 6):
         raise ValueError("The iteration list must contain 4 iteration numbers")
     episode_length = hyperparameters["timesteps_per_save"]
 
@@ -518,10 +518,15 @@ def validation_multiplot(validation_folder:str, iteration_list: list, asset_univ
     # create a figure
 
         
-    fig = make_subplots(rows=2, cols=2, subplot_titles=(f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[0]/episode_length)}$', 
+    fig = make_subplots(rows=3, cols=2, subplot_titles=(f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[0]/episode_length)}$', 
                                                         f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[1]/episode_length)}$', 
                                                         f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[2]/episode_length)}$', 
-                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[3]/episode_length)}$'))
+                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[3]/episode_length)}$',
+                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[4]/episode_length)}$',
+                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[5]/episode_length)}$'),
+                                        vertical_spacing=0.1,  # Adjust vertical space between subplots
+                                        horizontal_spacing=0.1  # Adjust horizontal space between subplots
+                                                        )
     for i, iteration in enumerate(iteration_list):
         if(iteration % episode_length != 0):
             raise ValueError("The iteration numbers must be multiples of the episode length")
@@ -543,22 +548,64 @@ def validation_multiplot(validation_folder:str, iteration_list: list, asset_univ
         showlegend = False
         if i == 0:
             showlegend = True
-        fig.add_trace(go.Scatter(x=dates, y=rewards, mode="lines", line=dict(color="blue"),legendgroup=f"group{i+1}", showlegend=showlegend, name='$\\text{Model}$'), row=(i//2)+1, col=(i%2)+1)
+        fig.add_trace(go.Scatter(x=dates, 
+                                 y=rewards, 
+                                 mode="lines", 
+                                 line=dict(color="blue"),
+                                 legendgroup=f"group{i+1}", 
+                                 showlegend=showlegend, 
+                                 name='$\\text{Model}$'), 
+                                 row=(i//2)+1, col=(i%2)+1)
 
         # add the baseline to the plot
    
-        fig.add_trace(go.Scatter(x=baseline_dates, y=baseline_roi, mode="lines", name='$\\text{Baseline}$', line=dict(dash='dash', color='red'),legendgroup=f"group{i+1}", showlegend=showlegend), row=(i//2)+1, col=(i%2)+1)
+        fig.add_trace(go.Scatter(x=baseline_dates, 
+                                 y=baseline_roi, 
+                                 mode="lines", 
+                                 name='$\\text{Baseline}$', 
+                                 line=dict(dash='dash', color='red'),
+                                 legendgroup=f"group{i+1}", 
+                                 showlegend=showlegend), 
+                                 row=(i//2)+1, col=(i%2)+1)
 
 
         # set x and y axis titles
-        fig.update_xaxes(title_text='$\\text{Time Step}$', row=(i//2)+1, col=(i%2)+1)
-        fig.update_yaxes(title_text='$\\text{ROI}$', row=(i//2)+1, col=(i%2)+1)
+        title_font = dict(size=20, color='black')
+        tick_font = dict(size=17, family='Serif', color='black')
+
+        fig.update_xaxes(title_text='$\\text{Time Step}$', 
+                         row=(i//2)+1, col=(i%2)+1,
+                         showgrid=True, gridcolor='lightgrey',
+                         linecolor='lightgrey', linewidth=4,
+                         zerolinecolor='lightgrey', zerolinewidth=4,
+                         title_font=title_font,  
+                        tickfont=tick_font)
+
+        fig.update_yaxes(title_text='$\\text{ROI}$', 
+                         row=(i//2)+1, col=(i%2)+1,
+                         showgrid=True, gridcolor='lightgrey',
+                         linecolor='lightgrey', linewidth=4,
+                         zerolinecolor='lightgrey', zerolinewidth=4,
+                         title_font=title_font,
+                         tickfont=tick_font)
 
 
     # make figure huge
-    fig.update_layout(height=1000, width=2000)
+    fig.update_layout(height=1750, width=2000, plot_bgcolor='white', paper_bgcolor='white')
     # show legend in the dead center
-    fig.update_layout(legend=dict(x=0.455, y=0.5, traceorder='normal', font=dict(size=20, color="black"), bgcolor="LightSteelBlue", bordercolor="Black", borderwidth=2))
+    fig.update_layout(
+    legend=dict(
+        x=0.5, y=1.05,  # Centered in the middle for demonstration
+        xanchor='center', yanchor='middle',
+        traceorder='normal',
+        font=dict(size=35, color="black"),  # Larger font size
+        bgcolor='rgba(255, 255, 255, 0.5)',  # Semi-transparent background to see overlap
+        bordercolor='black',
+        borderwidth=2,
+        tracegroupgap=20
+    ),
+    margin=dict(l=150, r=150, t=150, b=150)  # Increase margins to ensure space
+)
 
 
 
@@ -592,13 +639,13 @@ if __name__ == "__main__":
     
     #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     
-    validate_loop("Logs/2024-08-25_00-35-26")
+    #validate_loop("Logs/2024-08-25_01-28-50")
 
     # analyse_validation_results("v4", asset_universe)
 
-    #model_list = [32768, 491520, 1540096, 2277376]
-    #validation_folder = "Validation/v17_comparison"
-    #validation_multiplot(validation_folder, model_list, asset_universe, macro_economic_factors)
+    model_list = [16384, 163840, 819200, 1638400, 2457600, 3276800]
+    validation_folder = "Validation/v18_comparison"
+    validation_multiplot(validation_folder, model_list, asset_universe, macro_economic_factors)
 
     """
     # playing around with plots
