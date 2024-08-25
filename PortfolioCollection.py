@@ -4,6 +4,7 @@ import datetime
 from numba import njit
 from hyperparameters import hyperparameters
 
+
 class PortfolioCollection(Collection):
     def __init__(self, asset_list: dict):
         super().__init__(asset_list=asset_list)
@@ -62,6 +63,29 @@ class PortfolioCollection(Collection):
 
         return np.array([roi])
 
+    def calculate_portfolio_entropy(self) -> float:
+        """
+        This method calculates the entropy of the portfolio.
+        This will be calculated as the sum of the product of the weightings of the assets in the portfolio and the log of the weightings of the assets in the portfolio.
+        """
+        entropy = -np.sum(self.weights_array * np.log(self.weights_array))
+        return entropy
+
+    def calculate_portfolio_volatility(self, date) -> float:
+        """
+        This method calculates the volatility of the portfolio.
+        This will be calculated as the weighted average of the standard deviations of the returns of the assets in the portfolio.
+        """
+        volatilities = []
+        for asset in self.asset_list.values():
+            volatilities.append(
+                asset.calculate_volatility(
+                    date, period=hyperparameters["volatility_period"]
+                )
+            )
+        volatilities = np.array(volatilities)
+        return np.dot(self.weights_array, volatilities)
+
     def calculate_portfolio_value(
         self, old_date: datetime.date, new_date: datetime.date
     ) -> float:
@@ -74,7 +98,7 @@ class PortfolioCollection(Collection):
         cash_weighting = 1 - np.sum(
             [asset.portfolio_weight for asset in self.asset_list.values()]
         )
-         #Precompute old and new prices for all assets
+        # Precompute old and new prices for all assets
         old_prices = np.array(
             [asset.calculate_value(old_date) for asset in self.asset_list.values()]
         )
@@ -90,9 +114,9 @@ class PortfolioCollection(Collection):
         # Calculate the new investment values
         new_investment_values = (new_prices / old_prices) * old_investment_values
 
-        self.actual_returns_array = (new_investment_values - old_investment_values) / old_investment_values
-
-
+        self.actual_returns_array = (
+            new_investment_values - old_investment_values
+        ) / old_investment_values
 
         # Calculate the new portfolio value
         new_portfolio_value = np.sum(new_investment_values)
@@ -118,34 +142,39 @@ class PortfolioCollection(Collection):
         self.returns_array = np.column_stack(returns_list)
         self.weights_array = np.array(weights_list)
         self.expected_returns_array = np.array(expected_returns_list)
- 
 
         self.portfolio_value = new_portfolio_value
         self.calculate_expected_return()
         self.calculate_actual_return()
-        self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(self.returns_array, self.weights_array)
+        self.portfolio_std = PortfolioCollection.calculate_portfolio_returns_std(
+            self.returns_array, self.weights_array
+        )
         self.calculate_sharpe_ratio()
 
         self.betas_array = np.array(betas_list)
-        self.portfolio_beta = PortfolioCollection.calculate_portfolio_beta(self.betas_array, self.weights_array)
+        self.portfolio_beta = PortfolioCollection.calculate_portfolio_beta(
+            self.betas_array, self.weights_array
+        )
         self.calculate_treynor_ratio()
 
         # Calculate the entropy penalty
         self.entropy_penalty = -np.sum(self.weights_array * np.log(self.weights_array))
 
-
-        self.reward = (hyperparameters["treynor_weight"] * self.expected_treynor_ratio) + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio) + (self.entropy_penalty*hyperparameters["entropy_weight"])
+        self.reward = (
+            (hyperparameters["treynor_weight"] * self.expected_treynor_ratio)
+            + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio)
+            + (self.entropy_penalty * hyperparameters["entropy_weight"])
+        )
 
         return self.portfolio_value
-    
+
     def calculate_actual_return(self) -> None:
         """
         This method will calculate the actual return of the portfolio over a given period.
         This will be calculated as the change in the value of the portfolio over the period.
+        This is the daily return of the portfolio. The annualised return will be calculated in the calculate_sharpe_ratio method.
         """
         self.actual_return = np.dot(self.weights_array, self.actual_returns_array)
-
-    
 
     def calculate_expected_return(self) -> None:
         """
@@ -167,10 +196,12 @@ class PortfolioCollection(Collection):
         """
 
         self.expected_return = np.dot(self.weights_array, self.expected_returns_array)
-        
+
     @staticmethod
     @njit(nogil=True)
-    def calculate_portfolio_returns_std(returns_array:np.array, weights_array: np.array) -> np.array:
+    def calculate_portfolio_returns_std(
+        returns_array: np.array, weights_array: np.array
+    ) -> np.array:
         """
         This method will calculate the standard deviation of the returns of the portfolio over a given period.
         This will be calculated as the weighted average of the standard deviations of the returns of the assets in the portfolio.
@@ -194,26 +225,32 @@ class PortfolioCollection(Collection):
             self.expected_return - self.risk_free_rate
         ) / self.portfolio_std
 
+        daily_risk_free_rate = (1 + self.risk_free_rate) ** (1 / 252) - 1
+        daily_portfolio_std = self.portfolio_std / np.sqrt(252)
         self.actual_sharpe_ratio = (
-            self.actual_return - self.risk_free_rate
-        ) / self.portfolio_std
-
+             self.actual_return - daily_risk_free_rate
+        ) / daily_portfolio_std
 
     @staticmethod
     @njit(nogil=True)
-    def calculate_portfolio_beta(betas_array: np.array, weights_array: np.array) -> float:
+    def calculate_portfolio_beta(
+        betas_array: np.array, weights_array: np.array
+    ) -> float:
         """
         This method will calculate the beta of the portfolio.
         This will be calculated as the weighted average of the betas of the assets in the portfolio.
         """
         portfolio_beta = np.dot(weights_array, betas_array)
         return portfolio_beta
-    
 
     def calculate_treynor_ratio(self) -> None:
         """
         This method will calculate the Treynor ratio of the portfolio.
         This will be calculated as the ratio of the expected return of the portfolio to the beta of the portfolio.
         """
-        self.expected_treynor_ratio = (self.expected_return - self.risk_free_rate) / self.portfolio_beta
-        self.actual_treynor_ratio = (self.actual_return - self.risk_free_rate) / self.portfolio_beta
+        self.expected_treynor_ratio = (
+            self.expected_return - self.risk_free_rate
+        ) / self.portfolio_beta
+        self.actual_treynor_ratio = (
+            self.actual_return - self.risk_free_rate
+        ) / self.portfolio_beta

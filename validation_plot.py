@@ -9,6 +9,7 @@ from validation import roi_asset_universe
 from hyperparameters import hyperparameters
 import numpy as np
 
+
 def plot_stats(
     csv_list: list,
     macro_economic_collection: MacroEconomicCollection,
@@ -41,9 +42,7 @@ def plot_stats(
         version = extract_version_number(csv)
         rewards_sum[version] = rewards.sum()
         # plot the rewards against the time steps
-        fig.add_trace(
-            go.Scatter(x=dates, y=rewards, mode="lines", name=version)
-        )
+        fig.add_trace(go.Scatter(x=dates, y=rewards, mode="lines", name=version))
         start_date = datetime.strptime(dates[0], "%Y-%m-%d")
         end_date = datetime.strptime(dates[-1], "%Y-%m-%d")
     print(rewards_sum)
@@ -66,7 +65,7 @@ def plot_stats(
 
     # if hyperparameters[ "initial_validation_date" ] is before hyperparameters[ "initial_training_date" ]
     # add lines showing the training period (01/01/2015 - 01/01/2023)
-    if(start_date.date() < hyperparameters["initial_training_date"]):
+    if start_date.date() < hyperparameters["initial_training_date"]:
         print("Training period is after validation period")
         hardcoded_end_training_date = pd.Timestamp(datetime(2023, 1, 1))
         hardcoded_start_training_date = pd.Timestamp(datetime(2015, 1, 1))
@@ -74,27 +73,30 @@ def plot_stats(
         # make 2 lines manually
         x = np.array([hardcoded_end_training_date, hardcoded_end_training_date])
         y = np.array([min_reward, max_reward])
-        fig.add_trace(go.Scatter(
-            x=x, 
-            y=y, 
-            mode="markers+lines", 
-            line=dict(color="green", dash="dash"),
-            marker=dict(size=10),  
-            name="Training Period"  
-            ))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="markers+lines",
+                line=dict(color="green", dash="dash"),
+                marker=dict(size=10),
+                name="Training Period",
+            )
+        )
 
         x = np.array([hardcoded_start_training_date, hardcoded_start_training_date])
-        fig.add_trace(go.Scatter(
-            x=x, 
-            y=y, 
-            mode="markers+lines", 
-            line=dict(color="green", dash="dash"),
-            marker=dict(size=10),  
-            name="Training Period",  
-            showlegend=False  # This will hide the trace from the legend
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="markers+lines",
+                line=dict(color="green", dash="dash"),
+                marker=dict(size=10),
+                name="Training Period",
+                showlegend=False,  # This will hide the trace from the legend
+            )
+        )
 
-    
     fig.write_image("Validation/rewards_comparison.png")
 
 

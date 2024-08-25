@@ -23,8 +23,9 @@ def np_cache(*args, **kwargs):
 
     >>> multiply.cache_info()
     CacheInfo(hits=1, misses=1, maxsize=256, currsize=1)
-    
+
     """
+
     def decorator(function):
         @wraps(function)
         def wrapper(np_array, *args, **kwargs):

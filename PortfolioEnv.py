@@ -157,7 +157,7 @@ class PortfolioEnv(gym.Env):
 
         obs = self._next_observation(self.initial_date)
         # set first column of asset universe observation to weights except the last value which is the cash holding
-        obs['asset_universe'][:,0] = weights.flatten()
+        obs["asset_universe"][:, 0] = weights.flatten()
 
         # print(obs)
         info = {}
@@ -248,7 +248,9 @@ class PortfolioEnv(gym.Env):
                 new_weighting = new_weighting[0]
             absolute_delta += abs(current_weighting - new_weighting)
             asset.portfolio_weight = new_weighting
-        self.portfolio.portfolio_value = current_portfolio_value * (1 - (self.transaction_cost * absolute_delta))
+        self.portfolio.portfolio_value = current_portfolio_value * (
+            1 - (self.transaction_cost * absolute_delta)
+        )
 
         # STEP 2 Adjust the portfolio object so only assets that have a non-zero weighting are included
         new_asset_list = {}
@@ -256,7 +258,9 @@ class PortfolioEnv(gym.Env):
             if asset.portfolio_weight > 0.0:
                 new_asset_list[asset.ticker] = asset
         self.portfolio.asset_list = new_asset_list
-        self.proportion_invested_in = len(new_asset_list) / len(self.asset_universe.asset_list)
+        self.proportion_invested_in = len(new_asset_list) / len(
+            self.asset_universe.asset_list
+        )
         # STEP 3: Calculate the new portfolio value at the next time step
         new_portfolio_value = self.portfolio.calculate_portfolio_value(
             self.current_date, next_date
@@ -287,7 +291,6 @@ class PortfolioEnv(gym.Env):
 
         # STEP 8: Check if the episode is truncated (not sure how this works yet)
         truncated = False
-
 
         reward = self.portfolio.reward + (hyperparameters["roi_weight"] * self.roi)
         # STEP 8: Generate the info dictionary from this step (Later)

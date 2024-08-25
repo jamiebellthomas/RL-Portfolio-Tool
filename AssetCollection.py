@@ -22,10 +22,9 @@ class AssetCollection(Collection):
             for asset in self.asset_list.values()
         ]
 
-
-            # print(observation_space)
+        # print(observation_space)
         return AssetCollection.normalise_observation(np.array(observation_space))
-    
+
     @staticmethod
     @njit(nogil=True)
     def normalise_observation(observation: np.array) -> np.array:

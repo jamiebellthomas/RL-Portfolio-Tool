@@ -23,11 +23,11 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
     period = 5
     # create a normal plotly figure
     fig = go.Figure()
-
+    max_vol = -1
+    max_illiquidity = -1
     dud_count = 0
     for asset in asset_universe.asset_list.values():
         asset.calculate_illiquidity_ratio(date, period)
-        print(asset.ticker, asset.illiquidity_ratio)
 
         # get subsection for the asset over the period
         start_date = date - datetime.timedelta(days=period * 365)
@@ -64,7 +64,9 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
             if asset.illiquidity_ratio > 1.0:
                 print(asset.ticker, asset.illiquidity_ratio, mean_volume)
             continue
-
+            
+        max_vol = max(max_vol, mean_volume)
+        max_illiquidity = max(max_illiquidity, asset.illiquidity_ratio)
         # plot the illiquidity ratio against the mean volume traded, make all markers the same colour
         fig.add_trace(
             go.Scatter(
@@ -75,17 +77,46 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
             )
         )
 
+    title_font = dict(size=20, color="black")
+    tick_font = dict(size=17, family="Serif", color="black")
+    color="lightgrey"
+
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor=color,
+        linecolor=color,
+        linewidth=4,
+        zerolinecolor=color,
+        zerolinewidth=4,
+        title_font=title_font,
+        tickfont=tick_font,
+        range = [0, max_vol*1.05]
+    )
+
+    fig.update_yaxes(
+            showgrid=True,
+            gridcolor=color,
+            linecolor=color,
+            linewidth=4,
+            zerolinecolor=color,
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+            range = [0, max_illiquidity*1.05]
+        )
+
+
     # add titles
     fig.update_layout(
-        
-        title=r'$\text{Illiquidity Ratio vs Mean Volume Traded (2019-present)}$',
-        xaxis_title=r'$\text{Mean Volume Traded}$',
-        yaxis_title=r'$\text{Illiquidity Ratio}$',
+        xaxis_title=r"$\text{Mean Volume Traded}$",
+        yaxis_title=r"$\text{Illiquidity Ratio}$",
     )
     # remove legend
-    fig.update_layout(showlegend=False)
+    fig.update_layout(width=750,height=500,showlegend=False, plot_bgcolor="white", paper_bgcolor="white")
     # save as a png
-    fig.write_image("Investigations/illiquidity_ratio/Illiquidity_Ratio_vs_Mean_Volume_Traded.png")
+    fig.write_image(
+        "Investigations/illiquidity_ratio/Illiquidity_Ratio_vs_Mean_Volume_Traded.png"
+    )
     print("duds:", dud_count)
 
 
@@ -127,9 +158,9 @@ def main():
     for ticker in tickers:
         asset = asset_universe.asset_lookup(ticker)
 
-        #illiquidity_over_time(
+        # illiquidity_over_time(
         #    asset, datetime.date(2000, 1, 1), datetime.date(2021, 1, 1), period=3
-        #)
+        # )
 
 
 if __name__ == "__main__":

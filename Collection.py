@@ -1,8 +1,10 @@
 from functools import cache
+
+
 class Collection:
     def __init__(self, asset_list):
         self.asset_list = asset_list
-        
+
     @cache
     def asset_lookup(self, ticker: str):
         """

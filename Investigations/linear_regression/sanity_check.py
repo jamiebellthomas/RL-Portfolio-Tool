@@ -10,6 +10,7 @@ from hyperparameters import hyperparameters
 import datetime
 import pickle
 import plotly.graph_objects as go
+
 # and sub plots
 from plotly.subplots import make_subplots
 
@@ -20,11 +21,17 @@ def plot_linear_regression(asset_list: list, date: datetime.date) -> None:
     """
     if len(asset_list) != 3:
         raise ValueError("This function only supports 3 assets at a time.")
-    
 
-    fig = make_subplots(rows=1, cols=len(asset_list), subplot_titles=(r'$\text{Trajectory of AAPL}$', r'$\text{Trajectory of CNVS}$', r'$\text{Trajectory of ACIW}$') )
-    for index,asset in enumerate(asset_list):
-
+    fig = make_subplots(
+        rows=1,
+        cols=len(asset_list),
+        subplot_titles=(
+            f"$\\text{{Trajectory of {asset_list[0]}}}$",
+            f"$\\text{{Trajectory of {asset_list[1]}}}$",
+            f"$\\text{{Trajectory of {asset_list[2]}}}$",
+        ),
+    )
+    for index, asset in enumerate(asset_list):
         slope, intercept, pct_change = asset.calculate_linear_regression(
             date, hyperparameters["linear_regression_period"]
         )
@@ -36,17 +43,65 @@ def plot_linear_regression(asset_list: list, date: datetime.date) -> None:
         # plot the linear regression model
 
         fig.add_trace(
-           go.Scatter(x=x, y=pct_change, mode="lines", line=dict(color="red"), showlegend=False), row=1, col=index+1
+            go.Scatter(
+                x=x,
+                y=pct_change,
+                mode="lines",
+                line=dict(color="red"),
+                showlegend=False,
+            ),
+            row=1,
+            col=index + 1,
         )
-        fig.add_trace(go.Scatter(x=x, y=y, mode="lines",line=dict(color="blue"), showlegend=False), row=1, col=index+1)
+        fig.add_trace(
+            go.Scatter(
+                x=x, y=y, mode="lines", line=dict(color="blue"), showlegend=False
+            ),
+            row=1,
+            col=index + 1,
+        )
         # for this subplot, make the x-axis the date and the y-axis the pct_change
-        fig.update_xaxes(title_text=r'$\text{Days}$', row=1, col=index+1)
-        fig.update_yaxes(title_text=r'$\text{ROI}$', row=1, col=index+1)
+        title_font = dict(size=20, color="black")
+        tick_font = dict(size=17, family="Serif", color="black")
+        color = "lightgrey"
 
- 
-    fig.update_layout(height=500, width=1500)
+        fig.update_xaxes(
+            title_text="$\\text{Days}$",
+            row=1,
+            col=index + 1,
+            showgrid=True,
+            gridcolor=color,
+            linecolor=color,
+            linewidth=4,
+            zerolinecolor=color,
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+        )
+
+        fig.update_yaxes(
+            title_text="$\\text{ROI}$",
+            row=1,
+            col=index + 1,
+            showgrid=True,
+            gridcolor=color,
+            linecolor=color,
+            linewidth=4,
+            zerolinecolor=color,
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+        )
+
+    fig.update_layout(height=500, width=1500, plot_bgcolor="white", showlegend=False, paper_bgcolor="white")
     fig.write_image(
-        "Investigations/linear_regression/" + asset_list[0].ticker + "_" + asset_list[1].ticker + "_" + asset_list[2].ticker + "_linear_regression.png"
+        "Investigations/linear_regression/"
+        + asset_list[0].ticker
+        + "_"
+        + asset_list[1].ticker
+        + "_"
+        + asset_list[2].ticker
+        + "_linear_regression.png"
     )
 
     return slope, intercept

@@ -126,11 +126,61 @@ def CAPM_over_time(
         expected_returns.append(expected_return)
         betas.append(asset.beta)
     # plot the expected returns against the date
-    returns_fig = make_subplots(rows=1, cols=3,
-                    subplot_titles=(r'$\text{Expected Returns of AAPL}$', r'$\text{Stock Price of AAPL}$', r'$\text{Value of the NASDAQ Composite Index}$'))
-    returns_fig.add_trace(
-        go.Scatter(x=date_range, y=expected_returns, mode="lines", name=r'$\text{Expected Returns}$'), row=1, col=1
+    returns_fig = make_subplots(
+        rows=1,
+        cols=3,
+        subplot_titles=(
+            f"$\\text{{Expected Returns of {asset.ticker}}}$",
+            f"$\\text{{Stock Price of {asset.ticker}}}$",
+            r"$\text{Value of the NASDAQ Composite Index}$",
+        ),
+        horizontal_spacing=0.08,
     )
+    returns_fig.add_trace(
+        go.Scatter(
+            x=date_range,
+            y=expected_returns,
+            mode="lines",
+            name=r"$\text{Expected Returns}$",
+        ),
+        row=1,
+        col=1,
+    )
+
+    title_font = dict(size=20, color="black")
+    tick_font = dict(size=17, family="Serif", color="black")
+    color="lightgrey"
+
+    returns_fig.update_xaxes(
+        title_text="$\\text{Date}$",
+        row=1,
+        col=1,
+        showgrid=True,
+        gridcolor=color,
+        linecolor=color,
+        linewidth=4,
+        zerolinecolor=color,
+        zerolinewidth=4,
+        title_font=title_font,
+        tickfont=tick_font,
+    )
+
+    returns_fig.update_yaxes(
+            title_text="$\\text{Expected Return}$",
+            row=1,
+            col=1,
+            showgrid=True,
+            gridcolor=color,
+            linecolor=color,
+            linewidth=4,
+            zerolinecolor=color,
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+        )
+
+    
+
     # Now we need the value of the asset bwteen the init_date and end_date
     new_time_series = asset.value_list[
         (asset.index_list >= init_date) & (asset.index_list <= end_date)
@@ -139,8 +189,41 @@ def CAPM_over_time(
         (asset.index_list >= init_date) & (asset.index_list <= end_date)
     ]
     returns_fig.add_trace(
-        go.Scatter(x=new_index, y=new_time_series, mode="lines", name=r'$\text{Asset Value}$'), row=1, col=2
+        go.Scatter(
+            x=new_index, y=new_time_series, mode="lines", name=r"$\text{Asset Value}$"
+        ),
+        row=1,
+        col=2,
     )
+
+    returns_fig.update_xaxes(
+        title_text="$\\text{Date}$",
+        row=1,
+        col=2,
+        showgrid=True,
+        gridcolor=color,
+        linecolor=color,
+        linewidth=4,
+        zerolinecolor=color,
+        zerolinewidth=4,
+        title_font=title_font,
+        tickfont=tick_font,
+    )
+
+    returns_fig.update_yaxes(
+            title_text="$\\text{Asset Value}$",
+            row=1,
+            col=2,
+            showgrid=True,
+            gridcolor=color,
+            linecolor=color,
+            linewidth=4,
+            zerolinecolor=color,
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+        )
+
 
     # Now we need the value of the NASDAQ bwteen the init_date and end_date
     sp500 = macro_economic_collection.asset_lookup("NASDAQ")
@@ -151,29 +234,57 @@ def CAPM_over_time(
         (sp500.index_list >= init_date) & (sp500.index_list <= end_date)
     ]
     returns_fig.add_trace(
-        go.Scatter(x=new_sp500_index, y=new_sp500_values, mode="lines", name=r'$\text{NASDAQ}$'), row=1, col=3
+        go.Scatter(
+            x=new_sp500_index, y=new_sp500_values, mode="lines", name=r"$\text{NASDAQ}$"
+        ),
+        row=1,
+        col=3,
     )
 
-    returns_fig.update_yaxes(title_text=r'$\text{Expected Return}$', row=1, col=1)
-    returns_fig.update_xaxes(title_text=r'$\text{Date}$', row=1, col=1)
-    returns_fig.update_yaxes(title_text=r'$\text{Asset Value}$', row=1, col=2)
-    returns_fig.update_xaxes(title_text=r'$\text{Date}$', row=1, col=2)
-    returns_fig.update_yaxes(title_text=r'$\text{NASDAQ Composite Index Value}$', row=1, col=3)
-    returns_fig.update_xaxes(title_text=r'$\text{Date}$', row=1, col=3)
+    returns_fig.update_xaxes(
+    title_text="$\\text{Date}$",
+    row=1,
+    col=3,
+    showgrid=True,
+    gridcolor=color,
+    linecolor=color,
+    linewidth=4,
+    zerolinecolor=color,
+    zerolinewidth=4,
+    title_font=title_font,
+    tickfont=tick_font,
+    )
+
+    returns_fig.update_yaxes(
+        title_text="$\\text{NASDAQ Composite Index Value}$",
+        row=1,
+        col=3,
+        showgrid=True,
+        gridcolor=color,
+        linecolor=color,
+        linewidth=4,
+        zerolinecolor=color,
+        zerolinewidth=4,
+        title_font=title_font,
+        tickfont=tick_font,
+        )
+
+    returns_fig.update_yaxes(title_text=r"$\text{Expected Return}$", row=1, col=1)
+    returns_fig.update_xaxes(title_text=r"$\text{Date}$", row=1, col=1)
+    returns_fig.update_yaxes(title_text=r"$\text{Asset Value}$", row=1, col=2)
+    returns_fig.update_xaxes(title_text=r"$\text{Date}$", row=1, col=2)
+    returns_fig.update_yaxes(
+        title_text=r"$\text{NASDAQ Composite Index Value}$", row=1, col=3
+    )
+    returns_fig.update_xaxes(title_text=r"$\text{Date}$", row=1, col=3)
     # remove legend
     returns_fig.update_layout(showlegend=False)
 
     # make the plot very wide
-    returns_fig.update_layout(height=500, width=1500)
+    returns_fig.update_layout(height=500, width=1500, plot_bgcolor="white", paper_bgcolor="white")
     returns_fig.write_image(
         "Investigations/CAPM_period/" + asset.ticker + "/expected_returns.png"
     )
-
-
-
-
-
-
 
     # plot the betas against the date
     betas_fig = go.Figure()
@@ -187,8 +298,18 @@ def CAPM_over_time(
 
 
 def main():
-    tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "AZTA", "SCYX", "CROX", "PSTV", "SSSS", "NVDA"]
-    tickers = ["AAPL"]
+    tickers = [
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "AMZN",
+        "AZTA",
+        "SCYX",
+        "CROX",
+        "PSTV",
+        "SSSS",
+        "NVDA",
+    ]
     # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
     macro_economic_collection = open_macro_economic_file()
     for ticker in tickers:
@@ -197,7 +318,7 @@ def main():
         CAPM_investigation(asset, macro_economic_collection)
         CAPM_over_time(
             asset,
-            datetime.date(2015, 1, 1),
+            datetime.date(2000, 1, 1),
             datetime.date(2023, 1, 1),
             3,
             macro_economic_collection,

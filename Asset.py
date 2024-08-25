@@ -16,6 +16,7 @@ time_series is a data frame containing the time series data for the asset. Time 
 neg_inf = float("-inf")
 pos_inf = float("inf")
 
+
 class Asset:
     def __init__(
         self,
@@ -58,8 +59,8 @@ class Asset:
         """
         plot = go.Figure()
         # extract the subsection of the time series data
-        value_sub_section, _, _, _, start_date_index, end_date_index = self.extract_subsection(
-            start_date, end_date
+        value_sub_section, _, _, _, start_date_index, end_date_index = (
+            self.extract_subsection(start_date, end_date)
         )
         # add a scatter plot of the subsection
 
@@ -79,7 +80,7 @@ class Asset:
         )
         # save the plot to a png file
         plot.write_image("Investigations/Value_Plots/" + self.ticker + ".png")
-        
+
     @cache
     def closest_date_match(self, date: datetime.date) -> int:
         """
@@ -98,7 +99,7 @@ class Asset:
             return pos
         else:
             return pos - 1
-        
+
     @cache
     def extract_subsection(
         self, start_date: datetime.date, end_date: datetime.date
@@ -131,8 +132,7 @@ class Asset:
             start_date_index,
             end_date_index,
         )
-    
-    
+
     @staticmethod
     @njit(nogil=True)
     def pct_change(arr: np.array, periods=1) -> np.array:
@@ -154,7 +154,7 @@ class Asset:
         pct_change_arr = pct_change_arr[periods:]
 
         return pct_change_arr
-    
+
     @staticmethod
     def cumulative_return(arr: np.array, periods=1) -> np.array:
         """
@@ -171,7 +171,7 @@ class Asset:
         # now we can calculate the cumulative return but summation
         cum_return = np.cumsum(pct_change_arr)
         return cum_return
-    
+
     @cache
     def calculate_CAPM(
         self, macro_economic_collection: Collection, date: datetime.date, period: int
@@ -274,7 +274,7 @@ class Asset:
         # print("\n")
 
         return self.expected_return
-    
+
     @cache
     def calculate_illiquidity_ratio(self, date: datetime.date, period: int) -> float:
         """
@@ -313,7 +313,7 @@ class Asset:
             return self.illiquidity_ratio
         self.illiquidity_ratio = min(self.illiquidity_ratio, 1.0)
         return self.illiquidity_ratio
-    
+
     @cache
     def calculate_volatility(self, date: datetime.date, period: int) -> float:
         """
@@ -341,7 +341,7 @@ class Asset:
         ):
             self.volatility = 0.0
         return self.volatility
-    
+
     @cache
     def calculate_linear_regression(self, date: datetime.date, period: int) -> float:
         """
@@ -401,7 +401,7 @@ class Asset:
         closest_date_index = self.closest_date_match(date)
 
         return self.value_list[closest_date_index]
-    
+
     @staticmethod
     def nan_to_num(num) -> float:
         if math.isnan(num):
@@ -409,10 +409,8 @@ class Asset:
         elif num == pos_inf:
             return 1.0
         elif num == neg_inf:
-           return 0.0
+            return 0.0
         return num
-
-
 
     def get_observation(
         self, macro_economic_collection: Collection, date: datetime.date
@@ -422,22 +420,19 @@ class Asset:
         It will combine all calculated features above into a single row.
         """
 
-
         # If date is before the start date of the time series data, return a row of zeros, of size n_features
-        
+
         if date < self.start_date:
             observation = []
             for i in range(hyperparameters["asset_feature_count"]):
                 observation.append(0.0)
             return np.array(observation)
 
-
         self.calculate_CAPM(
             macro_economic_collection=macro_economic_collection,
             date=date,
             period=hyperparameters["CAPM_period"],
         )
-
 
         self.calculate_illiquidity_ratio(
             date=date, period=hyperparameters["illiquidity_ratio_period"]
@@ -447,20 +442,19 @@ class Asset:
             date=date, period=hyperparameters["volatility_period"]
         )
 
-
         self.calculate_linear_regression(
             date=date, period=hyperparameters["linear_regression_period"]
         )
 
-        observation = [self.portfolio_weight, 
-                       self.expected_return, 
-                       self.beta, 
-                       self.illiquidity_ratio, 
-                       self.volatility, 
-                       self.linear_regression_slope, 
-                       #self.linear_regression_intercept
-                       ]
-
+        observation = [
+            self.portfolio_weight,
+            self.expected_return,
+            self.beta,
+            self.illiquidity_ratio,
+            self.volatility,
+            self.linear_regression_slope,
+            # self.linear_regression_intercept
+        ]
 
         # check if any values in the observation are NaN, if so, set them to zero
         return np.array([Asset.nan_to_num(obs) for obs in observation])

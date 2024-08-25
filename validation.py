@@ -298,7 +298,7 @@ def analyse_validation_results(version_number: str, asset_universe: AssetCollect
     # convert it to a dataframe
     analysis_df = pd.DataFrame(analysis_df, columns=["Sum of Weights"])
 
-    #latest_date = extract_latest_date(asset_universe)
+    # latest_date = extract_latest_date(asset_universe)
     # remove the reward row from the dataframe
     analysis_df = analysis_df.drop("Reward")
 
@@ -348,7 +348,7 @@ def validate_loop(model_folder: str):
     fig = go.Figure()
     for model_file in model_files:
         model_path = os.path.join(model_folder, model_file)
-        model_iteration = extract_model_iteration(model_file)  
+        model_iteration = extract_model_iteration(model_file)
         if model_iteration % (it_divider) == 0:
             results = validate(
                 model_path=model_path,
@@ -458,7 +458,7 @@ def manual_plot(validation_folder):
     This function loops through the rewards csv files in the comparison validation folder and plots the rewards against the time steps on one graph
     It also plots the cumulative rewards against the training iterations on a separate graph
     """
-    #1 get a list of the csv files in the validation folder
+    # 1 get a list of the csv files in the validation folder
     csv_files = os.listdir(validation_folder)
     # filter out the csv files
     csv_files = [file for file in csv_files if file.endswith(".csv")]
@@ -478,10 +478,18 @@ def manual_plot(validation_folder):
         rewards = rewards[1:]
         rewards = rewards.to_numpy()
         # plot the rewards against the time steps
-        fig.add_trace(go.Scatter(x=dates, y=rewards, mode="lines", name=str(number) + " iterations"))
+        fig.add_trace(
+            go.Scatter(
+                x=dates, y=rewards, mode="lines", name=str(number) + " iterations"
+            )
+        )
         # save the total reward to a dictionary
         total_rewards[number] = rewards.sum()
-    fig.update_layout(title="Return on Investment vs Time Step", xaxis_title="Time Step", yaxis_title="ROI")
+    fig.update_layout(
+        title="Return on Investment vs Time Step",
+        xaxis_title="Time Step",
+        yaxis_title="ROI",
+    )
 
     fig.write_image(validation_folder + "/rewards.png")
 
@@ -489,8 +497,16 @@ def manual_plot(validation_folder):
     total_rewards = dict(sorted(total_rewards.items(), key=lambda item: item[1]))
     # plot total rewards against iterations as a scatter plot with no lines
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=list(total_rewards.keys()), y=list(total_rewards.values()), mode="markers"))
-    fig.update_layout(title="Total Reward vs Iterations", xaxis_title="Iterations", yaxis_title="Total Reward")
+    fig.add_trace(
+        go.Scatter(
+            x=list(total_rewards.keys()), y=list(total_rewards.values()), mode="markers"
+        )
+    )
+    fig.update_layout(
+        title="Total Reward vs Iterations",
+        xaxis_title="Iterations",
+        yaxis_title="Total Reward",
+    )
     fig.write_image(validation_folder + "/total_rewards.png")
     # also export the dictionary to a text file
     with open(validation_folder + "/total_rewards.txt", "w") as f:
@@ -498,13 +514,17 @@ def manual_plot(validation_folder):
             f.write(str(key) + ":" + str(value) + "\n")
 
 
-def validation_multiplot(validation_folder:str, iteration_list: list, asset_universe: AssetCollection,
-    macro_economic_factors: AssetCollection):
+def validation_multiplot(
+    validation_folder: str,
+    iteration_list: list,
+    asset_universe: AssetCollection,
+    macro_economic_factors: AssetCollection,
+):
     """
     This function takes in a model directory, and 4 iteration numbers and plots the rewards against the time steps for each model on one graph
-    in a 3x2 grid. 
+    in a 3x2 grid.
     """
-    if(len(iteration_list) != 6):
+    if len(iteration_list) != 6:
         raise ValueError("The iteration list must contain 4 iteration numbers")
     episode_length = hyperparameters["timesteps_per_save"]
 
@@ -517,21 +537,27 @@ def validation_multiplot(validation_folder:str, iteration_list: list, asset_univ
     baseline_dates = baseline_df.index
     # create a figure
 
-        
-    fig = make_subplots(rows=3, cols=2, subplot_titles=(f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[0]/episode_length)}$', 
-                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[1]/episode_length)}$', 
-                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[2]/episode_length)}$', 
-                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[3]/episode_length)}$',
-                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[4]/episode_length)}$',
-                                                        f'$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[5]/episode_length)}$'),
-                                        vertical_spacing=0.1,  # Adjust vertical space between subplots
-                                        horizontal_spacing=0.1  # Adjust horizontal space between subplots
-                                                        )
+    fig = make_subplots(
+        rows=3,
+        cols=2,
+        subplot_titles=(
+            f"$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[0]/episode_length)}$",
+            f"$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[1]/episode_length)}$",
+            f"$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[2]/episode_length)}$",
+            f"$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[3]/episode_length)}$",
+            f"$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[4]/episode_length)}$",
+            f"$\\mathbf{{PPO:}} \\text{{  Overall ROI, episode = }} {int(iteration_list[5]/episode_length)}$",
+        ),
+        vertical_spacing=0.1,  # Adjust vertical space between subplots
+        horizontal_spacing=0.1,  # Adjust horizontal space between subplots
+    )
     for i, iteration in enumerate(iteration_list):
-        if(iteration % episode_length != 0):
-            raise ValueError("The iteration numbers must be multiples of the episode length")
-        
-        episode = int(iteration/episode_length)
+        if iteration % episode_length != 0:
+            raise ValueError(
+                "The iteration numbers must be multiples of the episode length"
+            )
+
+        episode = int(iteration / episode_length)
 
         model_path = os.path.join(validation_folder, f"{iteration}_results.csv")
         results_df = pd.read_csv(model_path)
@@ -548,104 +574,122 @@ def validation_multiplot(validation_folder:str, iteration_list: list, asset_univ
         showlegend = False
         if i == 0:
             showlegend = True
-        fig.add_trace(go.Scatter(x=dates, 
-                                 y=rewards, 
-                                 mode="lines", 
-                                 line=dict(color="blue"),
-                                 legendgroup=f"group{i+1}", 
-                                 showlegend=showlegend, 
-                                 name='$\\text{Model}$'), 
-                                 row=(i//2)+1, col=(i%2)+1)
+        fig.add_trace(
+            go.Scatter(
+                x=dates,
+                y=rewards,
+                mode="lines",
+                line=dict(color="blue"),
+                legendgroup=f"group{i+1}",
+                showlegend=showlegend,
+                name="$\\text{Model}$",
+            ),
+            row=(i // 2) + 1,
+            col=(i % 2) + 1,
+        )
 
         # add the baseline to the plot
-   
-        fig.add_trace(go.Scatter(x=baseline_dates, 
-                                 y=baseline_roi, 
-                                 mode="lines", 
-                                 name='$\\text{Baseline}$', 
-                                 line=dict(dash='dash', color='red'),
-                                 legendgroup=f"group{i+1}", 
-                                 showlegend=showlegend), 
-                                 row=(i//2)+1, col=(i%2)+1)
 
+        fig.add_trace(
+            go.Scatter(
+                x=baseline_dates,
+                y=baseline_roi,
+                mode="lines",
+                name="$\\text{Baseline}$",
+                line=dict(dash="dash", color="red"),
+                legendgroup=f"group{i+1}",
+                showlegend=showlegend,
+            ),
+            row=(i // 2) + 1,
+            col=(i % 2) + 1,
+        )
 
         # set x and y axis titles
-        title_font = dict(size=20, color='black')
-        tick_font = dict(size=17, family='Serif', color='black')
+        title_font = dict(size=20, color="black")
+        tick_font = dict(size=17, family="Serif", color="black")
 
-        fig.update_xaxes(title_text='$\\text{Time Step}$', 
-                         row=(i//2)+1, col=(i%2)+1,
-                         showgrid=True, gridcolor='lightgrey',
-                         linecolor='lightgrey', linewidth=4,
-                         zerolinecolor='lightgrey', zerolinewidth=4,
-                         title_font=title_font,  
-                        tickfont=tick_font)
+        fig.update_xaxes(
+            title_text="$\\text{Time Step}$",
+            row=(i // 2) + 1,
+            col=(i % 2) + 1,
+            showgrid=True,
+            gridcolor="lightgrey",
+            linecolor="lightgrey",
+            linewidth=4,
+            zerolinecolor="lightgrey",
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+        )
 
-        fig.update_yaxes(title_text='$\\text{ROI}$', 
-                         row=(i//2)+1, col=(i%2)+1,
-                         showgrid=True, gridcolor='lightgrey',
-                         linecolor='lightgrey', linewidth=4,
-                         zerolinecolor='lightgrey', zerolinewidth=4,
-                         title_font=title_font,
-                         tickfont=tick_font)
-
+        fig.update_yaxes(
+            title_text="$\\text{ROI}$",
+            row=(i // 2) + 1,
+            col=(i % 2) + 1,
+            showgrid=True,
+            gridcolor="lightgrey",
+            linecolor="lightgrey",
+            linewidth=4,
+            zerolinecolor="lightgrey",
+            zerolinewidth=4,
+            title_font=title_font,
+            tickfont=tick_font,
+        )
 
     # make figure huge
-    fig.update_layout(height=1750, width=2000, plot_bgcolor='white', paper_bgcolor='white')
+    fig.update_layout(
+        height=1750, width=2000, plot_bgcolor="white", paper_bgcolor="white"
+    )
     # show legend in the dead center
     fig.update_layout(
-    legend=dict(
-        x=0.5, y=1.05,  # Centered in the middle for demonstration
-        xanchor='center', yanchor='middle',
-        traceorder='normal',
-        font=dict(size=35, color="black"),  # Larger font size
-        bgcolor='rgba(255, 255, 255, 0.5)',  # Semi-transparent background to see overlap
-        bordercolor='black',
-        borderwidth=2,
-        tracegroupgap=20
-    ),
-    margin=dict(l=150, r=150, t=150, b=150)  # Increase margins to ensure space
-)
-
-
+        legend=dict(
+            x=0.5,
+            y=1.05,  # Centered in the middle for demonstration
+            xanchor="center",
+            yanchor="middle",
+            traceorder="normal",
+            font=dict(size=35, color="black"),  # Larger font size
+            bgcolor="rgba(255, 255, 255, 0.5)",  # Semi-transparent background to see overlap
+            bordercolor="black",
+            borderwidth=2,
+            tracegroupgap=20,
+        ),
+        margin=dict(l=150, r=150, t=150, b=150),  # Increase margins to ensure space
+    )
 
     # save the figure
     fig.write_image(validation_folder + "/rewards_multiplot.png")
-        
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
-    asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
+    asset_universe = pickle.load(
+        open("Collections/test_reduced_asset_universe.pkl", "rb")
+    )
     macro_economic_factors = pickle.load(
         open("Collections/macro_economic_factors.pkl", "rb")
     )
 
-    #asset = asset_universe.asset_lookup("NVDA")
-    #today = datetime.date.today()
-    #asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
+    # asset = asset_universe.asset_lookup("NVDA")
+    # today = datetime.date.today()
+    # asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
 
     model_path = "Logs/2024-08-24_12-17-32/model_3932160_steps.zip"
 
-    #manual_plot("Validation/2024-08-23_16-51-57_comparison")
+    # manual_plot("Validation/2024-08-23_16-51-57_comparison")
 
     # sense_check(asset_universe)
-    
-    #validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
-    
-    #validate_loop("Logs/2024-08-25_01-28-50")
+
+    # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
+
+    # validate_loop("Logs/2024-08-25_01-28-50")
 
     # analyse_validation_results("v4", asset_universe)
 
     model_list = [16384, 163840, 819200, 1638400, 2457600, 3276800]
     validation_folder = "Validation/v18_comparison"
-    validation_multiplot(validation_folder, model_list, asset_universe, macro_economic_factors)
+    validation_multiplot(
+        validation_folder, model_list, asset_universe, macro_economic_factors
+    )
 
     """
     # playing around with plots

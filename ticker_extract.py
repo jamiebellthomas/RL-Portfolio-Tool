@@ -1,7 +1,8 @@
-
 import yfinance as yf
 import matplotlib.pyplot as plt
+
 file_path = "NASDAQ-List.txt"
+
 
 def extract_ticker(file_path: str):
     with open(file_path, "r") as file:
