@@ -80,6 +80,7 @@ def calculate_ubah(asset_universe: AssetCollection, start_date: datetime.date, e
 
     create_csv(values, roi, start_date, end_date, "UBAH")
     plot_weighting_progression(weighting_tracker, start_date, end_date, "UBAH")
+    # export weighting_tracker to a CSV with the relevant ticker attatched
 
 @cache
 def calculate_bss(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date) -> None:
