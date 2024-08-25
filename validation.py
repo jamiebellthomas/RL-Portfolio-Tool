@@ -681,15 +681,15 @@ if __name__ == "__main__":
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
 
-    # validate_loop("Logs/2024-08-25_01-28-50")
+    validate_loop("Logs/2024-08-25_18-17-30")
 
     # analyse_validation_results("v4", asset_universe)
 
-    model_list = [16384, 163840, 819200, 1638400, 2457600, 3276800]
-    validation_folder = "Validation/v18_comparison"
-    validation_multiplot(
-        validation_folder, model_list, asset_universe, macro_economic_factors
-    )
+    #model_list = [16384, 163840, 819200, 1638400, 2457600, 3276800]
+    #validation_folder = "Validation/v18_comparison"
+    #validation_multiplot(
+    #    validation_folder, model_list, asset_universe, macro_economic_factors
+    #)
 
     """
     # playing around with plots
