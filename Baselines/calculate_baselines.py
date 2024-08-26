@@ -133,6 +133,12 @@ def calculate_ubah(
     sharpe_ratios[1] = sharpe_ratios[3]
     volatilities[0] = volatilities[1]
 
+    # replace any values in sharpe ratios that are greater than 10 with 10
+    sharpe_ratios = np.array(sharpe_ratios)
+    sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
+    # back to list
+    sharpe_ratios = sharpe_ratios.tolist()
+
     print("UBAH ", weighting_tracker.shape)
     
 
@@ -226,6 +232,12 @@ def calculate_ucrp(
     entropy_list[0] = entropy_list[1]
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
+
+    # replace any values in sharpe ratios that are greater than 10 with 10
+    sharpe_ratios = np.array(sharpe_ratios)
+    sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
+    # back to list
+    sharpe_ratios = sharpe_ratios.tolist()
 
     print("UCRP: ", weighting_tracker.shape)
     # for each column in the weighting tracker, calculate the weighted mean asset percentile
@@ -324,6 +336,12 @@ def calculate_ftw(
     entropy_list[0] = entropy_list[1]
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
+
+    # replace any values in sharpe ratios that are greater than 10 with 10
+    sharpe_ratios = np.array(sharpe_ratios)
+    sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
+    # back to list
+    sharpe_ratios = sharpe_ratios.tolist()
 
     # for each column in the weighting tracker, calculate the weighted mean asset percentile
     percentile_array = []
@@ -425,6 +443,12 @@ def calculate_ftl(
     entropy_list[0] = entropy_list[1]
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
+
+    # replace any values in sharpe ratios that are greater than 10 with 10
+    sharpe_ratios = np.array(sharpe_ratios)
+    sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
+    # back to list
+    sharpe_ratios = sharpe_ratios.tolist()
 
     # for each column in the weighting tracker, calculate the weighted mean asset percentile
     percentile_array = []
@@ -682,6 +706,7 @@ def convert_plot_to_moving_average(fig: go.Figure, window: int) -> go.Figure:
     """
     This function will take in a plotly figure and convert it to a moving average over the window size.
     """
+    # set fig title to say that it is a moving average
     for i in range(len(fig.data)):
         y_data = pd.Series(fig.data[i].y)
         
@@ -690,9 +715,10 @@ def convert_plot_to_moving_average(fig: go.Figure, window: int) -> go.Figure:
         
         # Update the trace with the moving average data
         fig.data[i].y = y_moving_avg
+        
 
         # Update the legend name to indicate moving average
-        fig.data[i].name = fig.data[i].name + f" (MA {window})"
+        fig.data[i].name = fig.data[i].name + f" MA ({window} days)"
     return fig
 
 

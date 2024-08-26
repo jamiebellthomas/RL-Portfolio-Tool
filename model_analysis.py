@@ -134,7 +134,7 @@ def analysis(model_path: str,
         
         
     
-        fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=final_date), y=results[metric], mode="lines", name="Model"))  
+        fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=final_date), y=results[metric], mode="lines", name='$\\text{{Model}}$'))  
 
         
 
@@ -145,6 +145,8 @@ def analysis(model_path: str,
 
         # save the figure as a png
         relative_path = extract_model_path(model_path)
+        # make a path with the start and end date appended to the end
+        relative_path = relative_path + "_{}_to_{}".format(start_date, final_date)
         # check if path exists if not create it
         if not os.path.exists("Analysis/{}".format(relative_path)):
             os.makedirs("Analysis/{}".format(relative_path))

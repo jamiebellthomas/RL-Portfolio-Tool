@@ -39,7 +39,7 @@ hyperparameters = {
     "sortino_weight": 0.0,
     "max_drawdown_weight": 0.0,
     "roi_weight": 0.0,
-    "entropy_weight": 0.125,
+    "entropy_weight": 0.14,
     # PPO hyperparameters
     "n_envs": 4,
     "n_steps": 1024,
