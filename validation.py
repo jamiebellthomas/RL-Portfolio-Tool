@@ -701,11 +701,11 @@ if __name__ == "__main__":
     # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
-    model_folder = "Logs/2024-08-26_14-25-04"
+    model_folder = "Logs/2024-08-26_19-11-01/PPO"
     model_type = "PPO"
 
-    validate_loop("Logs/2024-08-26_14-25-04", start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
-    validate_loop("Logs/2024-08-26_14-25-04", start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
+    validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
+    validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
 
 
     #manual_plot("Validation/2024-08-26_12-45-07_comparison")
