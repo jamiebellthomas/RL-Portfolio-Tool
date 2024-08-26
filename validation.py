@@ -36,15 +36,20 @@ def validate(
     """
     model_date = extract_model_date(model_path)
 
-    model_folder = "Logs/" + str(model_date)+ "/" + model_type
+    if model_type not in ["PPO", "DDPG"]:
+        raise ValueError("Model type must be 'PPO' or 'DDPG'")
 
-    hyperparameters_dict = move_hyperparameters_to_logs(model_folder)
-        # create hyperparameters.txt file in the validation directory
-    os.makedirs("Validation/" + str(model_date) + "_" + str(start_date) + "_to_" + str(end_date), exist_ok=True)
+    if create_folder:
 
-    with open("Validation/" + str(model_date)+ "_"  + str(start_date) + "_to_" + str(end_date) + "/hyperparameters.txt", "w") as f:
-        for key, value in hyperparameters_dict.items():
-            f.write(key + ":" + value + "\n")
+        model_folder = "Logs/" + str(model_date)+ "/" + model_type
+
+        hyperparameters_dict = move_hyperparameters_to_logs(model_folder)
+            # create hyperparameters.txt file in the validation directory
+        os.makedirs("Validation/" + str(model_date) + "_" + str(start_date) + "_to_" + str(end_date), exist_ok=True)
+
+        with open("Validation/" + str(model_date)+ "_"  + str(start_date) + "_to_" + str(end_date) + "/hyperparameters.txt", "w") as f:
+            for key, value in hyperparameters_dict.items():
+                f.write(key + ":" + value + "\n")
 
     
 
