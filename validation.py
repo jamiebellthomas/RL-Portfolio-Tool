@@ -15,6 +15,7 @@ import datetime
 import pandas as pd
 from hyperparameters import hyperparameters
 from AssetCollection import AssetCollection
+from MacroEconomicCollection import MacroEconomicCollection
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
@@ -23,7 +24,7 @@ import os
 def validate(
     model_path: str,
     asset_universe: AssetCollection,
-    macro_economic_factors: AssetCollection,
+    macro_economic_factors: MacroEconomicCollection,
     create_folder: bool,
 ):
     """
@@ -681,15 +682,13 @@ if __name__ == "__main__":
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
 
-    validate_loop("Logs/2024-08-25_18-17-30")
+    validate_loop("Logs/2024-08-25_23-19-19")
 
     # analyse_validation_results("v4", asset_universe)
 
-    #model_list = [16384, 163840, 819200, 1638400, 2457600, 3276800]
-    #validation_folder = "Validation/v18_comparison"
-    #validation_multiplot(
-    #    validation_folder, model_list, asset_universe, macro_economic_factors
-    #)
+    model_list = [16384, 98304, 1015808, 2015232, 3063808, 3883008]
+    validation_folder = "Validation/v20_comparison"
+    #validation_multiplot(validation_folder, model_list, asset_universe, macro_economic_factors)
 
     """
     # playing around with plots

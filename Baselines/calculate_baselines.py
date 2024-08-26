@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../"
 
 import PortfolioCollection as PortfolioCollection
 from AssetCollection import AssetCollection
+from MacroEconomicCollection import MacroEconomicCollection
 from PortfolioEnv import PortfolioEnv
 from Asset import Asset
 from hyperparameters import hyperparameters
@@ -39,10 +40,12 @@ def create_csv(
     entropy_list: list,
     volatility_list: list,
     sharpe_ratios: list,
+    weighted_mean_percentile: list,
     start_date: datetime.date,
     end_date: datetime.date,
     name: str,
-) -> None:
+    make_csv: bool,
+) -> pd.DataFrame:
     """
     This function creates a csv file with the value and ROI lists.
     """
@@ -61,12 +64,23 @@ def create_csv(
     results["Sharpe Ratio"] = sharpe_ratios
     # cumulative sharp ratio
     results["Cumulative Sharpe Ratio"] = results["Sharpe Ratio"].cumsum()
-    # save this as a csv
-    results.to_csv(f"Baselines/{name}.csv")
+    # add the weighted mean asset percentile as a column
+    results["Weighted Mean Asset Percentile"] = weighted_mean_percentile
+
+    if make_csv:
+        # save this as a csv
+        results.to_csv(f"Baselines/{name}.csv")
+
+    return results
 
 
 def calculate_ubah(
-    asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date
+    asset_universe: AssetCollection, 
+    macro_economic_data:MacroEconomicCollection, 
+    start_date: datetime.date, 
+    end_date: datetime.date, 
+    make_csv: bool,
+    percentile_lookup: pd.DataFrame
 ) -> None:
     """
     Calculate the UBAH baseline for the financial model.
@@ -96,13 +110,14 @@ def calculate_ubah(
     sharpe_ratios = [0]
     terminated = False
     while not terminated:
-        if env.current_date != start_date:
-            weighting_tracker = np.column_stack((weighting_tracker, action))
-
+        
         obs, reward, terminated, truncated, info = env.step(action)
 
         # get a new action, this is the updated weightings of the assets in the portfolio
         action = env.portfolio.weights_array
+        if env.current_date != start_date:
+            weighting_tracker = np.column_stack((weighting_tracker, action))
+
         values.append(env.portfolio_value)
         roi.append(env.roi)
         volatilities.append(
@@ -118,64 +133,53 @@ def calculate_ubah(
     sharpe_ratios[1] = sharpe_ratios[3]
     volatilities[0] = volatilities[1]
 
-    create_csv(
+    print("UBAH ", weighting_tracker.shape)
+    
+
+    # for each column in the weighting tracker, calculate the weighted mean asset percentile
+    percentile_array = []
+
+    for i in range(weighting_tracker.shape[1]):
+        weighted_mean_asset_percentile = 0
+        for j in range(weighting_tracker.shape[0]):
+            try:
+                weighted_mean_asset_percentile += (
+                    weighting_tracker[j][i] * percentile_lookup.iloc[j][i]
+                )
+            except TypeError as e:
+                print("Error: ", e)
+                print("j: ", j, "i: ", i)
+                print("weighting_tracker[j][i]: ", weighting_tracker[j][i])
+                print("percentile_lookup.iloc[j][i]: ", percentile_lookup.iloc[j][i])
+        percentile_array.append(weighted_mean_asset_percentile)
+
+
+    data = create_csv(
         values,
         roi,
         entropy_list,
         volatilities,
         sharpe_ratios,
+        percentile_array,
         start_date,
         end_date,
         "UBAH",
+        make_csv=make_csv,
     )
-    plot_weighting_progression(weighting_tracker, start_date, end_date, "UBAH")
-    # export weighting_tracker to a CSV with the relevant ticker attatched
+    if make_csv:
+        plot_weighting_progression(weighting_tracker, start_date, end_date, "UBAH")
+
+    return data
 
 
-"""
-@cache
-def calculate_bss(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date) -> None:
-    
-    #This works ouf the stock with the highest ROI over the period in the asset universe and saves the value and ROI to a csv file.
-    
-    highest_roi = 0
-    highest_roi_asset = None
-    asset_index = 0
-    for index,asset in enumerate(asset_universe.asset_list.values()):
-        initial_value = asset.calculate_value(start_date)
-        final_value = asset.calculate_value(end_date)
-        roi = (final_value - initial_value) / initial_value
-        if roi > highest_roi:
-            highest_roi = roi
-            highest_roi_asset = asset.ticker
-            asset_index = index
-        
-    print(f"The asset with the highest ROI is {highest_roi_asset} with a ROI of {highest_roi}")
 
-    action = [0 for _ in range(len(asset_universe.asset_list))]
-    action[asset_index] = 1
-    action = np.array(action)
-    values = [hyperparameters["initial_balance"]]
-    roi_list = [0]
-    weighting_tracker = np.array(action)
-
-    # Now we create a PortfolioEnv object to calculate the value and ROI of the asset
-    env = PortfolioEnv(asset_universe = asset_universe, macro_economic_data = macro_economic_data, initial_date = start_date, final_date = end_date)
-    terminated = False
-    while not terminated:
-        weighting_tracker = np.column_stack((weighting_tracker, action))
-        obs, reward, terminated, truncated, info = env.step(action)
-        values.append(env.portfolio_value)
-        roi_list.append(env.roi)
-    
-    create_csv(values, roi_list, start_date, end_date, "BSS")
-    plot_weighting_progression(weighting_tracker, start_date, end_date, "BSS")
-    
-"""
-
-
-def calulate_ucrp(
-    asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date
+def calculate_ucrp(
+    asset_universe: AssetCollection, 
+    macro_economic_data:MacroEconomicCollection,
+    start_date: datetime.date, 
+    end_date: datetime.date, 
+    make_csv: bool,
+    percentile_lookup: pd.DataFrame
 ):
     """
     Calculate the UCRP baseline for the financial model.
@@ -223,21 +227,42 @@ def calulate_ucrp(
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
 
-    create_csv(
+    print("UCRP: ", weighting_tracker.shape)
+    # for each column in the weighting tracker, calculate the weighted mean asset percentile
+    percentile_array = []
+
+    for i in range(weighting_tracker.shape[1]):
+        weighted_mean_asset_percentile = 0
+        for j in range(weighting_tracker.shape[0]):
+            weighted_mean_asset_percentile += (
+                weighting_tracker[j][i] * percentile_lookup.iloc[j][i]
+            )
+        percentile_array.append(weighted_mean_asset_percentile)
+
+    data = create_csv(
         values,
         roi_list,
         entropy_list,
         volatilities,
         sharpe_ratios,
+        percentile_array,
         start_date,
         end_date,
         "UCRP",
+        make_csv=make_csv,
     )
-    plot_weighting_progression(weighting_tracker, start_date, end_date, "UCRP")
+    if make_csv:
+        plot_weighting_progression(weighting_tracker, start_date, end_date, "UCRP")
 
+    return data
 
-def calcualte_ftw(
-    asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date
+def calculate_ftw(
+    asset_universe: AssetCollection, 
+    macro_economic_data:MacroEconomicCollection,
+    start_date: datetime.date, 
+    end_date: datetime.date, 
+    make_csv: bool,
+    percentile_lookup: pd.DataFrame
 ):
     """
     This calcualtes the folow the winner strategy for the financial model.
@@ -257,8 +282,6 @@ def calcualte_ftw(
             roi = min(((final_value - initial_value) / initial_value), 5)
             pct_change_matrix[index][i] = roi
 
-    # print 20 largest values in the matrix
-    print(np.sort(pct_change_matrix.flatten())[-20:])
 
     weightings = np.zeros(
         (
@@ -302,21 +325,42 @@ def calcualte_ftw(
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
 
-    create_csv(
+    # for each column in the weighting tracker, calculate the weighted mean asset percentile
+    percentile_array = []
+    print("FTW: ", weightings.shape)
+
+    for i in range(weightings.shape[1]):
+        weighted_mean_asset_percentile = 0
+        for j in range(weightings.shape[0]):
+            weighted_mean_asset_percentile += (
+                weightings[j][i] * percentile_lookup.iloc[j][i]
+            )
+        percentile_array.append(weighted_mean_asset_percentile)
+
+    data = create_csv(
         values,
         roi_list,
         entropy_list,
         volatilities,
         sharpe_ratios,
+        percentile_array,
         start_date,
         end_date,
         "FTW",
+        make_csv=make_csv,
     )
-    plot_weighting_progression(weightings, start_date, end_date, "FTW")
+    if make_csv:
+        plot_weighting_progression(weightings, start_date, end_date, "FTW")
+    return data
 
 
 def calculate_ftl(
-    asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date
+    asset_universe: AssetCollection, 
+    macro_economic_data:MacroEconomicCollection,
+    start_date: datetime.date, 
+    end_date: datetime.date, 
+    make_csv: bool,
+    percentile_lookup: pd.DataFrame
 ):
     """
     This calculates the follow the loser strategy for the financial model.
@@ -337,8 +381,6 @@ def calculate_ftl(
             roi = min(((final_value - initial_value) / initial_value), 100)
             pct_change_matrix[index][i] = roi
 
-    # print 20 largest values in the matrix
-    print(np.sort(pct_change_matrix.flatten())[-20:])
 
     # now adjust it so the lowest roi os normalised to the highest weighting
     pct_change_matrix = np.abs(pct_change_matrix - np.max(pct_change_matrix))
@@ -384,17 +426,34 @@ def calculate_ftl(
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
 
-    create_csv(
+    # for each column in the weighting tracker, calculate the weighted mean asset percentile
+    percentile_array = []
+    print("FTL: ", weightings.shape)
+
+    for i in range(weightings.shape[1]):
+        weighted_mean_asset_percentile = 0
+        for j in range(weightings.shape[0]):
+            weighted_mean_asset_percentile += (
+                weightings[j][i] * percentile_lookup.iloc[j][i]
+            )
+        percentile_array.append(weighted_mean_asset_percentile)
+
+    data = create_csv(
         values,
         roi_list,
         entropy_list,
         volatilities,
         sharpe_ratios,
+        percentile_array,
         start_date,
         end_date,
         "FTL",
+        make_csv=make_csv,
     )
-    plot_weighting_progression(weightings, start_date, end_date, "FTL")
+    if make_csv:
+        plot_weighting_progression(weightings, start_date, end_date, "FTL")
+
+    return data
 
 
 def plot_baselines(
@@ -402,27 +461,16 @@ def plot_baselines(
     start_date: datetime.date,
     latest_date: datetime.date,
     metric: str,
+    ubah: pd.DataFrame,
+    ucrp: pd.DataFrame,
+    ftw: pd.DataFrame,
+    ftl: pd.DataFrame,
+
 ) -> None:
     """
     This function plots the baselines using plotly.
     """
-    # if the baselines csv files don't exist, then we need to calculate them
-    if not os.path.exists("Baselines/UBAH.csv"):
-        calculate_ubah(asset_universe, start_date, latest_date)
-    # if not os.path.exists("Baselines/BSS.csv"):
-    #    calculate_bss(asset_universe, start_date, latest_date)
-    if not os.path.exists("Baselines/UCRP.csv"):
-        calulate_ucrp(asset_universe, start_date, latest_date)
-    if not os.path.exists("Baselines/FTW.csv"):
-        calcualte_ftw(asset_universe, start_date, latest_date)
-    if not os.path.exists("Baselines/FTL.csv"):
-        calculate_ftl(asset_universe, start_date, latest_date)
 
-    ubah = pd.read_csv("Baselines/UBAH.csv")
-    # bss = pd.read_csv("Baselines/BSS.csv")
-    ucrp = pd.read_csv("Baselines/UCRP.csv")
-    ftw = pd.read_csv("Baselines/FTW.csv")
-    ftl = pd.read_csv("Baselines/FTL.csv")
     # for each set the first columnm to the index
     date_range = pd.date_range(start=start_date, end=latest_date)
     fig = go.Figure()
@@ -438,13 +486,13 @@ def plot_baselines(
     fig.add_trace(
         go.Scatter(x=date_range, y=ftl[metric], mode="lines", name=r"$\text{FtL}$")
     )
-    fig = fig_modification(fig, "Day", metric)
+    fig = fig_modification(fig, "Date", metric)
     
     # save the plot as an png
     fig.write_image(f"Baselines/Baselines_{metric}.png")
 
 
-    return ubah, ucrp, ftw, ftl
+    return fig
 
 def fig_modification(fig, x_label: str, y_label: str):
     """
@@ -494,7 +542,6 @@ def fig_modification(fig, x_label: str, y_label: str):
     
     # scale the y axis so that the graph it is easier to read
     # Check if the figure has data and access the y-values
-    print("Scaling y-axis range for {}...".format(y_label))
     if len(fig.data) > 0 and hasattr(fig.data[0], 'y'):
         # Extract y-values
         max_y = -np.inf
@@ -506,26 +553,20 @@ def fig_modification(fig, x_label: str, y_label: str):
             max_y = max(max_y, max(y_values))
             min_y = min(min_y, min(y_values))
         
-        # Convert y_values to a list if it's a numpy array or similar structure
-          # This ensures compatibility
 
-        # Debugging: Print min and max values of y for verification
-        print("y_min:", min_y, "y_max:", max_y)
 
         # Apply scaling factors for the y-axis range
         # Adjust the scaling factor if needed (5% may not be suitable in all cases)
-        lower_limit = (min_y * 1.2)-0.05 if min_y < 0 else min_y * 0.95
+        lower_limit = (min_y * 1.2) if min_y < 0 else min_y * 0.95
         upper_limit = max_y * 1.1
 
         # Debugging: Print the calculated limits for verification
-        print("Lower limit:", lower_limit, "Upper limit:", upper_limit)
 
         # Update y-axis range using calculated limits
         fig.update_yaxes(range=[lower_limit, upper_limit])
     else:
         print("No y data found or figure is empty.")
 
-    print("\n")
     return fig
 
 
@@ -590,6 +631,67 @@ def plot_weighting_progression(
     fig.write_image(f"Baselines/{series}_weighting_progression.png")
 
 
+
+
+
+def generate_percentile_array(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date, make_csv:bool) -> pd.DataFrame:
+    """
+    This function will generate the percentile array for the assets in the asset universe at each time step
+    This percentile will be a representation of an asset's ROI over the last 30 days, compared to the ROI of all the other assets
+    Asset's will be ranked and then assigned a percentile based on their rank. The resultant array will be saved as a csv file.
+    """
+    # create a 2D array to store the percentiles of each asset at each time step
+    percentile_array = np.zeros(
+        (
+            len(asset_universe.asset_list),
+            len(pd.date_range(start=start_date, end=end_date)),
+        )
+    )
+
+    # loop through each asset in the asset universe
+    for index, asset in enumerate(asset_universe.asset_list.values()):
+        # loop through each time step
+        for i, date in enumerate(pd.date_range(start=start_date, end=end_date)):
+            date = date.date()
+            # calculate the ROI of the asset over the last 30 days
+            initial_value = asset.calculate_value(date - datetime.timedelta(days=30))
+            final_value = asset.calculate_value(date)
+            roi = (final_value - initial_value) / initial_value
+            # calculate the percentile of the asset
+            percentile = 0
+            for other_asset in asset_universe.asset_list.values():
+                other_initial_value = other_asset.calculate_value(date - datetime.timedelta(days=30))
+                other_final_value = other_asset.calculate_value(date)
+                other_roi = (other_final_value - other_initial_value) / other_initial_value
+                if other_roi < roi:
+                    percentile += 1
+            percentile_array[index][i] = percentile / len(asset_universe.asset_list)
+
+    # make the percentile array into a dataframe where the index is the asset ticker and the columns are the dates
+    percentile_df = pd.DataFrame(
+        data=percentile_array,
+        index=asset_universe.asset_list.keys(),
+        columns=pd.date_range(start=start_date, end=end_date),
+    )
+
+    # save the percentile array as a csv file
+    return percentile_df
+
+
+def convert_plot_to_moving_average(fig: go.Figure, window: int) -> go.Figure:
+    """
+    This function will take in a plotly figure and convert it to a moving average over the window size.
+    """
+    for i in range(len(fig.data)):
+        fig.data[i].y = fig.data[i].y.rolling(window=window).mean()
+
+    # Make sure all legend terms have (MA) added to them
+    for i in range(len(fig.data)):
+        fig.data[i].name = fig.data[i].name + " (MA)"
+    return fig
+
+
+
 if __name__ == "__main__":
     asset_universe = pickle.load(
         open("Collections/test_reduced_asset_universe.pkl", "rb")
@@ -599,6 +701,15 @@ if __name__ == "__main__":
     )
     start_date = hyperparameters["initial_validation_date"]
     latest_date = extract_latest_date(asset_universe)
-    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio"]
+
+    percentile_lookup = generate_percentile_array(asset_universe, start_date, latest_date, make_csv=True)
+    
+    ubah = calculate_ubah(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
+    ucrp = calculate_ucrp(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
+    ftw = calculate_ftw(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
+    ftl = calculate_ftl(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
+    
+    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile"]
     for metric in metrics:
         plot_baselines(asset_universe, start_date, latest_date, metric)
+    

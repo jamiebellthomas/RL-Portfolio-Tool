@@ -93,11 +93,6 @@ class PortfolioCollection(Collection):
         This method determines the change in the portfolio value as a result of the change in asset prices.
         This will also lead to a change in the weightings of the assets in the portfolio as their relative values change.
         """
-
-        # first work out the cash holding weighting of the portfolio by doing 1 - sum of all asset weightings
-        cash_weighting = 1 - np.sum(
-            [asset.portfolio_weight for asset in self.asset_list.values()]
-        )
         # Precompute old and new prices for all assets
         old_prices = np.array(
             [asset.calculate_value(old_date) for asset in self.asset_list.values()]
@@ -250,7 +245,4 @@ class PortfolioCollection(Collection):
         """
         self.expected_treynor_ratio = (
             self.expected_return - self.risk_free_rate
-        ) / self.portfolio_beta
-        self.actual_treynor_ratio = (
-            self.actual_return - self.risk_free_rate
         ) / self.portfolio_beta
