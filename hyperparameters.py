@@ -63,7 +63,7 @@ hyperparameters = {
 
     # DDPG hyperparameters
     "buffer_size": 1000000,
-    "learning_rate_ddpg": 1e-5,
+    "learning_rate_ddpg": 1e-6,
     "gamma": 0.99,
     "batch_size_ddpg": 512,
     "tau": 0.001,
