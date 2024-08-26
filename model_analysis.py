@@ -134,11 +134,12 @@ def analysis(model_path: str,
         
         
     
-        fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=final_date), y=results[metric], mode="lines", name='$\\text{{Model}}$'))  
+        fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=final_date), y=results[metric], mode="lines", name='$\\text{Model}$'))  
 
         
-
+        #if(metric == "Weighted Mean Asset Percentile" or metric == "Volatility"):
         fig = calculate_baselines.convert_plot_to_moving_average(fig, window=30)
+
 
         fig = calculate_baselines.fig_modification(fig, "Date" , metric)
 
@@ -167,11 +168,12 @@ if __name__ == "__main__":
     asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
     macro_economic_factors = pickle.load(open("Collections/macro_economic_factors.pkl", "rb"))
     # Load the benchmark csv files
-    start_date = datetime.date(2007, 1, 1)
-    end_date = datetime.date(2013, 1, 1)
+    start_date = datetime.date(2023, 1, 1)
+    end_date = datetime.date(2024, 8, 26)
 
     latest_possible_date = extract_latest_date(asset_universe)
     if end_date > latest_possible_date:
+        print("End date is after the latest possible date, setting end date to latest possible date: ", latest_possible_date)
         end_date = latest_possible_date
 
     percentile_lookup = calculate_baselines.generate_percentile_array(asset_universe, 
@@ -212,7 +214,7 @@ if __name__ == "__main__":
 
 
     # Load the model
-    model_path = "Logs/v20/model_3883008_steps.zip"
+    model_path = "Logs/v19/model_3833856_steps.zip"
     # Set the start and end dates as datetime objects
     
     analysis(model_path, 

@@ -1,5 +1,7 @@
 # prompt: Import PPO from stable-baselines 3 and train PortfolioEnv
 from stable_baselines3 import PPO
+from stable_baselines3 import DDPG
+from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.logger import (
     configure,
     HumanOutputFormat,
@@ -26,13 +28,17 @@ model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
 # Configure the logger to output to both stdout and files
 
 
-def run_model():
+def run_model(model_type:str):
+
+    if model_type not in ["PPO", "DDPG"]:
+        raise ValueError("Model type must be 'PPO' or 'DDPG'")
     logs_path = "Logs"
     if not os.path.exists(logs_path):
         os.makedirs(logs_path)
     # Custom logger configuration
 
     log_path = os.path.join(logs_path, model_date)
+    log_path = os.path.join(log_path, model_type)
 
     os.makedirs(log_path, exist_ok=True)
     log_file = os.path.join(log_path, "log.csv")
@@ -60,17 +66,42 @@ def run_model():
     )
     # n_steps is the number of steps that the model will run for before updating the policy, if n_steps is less than total_timesteps then
     # the model will run for n_steps and then update the policy, if n_steps is greater than total_timesteps then the model will run for total_timesteps and then update the policy every n_steps
+    if model_type == "PPO":
+        model = PPO(
+            "MultiInputPolicy",
+            env,
+            verbose=1,
+            n_steps=hyperparameters["n_steps"],
+            batch_size=hyperparameters["batch_size"],
+            n_epochs=hyperparameters["n_epochs"],
+            learning_rate=hyperparameters["learning_rate"],
+            tensorboard_log=log_path,
+        )
+    elif model_type == "DDPG":
+        # The noise objects for DDPG
+        n_actions = len(asset_universe.keys())
+        action_noise = OrnsteinUhlenbeckActionNoise(
+            mean=[hyperparameters["action_noise_std"]] * n_actions, 
+            sigma=[hyperparameters["action_noise_std"]] * n_actions
+        )
+        model = DDPG(
+            "MultiInputPolicy",
+            env,
+            verbose=1,
+            buffer_size=hyperparameters["buffer_size"],
+            learning_rate=hyperparameters["learning_rate_ddpg"],
+            gamma=hyperparameters["gamma"],
+            batch_size=hyperparameters["batch_size_ddpg"],
+            tau=hyperparameters["tau"],
+            policy_delay=hyperparameters["policy_delay"],
+            target_noise=hyperparameters["target_noise"],
+            noise_clip=hyperparameters["noise_clip"],
+            action_noise=action_noise,
+            gradient_steps=hyperparameters["gradient_steps"],
+            tensorboard_log=log_path,
 
-    model = PPO(
-        "MultiInputPolicy",
-        env,
-        verbose=1,
-        n_steps=hyperparameters["n_steps"],
-        batch_size=hyperparameters["batch_size"],
-        n_epochs=hyperparameters["n_epochs"],
-        learning_rate=hyperparameters["learning_rate"],
-        tensorboard_log=log_path,
-    )
+
+        )   
 
     print("Model Date: ", model_date)
 
@@ -147,7 +178,7 @@ def continue_model(model_file: str) -> None:
 
 if __name__ == "__main__":
     # reset_model(asset_universe, macro_economic_factors)
-    run_model()
+    run_model(model_type="DDPG")
 
     # model_date = "2024-08-13_11-14-57"
     # model_path = "Logs/{}".format(model_date)

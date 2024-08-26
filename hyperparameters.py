@@ -26,9 +26,9 @@ hyperparameters = {
     # How many years the model should run for
     "episode_length": 10,
     # Date the model will start training from
-    "initial_training_date": datetime.date(2006, 1, 1),
+    "initial_training_date": datetime.date(2012, 1, 1),
     # Date the model will start validating from (probably shouldn't change this)
-    "initial_validation_date": datetime.date(2018, 1, 1),
+    "initial_validation_date": datetime.date(2021, 1, 1),
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
     # Interest rates for cash holdings (annual)
@@ -59,4 +59,19 @@ hyperparameters = {
     # target_kl=hyperparameters["target_kl"]
     # and for model.learn:
     # log_interval=hyperparameters["log_interval"],
+
+    # DDPG hyperparameters
+    "buffer_size": 1000000,
+    "learning_rate_ddpg": 1e-4,
+    "gamma": 0.99,
+    "batch_size_ddpg": 256,
+    "tau": 0.005,
+    "gradient_steps": 1,
+    "policy_delay": 2,
+    "target_noise": 0.2,
+    "noise_clip": 0.5,
+    "action_noise_std": 0.1,
+    "action_noise_mean": 0.5,
+
+
 }

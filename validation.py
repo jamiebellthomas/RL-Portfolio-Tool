@@ -350,6 +350,10 @@ def validate_loop(model_folder: str):
     for model_file in model_files:
         model_path = os.path.join(model_folder, model_file)
         model_iteration = extract_model_iteration(model_file)
+        potential_validation_folder = "Validation/" + model_date + "_comparison" + "/" + str(model_iteration) + "_results.csv"
+        if os.path.exists(potential_validation_folder):
+            print("Model already validated", potential_validation_folder)
+            continue
         if model_iteration % (it_divider) == 0:
             results = validate(
                 model_path=model_path,
@@ -676,13 +680,13 @@ if __name__ == "__main__":
 
     model_path = "Logs/2024-08-24_12-17-32/model_3932160_steps.zip"
 
-    # manual_plot("Validation/2024-08-23_16-51-57_comparison")
-
     # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
 
-    validate_loop("Logs/2024-08-25_23-19-19")
+    #validate_loop("Logs/2024-08-26_12-45-07")
+
+    manual_plot("Validation/2024-08-26_12-45-07_comparison")
 
     # analyse_validation_results("v4", asset_universe)
 
