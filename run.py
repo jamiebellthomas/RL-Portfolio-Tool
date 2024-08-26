@@ -81,6 +81,8 @@ def run_model(model_type:str):
     elif model_type == "DDPG":
         # The noise objects for DDPG
         n_actions = len(asset_universe.asset_list.keys())
+        print("n_actions: ", n_actions)
+        print(f"Action space shape: {env.action_space.shape}")
         action_noise = OrnsteinUhlenbeckActionNoise(
             mean = hyperparameters["action_noise_mean"] * np.ones(n_actions),
             sigma = hyperparameters["action_noise_std"] * np.ones(n_actions),
@@ -177,7 +179,7 @@ def continue_model(model_file: str) -> None:
 
 if __name__ == "__main__":
     # reset_model(asset_universe, macro_economic_factors)
-    run_model(model_type="DDPG")
+    run_model(model_type="PPO")
 
     # model_date = "2024-08-13_11-14-57"
     # model_path = "Logs/{}".format(model_date)
