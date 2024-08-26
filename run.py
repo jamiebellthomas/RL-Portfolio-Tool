@@ -108,6 +108,8 @@ def run_model(model_type:str):
             gradient_steps=hyperparameters["gradient_steps"],
             tensorboard_log=log_path,
             train_freq=train_freq,
+            max_grad_norm=hyperparameters["max_grad_norm"],
+            learning_starts=hyperparameters["learning_starts"],
 
 
         )   
