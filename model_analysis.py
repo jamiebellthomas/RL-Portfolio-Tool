@@ -168,7 +168,7 @@ if __name__ == "__main__":
     asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
     macro_economic_factors = pickle.load(open("Collections/macro_economic_factors.pkl", "rb"))
     # Load the benchmark csv files
-    start_date = datetime.date(2018, 1, 2)
+    start_date = hyperparameters["end_training_date"]
     end_date = datetime.date(2024, 8, 26)
 
     latest_possible_date = extract_latest_date(asset_universe)
@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
 
     # Load the model
-    model_path = "Logs/2024-08-26_12-45-07/model_737280_steps.zip"
+    model_path = "Logs/2024-08-26_19-11-01/PPO/model_1146880_steps.zip"
     # Set the start and end dates as datetime objects
     
     analysis(model_path, 

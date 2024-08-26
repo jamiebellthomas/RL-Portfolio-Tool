@@ -374,35 +374,34 @@ def validate_loop(model_folder: str, start_date: datetime.date, end_date: dateti
         if os.path.exists(potential_validation_folder):
             print("Model already validated", potential_validation_folder)
             continue
-        if model_iteration % (it_divider) == 0:
-            results = validate(
-                model_path=model_path,
-                asset_universe=asset_universe,
-                macro_economic_factors=macro_economic_factors,
-                create_folder=False,
-                start_date=start_date,
-                end_date=end_date,
-                model_type=model_type
+        results = validate(
+            model_path=model_path,
+            asset_universe=asset_universe,
+            macro_economic_factors=macro_economic_factors,
+            create_folder=False,
+            start_date=start_date,
+            end_date=end_date,
+            model_type=model_type
+        )
+        # save the results to a csv file
+        results.to_csv(
+            "Validation/"
+            + model_date
+            + "_comparison/"
+            + str(model_iteration)
+            + "_results.csv"
+        )
+        # plot the results against the time steps
+        fig.add_trace(
+            go.Scatter(
+                x=results.columns,
+                y=results.loc["Reward"],
+                mode="lines+markers",
+                name=str(model_iteration) + " iterations",
             )
-            # save the results to a csv file
-            results.to_csv(
-                "Validation/"
-                + model_date
-                + "_comparison/"
-                + str(model_iteration)
-                + "_results.csv"
-            )
-            # plot the results against the time steps
-            fig.add_trace(
-                go.Scatter(
-                    x=results.columns,
-                    y=results.loc["Reward"],
-                    mode="lines+markers",
-                    name=str(model_iteration) + " iterations",
-                )
-            )
-            # save the total reward to a dictionary
-            total_rewards[model_iteration] = results.loc["Reward"].sum()
+        )
+        # save the total reward to a dictionary
+        total_rewards[model_iteration] = results.loc["Reward"].sum()
 
     fig.update_layout(
         title="Return on Investment vs Time Step",
@@ -706,14 +705,14 @@ if __name__ == "__main__":
     # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
-    model_folder = "Logs/2024-08-26_19-11-01/PPO"
-    model_type = "PPO"
+    model_folder = "Logs/2024-08-26_22-38-51/DDPG"
+    model_type = "DDPG"
 
     validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
     validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
 
 
-    #manual_plot("Validation/2024-08-26_12-45-07_comparison")
+    manual_plot("Validation/2024-08-26_19-11-01_2021-01-01_to_2024-08-23_comparison")
 
     # analyse_validation_results("v4", asset_universe)
 
