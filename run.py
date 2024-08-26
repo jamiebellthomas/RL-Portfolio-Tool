@@ -109,7 +109,6 @@ def run_model(model_type:str):
             tensorboard_log=log_path,
             train_freq=train_freq,
             learning_starts=hyperparameters["learning_starts"],
-            noise_clip=hyperparameters["noise_clip"],
 
 
         )   
