@@ -18,6 +18,7 @@ import pickle
 import datetime
 import subprocess
 from hyperparameters import hyperparameters
+import numpy as np
 
 asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
 macro_economic_factors = pickle.load(
@@ -81,9 +82,10 @@ def run_model(model_type:str):
         # The noise objects for DDPG
         n_actions = len(asset_universe.asset_list.keys())
         action_noise = OrnsteinUhlenbeckActionNoise(
-            mean=[hyperparameters["action_noise_std"]] * n_actions, 
-            sigma=[hyperparameters["action_noise_std"]] * n_actions
+            mean = hyperparameters["action_noise_mean"] * np.ones(n_actions),
+            sigma = hyperparameters["action_noise_std"] * np.ones(n_actions),
         )
+            
         model = DDPG(
             "MultiInputPolicy",
             env,
