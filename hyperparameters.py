@@ -67,7 +67,6 @@ hyperparameters = {
     "batch_size_ddpg": 256,
     "tau": 0.005,
     "gradient_steps": 1,
-    "policy_delay": 2,
     "target_noise": 0.2,
     "noise_clip": 0.5,
     "action_noise_std": 0.1,

@@ -79,7 +79,7 @@ def run_model(model_type:str):
         )
     elif model_type == "DDPG":
         # The noise objects for DDPG
-        n_actions = len(asset_universe.keys())
+        n_actions = len(asset_universe.asset_list.keys())
         action_noise = OrnsteinUhlenbeckActionNoise(
             mean=[hyperparameters["action_noise_std"]] * n_actions, 
             sigma=[hyperparameters["action_noise_std"]] * n_actions
@@ -93,9 +93,6 @@ def run_model(model_type:str):
             gamma=hyperparameters["gamma"],
             batch_size=hyperparameters["batch_size_ddpg"],
             tau=hyperparameters["tau"],
-            policy_delay=hyperparameters["policy_delay"],
-            target_noise=hyperparameters["target_noise"],
-            noise_clip=hyperparameters["noise_clip"],
             action_noise=action_noise,
             gradient_steps=hyperparameters["gradient_steps"],
             tensorboard_log=log_path,
