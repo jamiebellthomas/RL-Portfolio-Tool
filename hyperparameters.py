@@ -26,9 +26,9 @@ hyperparameters = {
     # How many years the model should run for
     "episode_length": 10,
     # Date the model will start training from
-    "initial_training_date": datetime.date(2013, 1, 1),
+    "initial_training_date": datetime.date(2006, 1, 1),
     # Date the model will start validating from (probably shouldn't change this)
-    "initial_validation_date": datetime.date(2023, 1, 1),
+    "initial_validation_date": datetime.date(2018, 1, 1),
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
     # Interest rates for cash holdings (annual)

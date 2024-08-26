@@ -683,11 +683,16 @@ def convert_plot_to_moving_average(fig: go.Figure, window: int) -> go.Figure:
     This function will take in a plotly figure and convert it to a moving average over the window size.
     """
     for i in range(len(fig.data)):
-        fig.data[i].y = fig.data[i].y.rolling(window=window).mean()
+        y_data = pd.Series(fig.data[i].y)
+        
+        # Calculate the moving average
+        y_moving_avg = y_data.rolling(window=window).mean()
+        
+        # Update the trace with the moving average data
+        fig.data[i].y = y_moving_avg
 
-    # Make sure all legend terms have (MA) added to them
-    for i in range(len(fig.data)):
-        fig.data[i].name = fig.data[i].name + " (MA)"
+        # Update the legend name to indicate moving average
+        fig.data[i].name = fig.data[i].name + f" (MA {window})"
     return fig
 
 

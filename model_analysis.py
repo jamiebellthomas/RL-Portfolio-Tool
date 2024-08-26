@@ -136,11 +136,13 @@ def analysis(model_path: str,
     
         fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=final_date), y=results[metric], mode="lines", name="Model"))  
 
-        fig = calculate_baselines.fig_modification(fig, "Date" , metric)
+        
 
         fig = calculate_baselines.convert_plot_to_moving_average(fig, window=30)
 
-        
+        fig = calculate_baselines.fig_modification(fig, "Date" , metric)
+
+
         # save the figure as a png
         relative_path = extract_model_path(model_path)
         # check if path exists if not create it
