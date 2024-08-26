@@ -79,6 +79,7 @@ class PortfolioEnv(gym.Env):
         self.episode_length = hyperparameters["episode_length"]
         self.ROI_cutoff = hyperparameters["ROI_cutoff"]
         self.n_envs = hyperparameters["n_envs"]
+        self.save_freq = 1000000
 
         # Intialise other environment variables
         self.current_step = 0
@@ -126,7 +127,7 @@ class PortfolioEnv(gym.Env):
         self.action_space = spaces.Box(
             low=0,
             high=1,
-            shape=((len(self.asset_universe.asset_list)), 1),
+            shape=((len(self.asset_universe.asset_list)), ),
             dtype=np.float64,
         )
 
@@ -273,7 +274,7 @@ class PortfolioEnv(gym.Env):
             terminated = True
 
         if (
-            self.current_step % hyperparameters["timesteps_per_save"] == 0
+            self.current_step % self.save_freq == 0
             and self.current_step != 0
         ):
             print("Model Saved (", self.current_step, "steps )")

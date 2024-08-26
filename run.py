@@ -62,12 +62,17 @@ def run_model(model_type:str):
     env = PortfolioEnv(
         asset_universe,
         macro_economic_factors,
-        initial_date=hyperparameters["initial_training_date"],
-        final_date=hyperparameters["initial_validation_date"],
+        initial_date=hyperparameters["start_training_date"],
+        final_date=hyperparameters["end_training_date"],
     )
-    # n_steps is the number of steps that the model will run for before updating the policy, if n_steps is less than total_timesteps then
-    # the model will run for n_steps and then update the policy, if n_steps is greater than total_timesteps then the model will run for total_timesteps and then update the policy every n_steps
+
+    time_steps = 1
+    save_freq = 1
+
     if model_type == "PPO":
+        time_steps = hyperparameters["total_timesteps_ppo"]
+        save_freq = hyperparameters["timesteps_per_save_ppo"]
+        env.save_freq = save_freq
         model = PPO(
             "MultiInputPolicy",
             env,
@@ -80,9 +85,11 @@ def run_model(model_type:str):
         )
     elif model_type == "DDPG":
         # The noise objects for DDPG
+        time_steps = hyperparameters["total_timesteps_ddpg"]
+        save_freq = hyperparameters["timesteps_per_save_ddpg"]
+        env.save_freq = save_freq
         n_actions = len(asset_universe.asset_list.keys())
-        print("n_actions: ", n_actions)
-        print(f"Action space shape: {env.action_space.shape}")
+        train_freq = (hyperparameters["update_frequency_steps"], "step")
         action_noise = OrnsteinUhlenbeckActionNoise(
             mean = hyperparameters["action_noise_mean"] * np.ones(n_actions),
             sigma = hyperparameters["action_noise_std"] * np.ones(n_actions),
@@ -100,6 +107,7 @@ def run_model(model_type:str):
             action_noise=action_noise,
             gradient_steps=hyperparameters["gradient_steps"],
             tensorboard_log=log_path,
+            train_freq=train_freq,
 
 
         )   
@@ -108,13 +116,15 @@ def run_model(model_type:str):
 
     model.set_logger(new_logger)
 
+    
+
     checkpoint_callback = CheckpointCallback(
-        save_freq=hyperparameters["timesteps_per_save"],
+        save_freq=save_freq,
         save_path=log_path,
         name_prefix="model",
     )
     model.learn(
-        total_timesteps=hyperparameters["total_timesteps"], callback=checkpoint_callback
+        total_timesteps=time_steps, callback=checkpoint_callback
     )
 
     # model.learn(total_timesteps = hyperparameters["total_timesteps"])
@@ -160,8 +170,8 @@ def continue_model(model_file: str) -> None:
     env = PortfolioEnv(
         asset_universe,
         macro_economic_factors,
-        initial_date=hyperparameters["initial_training_date"],
-        final_date=hyperparameters["initial_validation_date"],
+        initial_date=hyperparameters["start_training_date"],
+        final_date=hyperparameters["end_training_date"],
     )
     model = PPO.load(model_path, env)
 
@@ -179,7 +189,7 @@ def continue_model(model_file: str) -> None:
 
 if __name__ == "__main__":
     # reset_model(asset_universe, macro_economic_factors)
-    run_model(model_type="PPO")
+    run_model(model_type="DDPG")
 
     # model_date = "2024-08-13_11-14-57"
     # model_path = "Logs/{}".format(model_date)

@@ -8,6 +8,7 @@
 
 
 from stable_baselines3 import PPO
+from stable_baselines3 import DDPG
 from PortfolioEnv import PortfolioEnv
 from PortfolioCollection import PortfolioCollection
 import pickle
@@ -26,30 +27,32 @@ def validate(
     asset_universe: AssetCollection,
     macro_economic_factors: MacroEconomicCollection,
     create_folder: bool,
+    start_date: datetime.date,
+    end_date: datetime.date,
+    model_type: str
 ):
     """
     This function will validate the trained model on the test data.
     """
     model_date = extract_model_date(model_path)
 
-    if create_folder:
-        model_folder = "Logs/" + model_date
+    model_folder = "Logs/" + model_date
 
-        hyperparameters_dict = move_hyperparameters_to_logs(model_folder)
+    hyperparameters_dict = move_hyperparameters_to_logs(model_folder)
         # create hyperparameters.txt file in the validation directory
-        os.makedirs("Validation/" + model_date, exist_ok=True)
+    os.makedirs("Validation/" + model_date + "_" + str(start_date) + "_to_" + str(end_date), exist_ok=True)
 
-        with open("Validation/" + model_date + "/hyperparameters.txt", "w") as f:
-            for key, value in hyperparameters_dict.items():
-                f.write(key + ":" + value + "\n")
+    with open("Validation/" + model_date + start_date + "_to_" + end_date + "/hyperparameters.txt", "w") as f:
+        for key, value in hyperparameters_dict.items():
+            f.write(key + ":" + value + "\n")
 
-    latest_date = extract_latest_date(asset_universe)
+    
 
     # for now we'll set latest_date to a fixed date for testing purposes
     # latest_date = datetime.date(2023, 1, 10)
 
     # if latest_date is before the initial validation date then we can't validate the model, so we need to raise an error
-    if latest_date < hyperparameters["initial_validation_date"]:
+    if end_date < start_date:
         raise ValueError(
             "The latest date in the asset universe is before the initial validation date, so the model can't be validated."
         )
@@ -58,16 +61,23 @@ def validate(
     env = PortfolioEnv(
         asset_universe,
         macro_economic_factors,
-        initial_date=hyperparameters["initial_validation_date"],
-        final_date=latest_date,
+        initial_date=start_date,
+        final_date=end_date,
     )
     print("Environment created")
     # calculate the number of days between the initial validation date and the latest date
-    num_days = (latest_date - hyperparameters["initial_validation_date"]).days
+    num_days = (end_date - start_date).days
     print("Number of steps: ", num_days)
 
     # load model
-    model = PPO.load(model_path)
+    if model_type == "PPO":
+        model = PPO.load(model_path)
+    
+    elif model_type == "DDPG":
+        model = DDPG.load(model_path)
+    
+    # set the model to the environment
+    env.model = model
 
     # validate model by applying it to the environment
     obs, info = env.reset()
@@ -103,11 +113,11 @@ def validate(
     if create_folder:
         # create directory if it doesn't exist
         try:
-            os.makedirs("Validation/" + model_date)
+            os.makedirs("Validation/" + model_date + start_date + "_to_" + end_date)
         except FileExistsError:
             pass
 
-        results_df.to_csv("Validation/" + model_date + "/results.csv")
+        results_df.to_csv("Validation/" + model_date + start_date + "_to_" + end_date + "/results.csv")
 
         # plot the rewards against the time steps
         fig = go.Figure()
@@ -121,7 +131,7 @@ def validate(
         )
         # save as png to same directory
         asset_universe_roi = roi_asset_universe(
-            asset_universe, hyperparameters["initial_validation_date"], latest_date
+            asset_universe, start_date=start_date, end_date=end_date
         )
         fig.add_trace(
             go.Scatter(
@@ -329,13 +339,18 @@ def analyse_validation_results(version_number: str, asset_universe: AssetCollect
     print(analysis_df)
 
 
-def validate_loop(model_folder: str):
+def validate_loop(model_folder: str, start_date: datetime.date, end_date: datetime.date, model_type: str):
     """
     This function will validate all the models in the model folder so we can compare them over the course of the training period
     """
+    latest_date = extract_latest_date(asset_universe)
+    if end_date > latest_date:
+        end_date = latest_date
     # get a list of the zip files in the model folder
     model_files = os.listdir(model_folder)
     model_date = model_folder.split("/")[1]
+    # add start and end date to the model date
+    model_date += "_" + str(start_date) + "_to_" + str(end_date)
     # create directory if it doesn't exist
     it_divider = 8192 * 2
     try:
@@ -360,6 +375,9 @@ def validate_loop(model_folder: str):
                 asset_universe=asset_universe,
                 macro_economic_factors=macro_economic_factors,
                 create_folder=False,
+                start_date=start_date,
+                end_date=end_date,
+                model_type=model_type
             )
             # save the results to a csv file
             results.to_csv(
@@ -683,10 +701,14 @@ if __name__ == "__main__":
     # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
+    model_folder = "Logs/2024-08-26_14-25-04"
+    model_type = "PPO"
 
-    #validate_loop("Logs/2024-08-26_12-45-07")
+    validate_loop("Logs/2024-08-26_14-25-04", start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
+    validate_loop("Logs/2024-08-26_14-25-04", start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
 
-    manual_plot("Validation/2024-08-26_12-45-07_comparison")
+
+    #manual_plot("Validation/2024-08-26_12-45-07_comparison")
 
     # analyse_validation_results("v4", asset_universe)
 
