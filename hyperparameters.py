@@ -66,7 +66,7 @@ hyperparameters = {
     "learning_rate_ddpg": 1e-3,
     "gamma": 0.99,
     "batch_size_ddpg": 1024,
-    "tau": 0.003,
+    "tau": 0.0005,
     "gradient_steps": 75,
     "action_noise_std": 0.01,
     "action_noise_mean": 0.0,
