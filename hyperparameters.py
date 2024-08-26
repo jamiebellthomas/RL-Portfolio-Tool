@@ -26,9 +26,10 @@ hyperparameters = {
     # How many years the model should run for
     "episode_length": 10,
     # Date the model will start training from
-    "initial_training_date": datetime.date(2012, 1, 1),
+    "start_training_date": datetime.date(2012, 1, 1),
     # Date the model will start validating from (probably shouldn't change this)
-    "initial_validation_date": datetime.date(2021, 1, 1),
+    "end_training_date": datetime.date(2021, 1, 1),
+    "start_validation_date": datetime.date(2006, 1, 1),
     # Cut off for ROI for the model to be deemed failed and episode terminated
     "ROI_cutoff": -1.0,
     # Interest rates for cash holdings (annual)
@@ -47,8 +48,8 @@ hyperparameters = {
     "n_epochs": 10,
     "learning_rate": 1e-5,
     # This needs to be multiple of n_steps or it will do a whole extra cycle.
-    "total_timesteps": 3932160,
-    "timesteps_per_save": 16384,
+    "total_timesteps_ppo": 3932160,
+    "timesteps_per_save_ppo": 16384,
     "clip_range": 0.05,
     # PPO parameters to look into for model:
     # gamma=hyperparameters["gamma"],
@@ -62,15 +63,18 @@ hyperparameters = {
 
     # DDPG hyperparameters
     "buffer_size": 1000000,
-    "learning_rate_ddpg": 1e-4,
+    "learning_rate_ddpg": 1e-5,
     "gamma": 0.99,
-    "batch_size_ddpg": 256,
+    "batch_size_ddpg": 512,
     "tau": 0.005,
-    "gradient_steps": 1,
+    "gradient_steps": 50,
     "target_noise": 0.2,
     "noise_clip": 0.5,
-    "action_noise_std": 0.1,
+    "action_noise_std": 0.01,
     "action_noise_mean": 0.5,
+    "total_timesteps_ddpg": 1000000,
+    "timesteps_per_save_ddpg": 5000,
+    "update_frequency_steps": 1000
 
 
 }
