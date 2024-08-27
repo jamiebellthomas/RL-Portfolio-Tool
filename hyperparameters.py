@@ -70,7 +70,7 @@ hyperparameters = {
     "gradient_steps": 75,
     "action_noise_std": 0.05,
     "action_noise_mean": 0.0,
-    "total_timesteps_ddpg": 1000000,
+    "total_timesteps_ddpg": 300000,
     "timesteps_per_save_ddpg": 10000,
     "update_frequency_steps": 1000,
     "learning_starts": 5000
