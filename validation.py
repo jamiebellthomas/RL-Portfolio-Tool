@@ -364,10 +364,14 @@ def validate_loop(model_folder: str, start_date: datetime.date, end_date: dateti
         pass
     # filter out the zip files
     model_files = [file for file in model_files if file.endswith(".zip")]
+    no_of_models = len(model_files)
+    current_model = 0
     # create a new figure
     total_rewards = {}
     fig = go.Figure()
     for model_file in model_files:
+        current_model += 1
+        print("Validating model: ", current_model, " of ", no_of_models)
         model_path = os.path.join(model_folder, model_file)
         model_iteration = extract_model_iteration(model_file)
         potential_validation_folder = "Validation/" + model_date + "_comparison" + "/" + str(model_iteration) + "_results.csv"
@@ -708,11 +712,22 @@ if __name__ == "__main__":
     model_folder = "Logs/2024-08-26_22-38-51/DDPG"
     model_type = "DDPG"
 
+    #validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
+    #validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
+
+    
+    model_folder = "Logs/2024-08-27_00-19-40/PPO"
+    model_type = "PPO"
+    #validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
+    #validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
+
+    model_folder = "Logs/2024-08-27_13-55-17/DDPG"
+    model_type = "DDPG"
     validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
     validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
 
 
-    manual_plot("Validation/2024-08-26_19-11-01_2021-01-01_to_2024-08-23_comparison")
+    #manual_plot("Validation/2024-08-26_22-38-51_2021-01-01_to_2024-08-23_comparison")
 
     # analyse_validation_results("v4", asset_universe)
 
