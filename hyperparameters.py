@@ -26,7 +26,7 @@ hyperparameters = {
     # How many years the model should run for
     "episode_length": 10,
     # Date the model will start training from
-    "start_training_date": datetime.date(2012, 1, 1),
+    "start_training_date": datetime.date(2017, 1, 1),
     # Date the model will start validating from (probably shouldn't change this)
     "end_training_date": datetime.date(2021, 1, 1),
     "start_validation_date": datetime.date(2006, 1, 1),
