@@ -233,8 +233,8 @@ def main(model_path: str, start_date: datetime.date, end_date: datetime.date) ->
 
 
 if __name__ == "__main__":
-    valiation1 = "Logs/2024-08-27_13-55-17/DDPG/model_80000_steps.zip"
-    validation2 = "Logs/2024-08-27_13-55-17/DDPG/model_190000_steps.zip"
+    valiation1 = "Logs/2024-08-27_13-55-17/DDPG/model_160000_steps.zip"
+    validation2 = "Logs/2024-08-27_13-55-17/DDPG/model_300000_steps.zip"
     main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
     main(model_path=valiation1, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
 
