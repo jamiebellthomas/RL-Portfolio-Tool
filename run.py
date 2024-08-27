@@ -190,7 +190,7 @@ def continue_model(model_file: str) -> None:
 
 if __name__ == "__main__":
     # reset_model(asset_universe, macro_economic_factors)
-    run_model(model_type="PPO")
+    run_model(model_type="DDPG")
 
     # model_date = "2024-08-13_11-14-57"
     # model_path = "Logs/{}".format(model_date)
