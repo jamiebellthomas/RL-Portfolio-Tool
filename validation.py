@@ -704,30 +704,16 @@ if __name__ == "__main__":
     # today = datetime.date.today()
     # asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
 
-    model_path = "Logs/2024-08-24_12-17-32/model_3932160_steps.zip"
 
     # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
-    model_folder = "Logs/2024-08-26_22-38-51/DDPG"
-    model_type = "DDPG"
-
-    #validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
-    #validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
-
-    
-    model_folder = "Logs/2024-08-27_00-19-40/PPO"
-    model_type = "PPO"
+    model_folder = "INSERT MODEL FOLDER HERE INCLUDING THE /DDPG BIT"
+    model_type = model_folder.split("/")[-1]
     validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
     validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
 
-    model_folder = "Logs/2024-08-27_13-55-17/DDPG"
-    model_type = "DDPG"
-    #validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
-    #validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
 
-
-    #manual_plot("Validation/2024-08-26_22-38-51_2021-01-01_to_2024-08-23_comparison")
 
     # analyse_validation_results("v4", asset_universe)
 
