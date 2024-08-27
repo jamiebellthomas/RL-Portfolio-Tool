@@ -15,6 +15,7 @@ from PortfolioEnv import PortfolioEnv
 from Baselines import calculate_baselines
 import pandas as pd
 from stable_baselines3 import PPO
+from stable_baselines3 import DDPG
 from validation import extract_latest_date
 import numpy as np
 import pickle
@@ -32,7 +33,8 @@ def analysis(model_path: str,
             ucrp: pd.DataFrame,
             ftw: pd.DataFrame,
             ftl: pd.DataFrame,
-            percentile_lookup: pd.DataFrame) -> None:
+            percentile_lookup: pd.DataFrame,
+            model_type: str) -> None:
     
     """
     This will be the detailed analysis of a specific model zip file, whereas the validation.py script will just get the results over a fixed testing period, this will have an adjustable testing period.
@@ -53,7 +55,10 @@ def analysis(model_path: str,
     print("Number of days: {}".format(num_days))
 
     # Load the model from the model_path
-    model = PPO.load(model_path)
+    if model_type == "PPO":
+        model = PPO.load(model_path)
+    elif model_type == "DDPG":
+        model = DDPG.load(model_path)
     # run the mode over the start_date and end_date
     env = PortfolioEnv(
         asset_universe,
@@ -163,13 +168,11 @@ def extract_model_path(model_path: str) -> str:
     model_path = model_path.replace(".zip", "")
     return model_path
 
-if __name__ == "__main__":
+def main(model_path: str, start_date: datetime.date, end_date: datetime.date) -> None:
     # Load the asset universe and macro economic factors
     asset_universe = pickle.load(open("Collections/test_reduced_asset_universe.pkl", "rb"))
     macro_economic_factors = pickle.load(open("Collections/macro_economic_factors.pkl", "rb"))
     # Load the benchmark csv files
-    start_date = hyperparameters["end_training_date"]
-    end_date = datetime.date(2024, 8, 26)
 
     latest_possible_date = extract_latest_date(asset_universe)
     if end_date > latest_possible_date:
@@ -213,8 +216,7 @@ if __name__ == "__main__":
     print("FTL dimensions: ", ftl.shape)
 
 
-    # Load the model
-    model_path = "Logs/2024-08-26_19-11-01/PPO/model_1146880_steps.zip"
+    model_type = model_path.split("/")[2]
     # Set the start and end dates as datetime objects
     
     analysis(model_path, 
@@ -226,10 +228,15 @@ if __name__ == "__main__":
              ucrp, 
              ftw, 
              ftl,
-             percentile_lookup)
+             percentile_lookup,
+             model_type)
 
 
-
+if __name__ == "__main__":
+    valiation1 = "Logs/2024-08-27_13-55-17/DDPG/model_80000_steps.zip"
+    validation2 = "Logs/2024-08-27_13-55-17/DDPG/model_190000_steps.zip"
+    main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
+    main(model_path=valiation1, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
 
     
     
