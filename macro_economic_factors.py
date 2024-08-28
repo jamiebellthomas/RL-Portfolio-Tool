@@ -6,6 +6,7 @@ import yfinance as yf
 from create_universe import time_series_edit
 import pandas as pd
 import numpy as np
+import datetime
 
 
 fred = Fred(api_key="ce93398088b6cef191be72551306fcae")
@@ -138,6 +139,8 @@ if __name__ == "__main__":
     print(np.__version__)
     print(pd.__version__)
     # plot_pickle_data()
-    # macro_economic_factors = open_macro_economic_file()
-    # asset = macro_economic_factors.asset_lookup("NASDAQ")
-    # asset.plot_asset()
+    macro_economic_factors = open_macro_economic_file()
+    asset = macro_economic_factors.asset_lookup("NASDAQ")
+    start_date = datetime.date(2006, 1, 1)
+    end_date = datetime.date(2012, 1, 2)
+    asset.plot_asset(start_date, end_date)

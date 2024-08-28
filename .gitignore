@@ -168,3 +168,4 @@ cython_debug/
 *.csv
 # The entre Logs folder
 Logs/
+mods.py

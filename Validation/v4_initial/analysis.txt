@@ -1,0 +1,5 @@
+Mean of Varience: 4.968591952646248e-07
+Varience of Varience: 1.2855351356391204e-11
+Mean of Average: 0.002272727272727251
+Varience of Average: 1.2950959874279476e-05
+Cumulated Reward: 38.10290939898199

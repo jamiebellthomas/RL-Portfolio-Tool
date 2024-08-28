@@ -7,7 +7,6 @@ import PortfolioCollection as PortfolioCollection
 from AssetCollection import AssetCollection
 from MacroEconomicCollection import MacroEconomicCollection
 from PortfolioEnv import PortfolioEnv
-from Asset import Asset
 from hyperparameters import hyperparameters
 import pandas as pd
 import datetime
@@ -40,6 +39,8 @@ def create_csv(
     entropy_list: list,
     volatility_list: list,
     sharpe_ratios: list,
+    sortino_ratios: list,
+    treynor_ratios: list,
     weighted_mean_percentile: list,
     start_date: datetime.date,
     end_date: datetime.date,
@@ -64,12 +65,20 @@ def create_csv(
     results["Sharpe Ratio"] = sharpe_ratios
     # cumulative sharp ratio
     results["Cumulative Sharpe Ratio"] = results["Sharpe Ratio"].cumsum()
+    # add the sortino ratio as a column
+    results["Sortino Ratio"] = sortino_ratios
+    # add the treynor ratio as a column
+    results["Treynor Ratio"] = treynor_ratios
+    #cumulative treynor ratio
+    results["Cumulative Treynor Ratio"] = results["Treynor Ratio"].cumsum()
+    # cumulative sortino ratio
+    results["Cumulative Sortino Ratio"] = results["Sortino Ratio"].cumsum()
     # add the weighted mean asset percentile as a column
     results["Weighted Mean Asset Percentile"] = weighted_mean_percentile
 
     if make_csv:
-        # save this as a csv
-        results.to_csv(f"Baselines/{name}.csv")
+        # save this as a csv with the dates as the index and the dates in the title so that we can easily compare the results
+        results.to_csv(f"Baselines/{name}_{start_date}_{end_date}.csv")
 
     return results
 
@@ -108,6 +117,8 @@ def calculate_ubah(
     volatilities = [0]
     entropy_list = [0]
     sharpe_ratios = [0]
+    sortino_ratios = [0]
+    treynor_ratios = [0]
     terminated = False
     while not terminated:
         
@@ -125,6 +136,8 @@ def calculate_ubah(
         )
         entropy_list.append(env.portfolio.calculate_portfolio_entropy())
         sharpe_ratios.append(env.portfolio.actual_sharpe_ratio)
+        sortino_ratios.append(env.portfolio.actual_sortino_ratio)
+        treynor_ratios.append(env.portfolio.actual_treynor_ratio)
 
     # set the first value of the entropy and sharpe ratios to the second value, so that the first value is not 0
     entropy_list[0] = entropy_list[2]
@@ -132,12 +145,25 @@ def calculate_ubah(
     entropy_list[1] = entropy_list[3]
     sharpe_ratios[1] = sharpe_ratios[3]
     volatilities[0] = volatilities[1]
+    sortino_ratios[0] = sortino_ratios[1]
+    treynor_ratios[0] = treynor_ratios[1]
 
     # replace any values in sharpe ratios that are greater than 10 with 10
     sharpe_ratios = np.array(sharpe_ratios)
     sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
     # back to list
     sharpe_ratios = sharpe_ratios.tolist()
+
+
+    # same limit for sortino ratios
+    sortino_ratios = np.array(sortino_ratios)
+    sortino_ratios = np.where(sortino_ratios > 10, 10, sortino_ratios)
+    sortino_ratios = sortino_ratios.tolist()
+
+    # same for treynor ratios
+    treynor_ratios = np.array(treynor_ratios)
+    treynor_ratios = np.where(treynor_ratios > 0.2, 0.2, treynor_ratios)
+    treynor_ratios = treynor_ratios.tolist()
 
     print("UBAH ", weighting_tracker.shape)
     
@@ -166,6 +192,8 @@ def calculate_ubah(
         entropy_list,
         volatilities,
         sharpe_ratios,
+        sortino_ratios,
+        treynor_ratios,
         percentile_array,
         start_date,
         end_date,
@@ -212,6 +240,8 @@ def calculate_ucrp(
     entropy_list = [0]
     volatilities = [0]
     sharpe_ratios = [0]
+    sortino_ratios = [0]
+    treynor_ratios = [0]
 
     # Now we take steps through the environment to calculate the portfolio value and ROI
     terminated = False
@@ -228,16 +258,31 @@ def calculate_ucrp(
             env.portfolio.calculate_portfolio_volatility(env.current_date)
         )
         sharpe_ratios.append(env.portfolio.actual_sharpe_ratio)
+        sortino_ratios.append(env.portfolio.actual_sortino_ratio)
+        treynor_ratios.append(env.portfolio.actual_treynor_ratio)
 
     entropy_list[0] = entropy_list[1]
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
+    sortino_ratios[0] = sortino_ratios[1]
+    treynor_ratios[0] = treynor_ratios[1]
 
     # replace any values in sharpe ratios that are greater than 10 with 10
     sharpe_ratios = np.array(sharpe_ratios)
     sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
     # back to list
     sharpe_ratios = sharpe_ratios.tolist()
+
+    # same limit for sortino ratios
+    sortino_ratios = np.array(sortino_ratios)
+    sortino_ratios = np.where(sortino_ratios > 10, 10, sortino_ratios)
+    sortino_ratios = sortino_ratios.tolist()
+
+    # same for treynor ratios
+    treynor_ratios = np.array(treynor_ratios)
+    treynor_ratios = np.where(treynor_ratios > 0.2, 0.2, treynor_ratios)
+    treynor_ratios = treynor_ratios.tolist()
+
 
     print("UCRP: ", weighting_tracker.shape)
     # for each column in the weighting tracker, calculate the weighted mean asset percentile
@@ -257,6 +302,8 @@ def calculate_ucrp(
         entropy_list,
         volatilities,
         sharpe_ratios,
+        sortino_ratios,
+        treynor_ratios,
         percentile_array,
         start_date,
         end_date,
@@ -318,6 +365,8 @@ def calculate_ftw(
     entropy_list = [0]
     volatilities = [0]
     sharpe_ratios = [0]
+    sortino_ratios = [0]
+    treynor_ratios = [0]
     terminated = False
     col = 0
     while not terminated:
@@ -332,16 +381,36 @@ def calculate_ftw(
             env.portfolio.calculate_portfolio_volatility(env.current_date)
         )
         sharpe_ratios.append(env.portfolio.actual_sharpe_ratio)
+        sortino_ratios.append(env.portfolio.actual_sortino_ratio)
+        treynor_ratios.append(env.portfolio.actual_treynor_ratio)
 
     entropy_list[0] = entropy_list[1]
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
+    sortino_ratios[0] = sortino_ratios[1]
+    treynor_ratios[0] = treynor_ratios[1]
 
     # replace any values in sharpe ratios that are greater than 10 with 10
     sharpe_ratios = np.array(sharpe_ratios)
     sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
     # back to list
     sharpe_ratios = sharpe_ratios.tolist()
+
+    # same limit for sortino ratios
+    sortino_ratios = np.array(sortino_ratios)
+    sortino_ratios = np.where(sortino_ratios > 10, 10, sortino_ratios)
+    sortino_ratios = sortino_ratios.tolist()
+
+    # same for treynor ratios
+    treynor_ratios = np.array(treynor_ratios)
+    treynor_ratios = np.where(treynor_ratios > 0.2, 0.2, treynor_ratios)
+    treynor_ratios = treynor_ratios.tolist()
+
+
+    # same but ca volatility at 0.1
+    volatilities = np.array(volatilities)
+    volatilities = np.where(volatilities > 0.1, 0.1, volatilities)
+    volatilities = volatilities.tolist()
 
     # for each column in the weighting tracker, calculate the weighted mean asset percentile
     percentile_array = []
@@ -361,6 +430,8 @@ def calculate_ftw(
         entropy_list,
         volatilities,
         sharpe_ratios,
+        sortino_ratios,
+        treynor_ratios,
         percentile_array,
         start_date,
         end_date,
@@ -426,6 +497,8 @@ def calculate_ftl(
     entropy_list = [0]
     volatilities = [0]
     sharpe_ratios = [0]
+    sortino_ratios = [0]
+    treynor_ratios = [0]
     terminated = False
     col = 0
     while not terminated:
@@ -440,15 +513,33 @@ def calculate_ftl(
             env.portfolio.calculate_portfolio_volatility(env.current_date)
         )
         sharpe_ratios.append(env.portfolio.actual_sharpe_ratio)
+        sortino_ratios.append(env.portfolio.actual_sortino_ratio)
+        treynor_ratios.append(env.portfolio.actual_treynor_ratio)
+
     entropy_list[0] = entropy_list[1]
     sharpe_ratios[0] = sharpe_ratios[1]
     volatilities[0] = volatilities[1]
+    sortino_ratios[0] = sortino_ratios[1]
+    treynor_ratios[0] = treynor_ratios[1]
+
 
     # replace any values in sharpe ratios that are greater than 10 with 10
     sharpe_ratios = np.array(sharpe_ratios)
     sharpe_ratios = np.where(sharpe_ratios > 10, 10, sharpe_ratios)
     # back to list
     sharpe_ratios = sharpe_ratios.tolist()
+
+
+    # same limit for sortino ratios
+    sortino_ratios = np.array(sortino_ratios)
+    sortino_ratios = np.where(sortino_ratios > 10, 10, sortino_ratios)
+    sortino_ratios = sortino_ratios.tolist()
+
+    # same for treynor ratios
+    treynor_ratios = np.array(treynor_ratios)
+    treynor_ratios = np.where(treynor_ratios > 0.2, 0.2, treynor_ratios)
+    treynor_ratios = treynor_ratios.tolist()
+
 
     # for each column in the weighting tracker, calculate the weighted mean asset percentile
     percentile_array = []
@@ -468,6 +559,8 @@ def calculate_ftl(
         entropy_list,
         volatilities,
         sharpe_ratios,
+        sortino_ratios,
+        treynor_ratios,
         percentile_array,
         start_date,
         end_date,
@@ -658,7 +751,7 @@ def plot_weighting_progression(
 
 
 
-def generate_percentile_array(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date, make_csv:bool) -> pd.DataFrame:
+def generate_percentile_array(asset_universe: AssetCollection, start_date: datetime.date, end_date: datetime.date, make_csv: bool) -> pd.DataFrame:
     """
     This function will generate the percentile array for the assets in the asset universe at each time step
     This percentile will be a representation of an asset's ROI over the last 30 days, compared to the ROI of all the other assets
@@ -697,6 +790,8 @@ def generate_percentile_array(asset_universe: AssetCollection, start_date: datet
         index=asset_universe.asset_list.keys(),
         columns=pd.date_range(start=start_date, end=end_date),
     )
+    if make_csv:
+        percentile_df.to_csv("Baselines/percentile_array_{}_{}.csv".format(start_date, end_date))
 
     # save the percentile array as a csv file
     return percentile_df
@@ -730,17 +825,18 @@ if __name__ == "__main__":
     macro_economic_data = pickle.load(
         open("Collections/macro_economic_factors.pkl", "rb")
     )
-    start_date = hyperparameters["initial_validation_date"]
+    #start_date = hyperparameters["initial_validation_date"]
     latest_date = extract_latest_date(asset_universe)
+    start_date = datetime.date(2023, 1, 1)
 
-    percentile_lookup = generate_percentile_array(asset_universe, start_date, latest_date, make_csv=True)
+    percentile_lookup = generate_percentile_array(asset_universe, start_date, latest_date)
     
-    ubah = calculate_ubah(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
-    ucrp = calculate_ucrp(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
-    ftw = calculate_ftw(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
-    ftl = calculate_ftl(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True)
+    ubah = calculate_ubah(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    ucrp = calculate_ucrp(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    ftw = calculate_ftw(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    ftl = calculate_ftl(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
     
-    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile"]
+    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile", "Cumulative Sortino Ratio", "Cumulative Treynor Ratio"]
     for metric in metrics:
-        plot_baselines(asset_universe, start_date, latest_date, metric)
+        plot_baselines(asset_universe, start_date, latest_date, metric, ubah, ucrp, ftw, ftl)
     

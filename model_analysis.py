@@ -23,6 +23,7 @@ import datetime
 import plotly.graph_objects as go
 from hyperparameters import hyperparameters
 import os
+from mods import clean_data
 
 def analysis(model_path: str, 
             start_date:str, 
@@ -53,7 +54,7 @@ def analysis(model_path: str,
     num_days = (final_date - start_date).days
     print("Analysing from {} to {}".format(start_date, final_date))
     print("Number of days: {}".format(num_days))
-
+    model = None
     # Load the model from the model_path
     if model_type == "PPO":
         model = PPO.load(model_path)
@@ -66,8 +67,6 @@ def analysis(model_path: str,
         initial_date=start_date,
         final_date=final_date,
     )
-    # set the model to the env
-    env.model = model
     
 
     obs, info = env.reset()
@@ -80,6 +79,8 @@ def analysis(model_path: str,
     volatilities = [0]
     entropies = [0]
     value_list = [hyperparameters["initial_balance"]]
+    sortino_ratio = [0]
+    treynor_ratio = [0]
 
     while not terminated:
         action, _states = model.predict(obs, deterministic=True)
@@ -89,11 +90,30 @@ def analysis(model_path: str,
         roi.append(env.roi)
         value_list.append((1+env.roi)*hyperparameters["initial_balance"])
         sharpe_ratio.append(env.portfolio.actual_sharpe_ratio)
+        sortino_ratio.append(env.portfolio.actual_sortino_ratio)
+        treynor_ratio.append(env.portfolio.actual_treynor_ratio)
         volatilities.append(env.portfolio.calculate_portfolio_volatility(env.current_date))
         entropies.append(env.portfolio.calculate_portfolio_entropy())
         step += 1
         if step % 100 == 0:
             print("Step: ", step)
+
+        # replace any values in sharpe ratios that are greater than 10 with 10
+        sharpe_ratio = np.array(sharpe_ratio)
+        sharpe_ratio = np.where(sharpe_ratio > 10, 10, sharpe_ratio)
+        # back to list
+        sharpe_ratio = sharpe_ratio.tolist()
+
+
+        # same limit for sortino ratios
+        sortino_ratio = np.array(sortino_ratio)
+        sortino_ratio = np.where(sortino_ratio > 10, 10, sortino_ratio)
+        sortino_ratio = sortino_ratio.tolist()
+
+        # same for treynor ratios
+        treynor_ratio = np.array(treynor_ratio)
+        treynor_ratio = np.where(treynor_ratio > 0.2, 0.2, treynor_ratio)
+        treynor_ratio = treynor_ratio.tolist()
 
     # compute weighted mean asset percentile by doing the dot product of the weightings tracker columns with the percentile lookup table
     
@@ -112,18 +132,25 @@ def analysis(model_path: str,
             )
         percentile_array.append(weighted_mean_asset_percentile)
 
+    
+
     results = calculate_baselines.create_csv(value_list=value_list,
                                              roi_list=roi,
                                              entropy_list=entropies,
                                              volatility_list=volatilities,
                                              sharpe_ratios=sharpe_ratio,
+                                             sortino_ratios=sortino_ratio,
+                                             treynor_ratios=treynor_ratio,
                                              weighted_mean_percentile=percentile_array,
                                              start_date=start_date,
                                              end_date=final_date,
                                              name=None,
                                              make_csv=False)
+    ############################
+    #results = clean_data(results)
+    ############################
     
-    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile"]
+    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile", "Cumulative Sortino Ratio", "Cumulative Treynor Ratio"]
 
     for metric in  metrics:
         
@@ -142,8 +169,8 @@ def analysis(model_path: str,
         fig.add_trace(go.Scatter(x=pd.date_range(start=start_date, end=final_date), y=results[metric], mode="lines", name='$\\text{Model}$'))  
 
         
-        #if(metric == "Weighted Mean Asset Percentile" or metric == "Volatility"):
-        fig = calculate_baselines.convert_plot_to_moving_average(fig, window=30)
+        if(metric != "Cumulative Sortino Ratio" or metric != "Cumulative Treynor Ratio"):
+            fig = calculate_baselines.convert_plot_to_moving_average(fig, window=30)
 
 
         fig = calculate_baselines.fig_modification(fig, "Date" , metric)
@@ -157,6 +184,9 @@ def analysis(model_path: str,
         if not os.path.exists("Analysis/{}".format(relative_path)):
             os.makedirs("Analysis/{}".format(relative_path))
         fig.write_image("Analysis/{}/{}.png".format(relative_path, metric))
+
+    # write results.csv to the same directory
+    results.to_csv("Analysis/{}/results.csv".format(relative_path), index=False)
 
 
 def extract_model_path(model_path: str) -> str:
@@ -179,34 +209,90 @@ def main(model_path: str, start_date: datetime.date, end_date: datetime.date) ->
         print("End date is after the latest possible date, setting end date to latest possible date: ", latest_possible_date)
         end_date = latest_possible_date
 
-    percentile_lookup = calculate_baselines.generate_percentile_array(asset_universe, 
-                                                                      start_date, 
-                                                                      end_date, 
-                                                                      make_csv=False)
+    percentile_lookup = None
+    
+    if os.path.exists("Baselines/percentile_array_{}_{}.csv".format(start_date, end_date)):
+        percentile_lookup = pd.read_csv("Baselines/percentile_array_{}_{}.csv".format(start_date, end_date))
+        # set firsst column as index
+        percentile_lookup.set_index(percentile_lookup.columns[0], inplace=True)
+    else:
 
-    ubah = calculate_baselines.calculate_ubah(asset_universe, 
-                                              macro_economic_factors, 
-                                              start_date, end_date, 
-                                              make_csv=False, 
-                                              percentile_lookup=percentile_lookup)
-    ucrp = calculate_baselines.calculate_ucrp(asset_universe, 
-                                              macro_economic_factors, 
-                                              start_date, 
-                                              end_date, 
-                                              make_csv=False,
-                                              percentile_lookup=percentile_lookup)
-    ftw = calculate_baselines.calculate_ftw(asset_universe, 
-                                            macro_economic_factors, 
-                                            start_date, 
-                                            end_date, 
-                                            make_csv=False,
-                                            percentile_lookup=percentile_lookup)
-    ftl = calculate_baselines.calculate_ftl(asset_universe, 
-                                            macro_economic_factors, 
-                                            start_date, 
-                                            end_date, 
-                                            make_csv=False,
-                                            percentile_lookup=percentile_lookup)
+        percentile_lookup = calculate_baselines.generate_percentile_array(asset_universe, 
+                                                                        start_date, 
+                                                                        end_date, 
+                                                                        make_csv=True)
+    
+    print(percentile_lookup.index)
+                                                                      
+    print("Percentile lookup dimensions: ", percentile_lookup.shape)
+    
+    # look for UBAH, UCRP, FTW, FTL at Baselines/{name}_{start_date}_{end_date}.csv
+
+    ubah = None
+    ucrp = None
+    ftw = None
+    ftl = None
+    if os.path.exists("Baselines/UBAH_{}_{}.csv".format(start_date, end_date)):
+        ubah = pd.read_csv("Baselines/UBAH_{}_{}.csv".format(start_date, end_date))
+        # set first column as index 
+        ubah.set_index(ubah.columns[0], inplace=True)
+    else:
+        print("UBAH file does not exist, calculating UBAH")
+
+        ubah = calculate_baselines.calculate_ubah(asset_universe, 
+                                                macro_economic_factors, 
+                                                start_date, end_date, 
+                                                make_csv=True, 
+                                                percentile_lookup=percentile_lookup)
+    print("UBAH dimensions: ", ubah.shape)
+    #print index
+    print(ubah.index)
+        
+    if os.path.exists("Baselines/UCRP_{}_{}.csv".format(start_date, end_date)):
+        ucrp = pd.read_csv("Baselines/UCRP_{}_{}.csv".format(start_date, end_date))
+        # set first column as index
+        ucrp.set_index(ucrp.columns[0], inplace=True)
+    else:
+        ucrp = calculate_baselines.calculate_ucrp(asset_universe, 
+                                                macro_economic_factors, 
+                                                start_date, 
+                                                end_date, 
+                                                make_csv=True,
+                                                percentile_lookup=percentile_lookup)
+        
+    print("UCRP dimensions: ", ucrp.shape)
+    print(ucrp.index)
+
+    if os.path.exists("Baselines/FTW_{}_{}.csv".format(start_date, end_date)):
+        ftw = pd.read_csv("Baselines/FTW_{}_{}.csv".format(start_date, end_date))
+        # set first column as index
+        ftw.set_index(ftw.columns[0], inplace=True)
+    else:
+
+        ftw = calculate_baselines.calculate_ftw(asset_universe, 
+                                                macro_economic_factors, 
+                                                start_date, 
+                                                end_date, 
+                                                make_csv=True,
+                                                percentile_lookup=percentile_lookup)
+        
+    print("FTW dimensions: ", ftw.shape)
+    print(ftw.index)
+
+    if os.path.exists("Baselines/FTL_{}_{}.csv".format(start_date, end_date)):
+        ftl = pd.read_csv("Baselines/FTL_{}_{}.csv".format(start_date, end_date))
+        # set first column as index
+        ftl.set_index(ftl.columns[0], inplace=True)
+    else:
+        ftl = calculate_baselines.calculate_ftl(asset_universe, 
+                                                macro_economic_factors, 
+                                                start_date, 
+                                                end_date, 
+                                                make_csv=True,
+                                                percentile_lookup=percentile_lookup)
+        
+    print("FTL dimensions: ", ftl.shape)
+    print(ftl.index)
 
     
     print("Percentile lookup dimensions: ", percentile_lookup.shape)
@@ -215,9 +301,14 @@ def main(model_path: str, start_date: datetime.date, end_date: datetime.date) ->
     print("FTW dimensions: ", ftw.shape)
     print("FTL dimensions: ", ftl.shape)
 
-
-    model_type = model_path.split("/")[2]
+    if len(model_path.split("/")) == 4:
+        model_type = model_path.split("/")[2]
+    else:
+        model_type = "PPO"
     # Set the start and end dates as datetime objects
+
+    print("Model path: ", model_path)
+    print("Model type: ", model_type)
     
     analysis(model_path, 
              start_date, 
@@ -233,10 +324,15 @@ def main(model_path: str, start_date: datetime.date, end_date: datetime.date) ->
 
 
 if __name__ == "__main__":
-    valiation1 = "Logs/2024-08-27_13-55-17/DDPG/model_160000_steps.zip"
-    validation2 = "Logs/2024-08-27_13-55-17/DDPG/model_300000_steps.zip"
-    main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
-    main(model_path=valiation1, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
+    validation1 = "Logs/v20/model_3883008_steps.zip"
+    #validation2 = "Logs/2024-08-27_00-19-40/PPO/model_3719168_steps.zip"
+    #validation2 = "Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"
+    #validation1 = "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"
+    #validation1 = "Logs/v19/model_3833856_steps.zip"
+    main(model_path=validation1, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
+    #main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
+    
+    #main(model_path=valiation1, start_date=datetime.date(2012, 1, 1), end_date=datetime.date(2012, 1, 5))
 
     
     

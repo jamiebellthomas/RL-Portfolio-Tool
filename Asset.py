@@ -7,6 +7,7 @@ import datetime
 import numpy as np
 import warnings
 from hyperparameters import hyperparameters
+from Baselines import calculate_baselines
 
 """
 Asset class
@@ -59,7 +60,7 @@ class Asset:
         """
         plot = go.Figure()
         # extract the subsection of the time series data
-        value_sub_section, _, _, _, start_date_index, end_date_index = (
+        value_sub_section, a, b, c, start_date_index, end_date_index = (
             self.extract_subsection(start_date, end_date)
         )
         # add a scatter plot of the subsection
@@ -73,11 +74,12 @@ class Asset:
             )
         )
 
-        plot.update_layout(
-            title="Asset Value for " + self.ticker,
-            xaxis_title="Date",
-            yaxis_title="Value",
-        )
+        fig = calculate_baselines.fig_modification(plot, "Date", "Value")
+
+        # set background color to white and page color to white
+
+
+
         # save the plot to a png file
         plot.write_image("Investigations/Value_Plots/" + self.ticker + ".png")
 
@@ -120,7 +122,7 @@ class Asset:
             and self.close_list is None
             and self.volume_list is None
         ):
-            return value_sub_section
+            return value_sub_section, None, None, None, start_date_index, end_date_index
         close_sub_section = self.close_list[start_date_index : end_date_index + 1]
         open_sub_section = self.open_list[start_date_index : end_date_index + 1]
         volume_sub_section = self.volume_list[start_date_index : end_date_index + 1]
@@ -134,7 +136,7 @@ class Asset:
         )
 
     @staticmethod
-    @njit(nogil=True)
+    #@njit(nogil=True)
     def pct_change(arr: np.array, periods=1) -> np.array:
         """
         Calculate the percentage change between the current and a prior element in a numpy array.
@@ -201,7 +203,7 @@ class Asset:
             return self.expected_return
         # next we need the relevant subsection of the macro economic factors
         sp500 = macro_economic_collection.asset_lookup("NASDAQ")
-        sp500_subsection = sp500.extract_subsection(
+        sp500_subsection, _, _, _, start_index, end_index = sp500.extract_subsection(
             self.index_list[start_date_index], self.index_list[end_date_index]
         )
 
@@ -219,8 +221,13 @@ class Asset:
 
         # We need to make a minimum number of points threshold for the variance and covariance calculations
         # Also maybe look at varience/co-variance over different periods (e.g. 1 month, 3 months, 1 year)
-
-        market_return = Asset.pct_change(sp500_subsection, periods=1)
+        try:
+            market_return = Asset.pct_change(sp500_subsection, periods=1)
+        except:
+            print("Error in pct_change")
+            print("Asset Return Length", len(subsection))
+            print("Market Return Length", len(sp500_subsection))
+            print(sp500_subsection)
         # print("Market Return Length", len(sp500_subsection))
 
         if len(asset_return) < 25 or len(market_return) < 25:

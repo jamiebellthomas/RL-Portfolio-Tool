@@ -1,0 +1,2 @@
+Difference:
+new reward fucntion: sharpe ratio

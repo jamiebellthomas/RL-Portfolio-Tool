@@ -21,6 +21,9 @@ class PortfolioCollection(Collection):
         self.portfolio_beta = 0.0
         self.expected_sharpe_ratio = 0.0
         self.expected_treynor_ratio = 0.0
+        self.actual_sharpe_ratio = 0.0
+        self.actual_treynor_ratio = 0.0
+        self.actual_sortino_ratio = 0.0
         self.risk_free_rate = 0.0
         self.reward = 0.0
         self.cash_return = 0.0
@@ -151,6 +154,7 @@ class PortfolioCollection(Collection):
             self.betas_array, self.weights_array
         )
         self.calculate_treynor_ratio()
+        self.calculate_sortino_ratios()
 
         # Calculate the entropy penalty
         self.entropy_penalty = -np.sum(self.weights_array * np.log(self.weights_array))
@@ -246,3 +250,19 @@ class PortfolioCollection(Collection):
         self.expected_treynor_ratio = (
             self.expected_return - self.risk_free_rate
         ) / self.portfolio_beta
+
+        daily_risk_free_rate = (1 + self.risk_free_rate) ** (1 / 252) - 1
+        self.actual_treynor_ratio = (
+            self.actual_return - daily_risk_free_rate
+        ) / self.portfolio_beta
+    
+    def calculate_sortino_ratios(self) -> None:
+        """
+        This method will calculate the Sortino ratio of the portfolio.
+        This will be calculated as the ratio of the expected return of the portfolio to the downside deviation of the returns of the portfolio.
+        """
+        downside_returns = self.returns_array[self.returns_array < 0]
+        downside_std = np.std(downside_returns)
+        downside_std = max(downside_std, 0.000001)
+        daily_risk_free_rate = (1 + self.risk_free_rate) ** (1 / 252) - 1
+        self.actual_sortino_ratio = (self.actual_return - daily_risk_free_rate) / downside_std
