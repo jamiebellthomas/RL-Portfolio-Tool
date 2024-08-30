@@ -276,3 +276,6 @@ class PortfolioCollection(Collection):
         self.expected_sortino_ratio = (self.expected_return - self.risk_free_rate) / expected_downside_std
         # cap the sortino ratio at 3
         self.expected_sortino_ratio = min(self.expected_sortino_ratio, 5)
+        # check for nan
+        if np.isnan(self.expected_sortino_ratio):
+            self.expected_sortino_ratio = 1.0
