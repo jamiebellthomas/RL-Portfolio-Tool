@@ -21,6 +21,7 @@ class PortfolioCollection(Collection):
         self.portfolio_beta = 0.0
         self.expected_sharpe_ratio = 0.0
         self.expected_treynor_ratio = 0.0
+        self.expected_sortino_ratio = 0.0
         self.actual_sharpe_ratio = 0.0
         self.actual_treynor_ratio = 0.0
         self.actual_sortino_ratio = 0.0
@@ -158,10 +159,17 @@ class PortfolioCollection(Collection):
 
         # Calculate the entropy penalty
         self.entropy_penalty = -np.sum(self.weights_array * np.log(self.weights_array))
+        print("Entropy:" ,self.entropy_penalty)
+        # print expected return, expected sharpe ratio, expected treynor ratio, expected sortino ratio 
+        print("Expected Return:", self.expected_return)
+        print("Expected Sharpe Ratio:", self.expected_sharpe_ratio)
+        print("Expected Treynor Ratio:", self.expected_treynor_ratio)
+        print("Expected Sortino Ratio:", self.expected_sortino_ratio)
 
         self.reward = (
             (hyperparameters["treynor_weight"] * self.expected_treynor_ratio)
             + (hyperparameters["sharpe_weight"] * self.expected_sharpe_ratio)
+            + (hyperparameters["sortino_weight"] * self.expected_sortino_ratio)
             + (self.entropy_penalty * hyperparameters["entropy_weight"])
         )
 
@@ -266,3 +274,10 @@ class PortfolioCollection(Collection):
         downside_std = max(downside_std, 0.000001)
         daily_risk_free_rate = (1 + self.risk_free_rate) ** (1 / 252) - 1
         self.actual_sortino_ratio = (self.actual_return - daily_risk_free_rate) / downside_std
+
+        expected_downside_returns = self.expected_returns_array[self.expected_returns_array < 0]
+        expected_downside_std = np.std(expected_downside_returns)
+        expected_downside_std = max(expected_downside_std, 0.000001)
+        self.expected_sortino_ratio = (self.expected_return - self.risk_free_rate) / expected_downside_std
+        # cap the sortino ratio at 3
+        self.expected_sortino_ratio = min(self.expected_sortino_ratio, 5)

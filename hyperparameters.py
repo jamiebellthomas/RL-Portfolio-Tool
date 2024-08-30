@@ -36,11 +36,11 @@ hyperparameters = {
     "interest_rate": 0.05,
     # Reward function hyperparameters
     "treynor_weight": 0.1,
-    "sharpe_weight": 0.9,
-    "sortino_weight": 0.0,
+    "sharpe_weight": 0.7,
+    "sortino_weight": 0.03,
     "max_drawdown_weight": 0.0,
-    "roi_weight": 0.0,
-    "entropy_weight": 0.1,
+    "roi_weight": 0.05,
+    "entropy_weight": 0.12,
     # PPO hyperparameters
     "n_envs": 4,
     "n_steps": 1024,
@@ -48,8 +48,8 @@ hyperparameters = {
     "n_epochs": 10,
     "learning_rate": 1e-5,
     # This needs to be multiple of n_steps or it will do a whole extra cycle.
-    "total_timesteps_ppo": 3932160,
-    "timesteps_per_save_ppo": 16384,
+    "total_timesteps_ppo": 2949120,
+    "timesteps_per_save_ppo": 32768,
     "clip_range": 0.05,
     # PPO parameters to look into for model:
     # gamma=hyperparameters["gamma"],
