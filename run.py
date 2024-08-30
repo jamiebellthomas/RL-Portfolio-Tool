@@ -26,6 +26,7 @@ macro_economic_factors = pickle.load(
 )
 model_date_and_time = datetime.datetime.now()
 model_date = model_date_and_time.strftime("%Y-%m-%d_%H-%M-%S")
+model_date = "test"
 # Configure the logger to output to both stdout and files
 
 
@@ -39,8 +40,9 @@ def run_model(model_type:str):
     # Custom logger configuration
 
     log_path = os.path.join(logs_path, model_date)
-    log_path = os.path.join(log_path, model_type)
+    os.makedirs(log_path, exist_ok=True)
 
+    log_path = os.path.join(log_path, model_type)
     os.makedirs(log_path, exist_ok=True)
     log_file = os.path.join(log_path, "log.csv")
 
