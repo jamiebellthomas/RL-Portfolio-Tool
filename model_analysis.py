@@ -365,15 +365,42 @@ def main(model_path: str, start_date: datetime.date, end_date: datetime.date) ->
              ftl,
              percentile_lookup,
              model_type)
+    
+def highest_performing_model(validation_comparison_folder:str) -> str:
+    """
+    Opens the total_rewards.txt file in each of the model folders in the validation_comparison_folder and finds the highest performing model
+    this is the one at the bottom of the file.
+    """
+    # open the txt file in the folder
+    # just open the file
+    # just open the text file at validation_comparison_folder/total_rewards.txt
+
+    with open("{}/total_rewards.txt".format(validation_comparison_folder), "r") as file:
+        lines = file.readlines()
+        # get the last line
+        last_line = lines[-1]
+        # get the model path
+        model_number = last_line.split(":")[0]
+        # make sire theres no spaces 
+        model_number = model_number.strip()
+        print("Highest performing model: ", model_number)
+        return model_number
+    
+
+
+    
 
 
 if __name__ == "__main__":
+    highest_performer = highest_performing_model("Validation/test_2021-01-01_to_2024-08-23_comparison")
     #validation1 = "Logs/v20/model_3883008_steps.zip"
     #validation2 = "Logs/2024-08-27_00-19-40/PPO/model_3719168_steps.zip"
-    validation2 = "Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"
-    validation1 = "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"
+    #validation2 = "Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"
+    #validation1 = "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"
+    model = "Logs/test/PPO/model_{}_steps.zip".format(highest_performer)
+    print("Model path: ", model)
     #validation1 = "Logs/v19/model_3833856_steps.zip"
-    main(model_path=validation1, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
+    main(model_path=model, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
     #main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
     
     #main(model_path=valiation1, start_date=datetime.date(2012, 1, 1), end_date=datetime.date(2012, 1, 5))

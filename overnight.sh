@@ -7,3 +7,6 @@ python run.py
 
 # now run validation.py
 python validation.py
+
+# now run model_analysis.py
+python model_analysis.py
