@@ -36,10 +36,10 @@ hyperparameters = {
     "interest_rate": 0.05,
     # Reward function hyperparameters
     "treynor_weight": 0.0,
-    "sharpe_weight": 1.0,
+    "sharpe_weight": 0.0,
     "sortino_weight": 0.0,
     "max_drawdown_weight": 0.0,
-    "roi_weight": 0.0,
+    "roi_weight": 1.0,
     "entropy_weight": 0.0,
     # PPO hyperparameters
     "n_envs": 4,
