@@ -24,7 +24,7 @@ import datetime
 import plotly.graph_objects as go
 from hyperparameters import hyperparameters
 import os
-from mods import clean_data
+#from mods import clean_data
 
 def analysis(model_path: str, 
             start_date:str, 
