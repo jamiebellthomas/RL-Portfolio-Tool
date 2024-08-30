@@ -11,6 +11,7 @@ Metrics are:
 """
 from AssetCollection import AssetCollection
 from MacroEconomicCollection import MacroEconomicCollection
+from PortfolioCollection import PortfolioCollection
 from PortfolioEnv import PortfolioEnv
 from Baselines import calculate_baselines
 import pandas as pd
@@ -70,6 +71,18 @@ def analysis(model_path: str,
     
 
     obs, info = env.reset()
+    weighted_asset_volatility = []
+    weighted_asset_illiquidity = []
+    weighted_asset_expected_return = []
+    weighted_asset_linear_regression = []
+
+    weighted_asset_expected_return, weighted_asset_volatility, weighted_asset_illiquidity, weighted_asset_linear_regression = calculate_baselines.collect_portfolio_details(env.portfolio, 
+                                                                                                                                                                            weighted_asset_expected_return, 
+                                                                                                                                                                            weighted_asset_volatility, 
+                                                                                                                                                                            weighted_asset_illiquidity, 
+                                                                                                                                                                            weighted_asset_linear_regression)
+
+
     # stack the first column of the obs to the weightings tracker
     weightings_tracker = np.array(obs["asset_universe"][:, 0])
     terminated = False
@@ -98,22 +111,30 @@ def analysis(model_path: str,
         if step % 100 == 0:
             print("Step: ", step)
 
+        weighted_asset_expected_return, weighted_asset_volatility, weighted_asset_illiquidity, weighted_asset_linear_regression = calculate_baselines.collect_portfolio_details(env.portfolio, 
+                                                                                                                                                                                weighted_asset_expected_return, 
+                                                                                                                                                                                weighted_asset_volatility, 
+                                                                                                                                                                                weighted_asset_illiquidity, 
+                                                                                                                                                                                weighted_asset_linear_regression)
+
+        
+
         # replace any values in sharpe ratios that are greater than 10 with 10
-        sharpe_ratio = np.array(sharpe_ratio)
-        sharpe_ratio = np.where(sharpe_ratio > 10, 10, sharpe_ratio)
-        # back to list
-        sharpe_ratio = sharpe_ratio.tolist()
+    sharpe_ratio = np.array(sharpe_ratio)
+    sharpe_ratio = np.where(sharpe_ratio > 10, 10, sharpe_ratio)
+    # back to list
+    sharpe_ratio = sharpe_ratio.tolist()
 
 
         # same limit for sortino ratios
-        sortino_ratio = np.array(sortino_ratio)
-        sortino_ratio = np.where(sortino_ratio > 10, 10, sortino_ratio)
-        sortino_ratio = sortino_ratio.tolist()
+    sortino_ratio = np.array(sortino_ratio)
+    sortino_ratio = np.where(sortino_ratio > 10, 10, sortino_ratio)
+    sortino_ratio = sortino_ratio.tolist()
 
-        # same for treynor ratios
-        treynor_ratio = np.array(treynor_ratio)
-        treynor_ratio = np.where(treynor_ratio > 0.2, 0.2, treynor_ratio)
-        treynor_ratio = treynor_ratio.tolist()
+    # same for treynor ratios
+    treynor_ratio = np.array(treynor_ratio)
+    treynor_ratio = np.where(treynor_ratio > 0.2, 0.2, treynor_ratio)
+    treynor_ratio = treynor_ratio.tolist()
 
     # compute weighted mean asset percentile by doing the dot product of the weightings tracker columns with the percentile lookup table
     
@@ -131,6 +152,28 @@ def analysis(model_path: str,
                 weightings_tracker[j][i] * percentile_lookup.iloc[j][i]
             )
         percentile_array.append(weighted_mean_asset_percentile)
+
+    # print the length of each weighted array
+    print("Weighted asset expected return length: ", len(weighted_asset_expected_return))
+    print("Weighted asset volatility length: ", len(weighted_asset_volatility))
+    print("Weighted asset illiquidity length: ", len(weighted_asset_illiquidity))
+    print("Weighted asset linear regression length: ", len(weighted_asset_linear_regression))
+    # for each of these arrays, set the first value to the second value
+    weighted_asset_expected_return[0] = weighted_asset_expected_return[1]
+    weighted_asset_volatility[0] = weighted_asset_volatility[1]
+    weighted_asset_illiquidity[0] = weighted_asset_illiquidity[1]
+    weighted_asset_linear_regression[0] = weighted_asset_linear_regression[1]
+    # print the length of the time range
+    print("Time range: ", len(pd.date_range(start=start_date, end=final_date)))
+    # export the weighted observations to a csv file
+    weighted_obs = pd.DataFrame({
+        "Weighted Asset Expected Return": weighted_asset_expected_return,
+        "Weighted Asset Volatility": weighted_asset_volatility,
+        "Weighted Asset Illiquidity": weighted_asset_illiquidity,
+        "Weighted Asset Linear Regression": weighted_asset_linear_regression
+    })
+    # print dimensions
+    print("Weighted obs dimensions: ", weighted_obs.shape)
 
     
 
@@ -187,6 +230,7 @@ def analysis(model_path: str,
 
     # write results.csv to the same directory
     results.to_csv("Analysis/{}/results.csv".format(relative_path), index=False)
+    weighted_obs.to_csv("Analysis/{}/weighted_obs.csv".format(relative_path), index=False)
 
 
 def extract_model_path(model_path: str) -> str:
@@ -324,10 +368,10 @@ def main(model_path: str, start_date: datetime.date, end_date: datetime.date) ->
 
 
 if __name__ == "__main__":
-    validation1 = "Logs/v20/model_3883008_steps.zip"
+    #validation1 = "Logs/v20/model_3883008_steps.zip"
     #validation2 = "Logs/2024-08-27_00-19-40/PPO/model_3719168_steps.zip"
-    #validation2 = "Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"
-    #validation1 = "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"
+    validation2 = "Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"
+    validation1 = "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"
     #validation1 = "Logs/v19/model_3833856_steps.zip"
     main(model_path=validation1, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
     #main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])

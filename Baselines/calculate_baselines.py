@@ -816,7 +816,127 @@ def convert_plot_to_moving_average(fig: go.Figure, window: int) -> go.Figure:
         fig.data[i].name = fig.data[i].name + f" MA ({window} days)"
     return fig
 
+def observation_collection(asset_universe: AssetCollection, 
+                           macro_economic_data: MacroEconomicCollection, 
+                           start_date: datetime.date, 
+                           end_date: datetime.date) -> pd.DataFrame:
+    """
+    This will loop run through a PortfolioEnv instance and collect the raw observations at each time step, saving them as a csv file.
+    """
+    # set the start date to the initial validation date
+    # create a PortfolioEnv instance
+    env = PortfolioEnv(
+        asset_universe=asset_universe,
+        macro_economic_data=macro_economic_data,
+        initial_date=start_date,
+        final_date=end_date,
+    )
+    # create a list to store the observations
+    expected_return_average = []
+    volatility_average = []
+    illiquidity_average = []
+    slope_average = []
 
+    obs, info = env.reset()
+    raw_obs = env.asset_universe.observation
+    expected_return, volatility, illiquidity, slope = extract_observation_means(raw_obs)
+    expected_return_average.append(expected_return)
+    volatility_average.append(volatility)
+    illiquidity_average.append(illiquidity)
+    slope_average.append(slope)
+
+    # loop through each time step
+    terminated = False
+    current = 0
+    while not terminated:
+        current += 1
+        if current % 100 == 0:
+            print(f"Current step: {current}")
+        # take a step in the environment
+        obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
+        raw_obs = env.asset_universe.observation
+        # add the observation to the list
+        expected_return, volatility, illiquidity, slope = extract_observation_means(raw_obs)
+        expected_return_average.append(expected_return)
+        volatility_average.append(volatility)
+        illiquidity_average.append(illiquidity)
+        slope_average.append(slope)
+    
+    # create a dataframe with the observations
+    observations_df = pd.DataFrame(
+        data={
+            "Expected Return": expected_return_average,
+            "Volatility": volatility_average,
+            "Illiquidity": illiquidity_average,
+            "Slope": slope_average,
+        },
+        index=pd.date_range(start=start_date, end=end_date),
+    )
+    # save the observations as a csv file with the start and end date
+    observations_df.to_csv(f"Baselines/observations_{start_date}_{end_date}.csv")
+
+    return observations_df
+
+def extract_observation_means(obs: np.array) -> tuple:
+    """
+    This function will take in the observations from the observation collection and return the mean of each observation.
+    """
+    expected_return_average = np.mean(obs[:, 1])
+    #print("expected_return_average", obs[:, 1])
+    volatility_average = np.mean(obs[:, 4])
+    #print("volatility_average", obs[:, 4])
+    illiquidity_average = np.mean(obs[:, 3])
+    #print("illiquidity_average", obs[:, 3])
+    slope_average = np.mean(obs[:, 5])
+    #print("slope_average", obs[:, 5])
+
+    return expected_return_average, volatility_average, illiquidity_average, slope_average
+
+def collect_portfolio_details(portfolio: PortfolioCollection, 
+                              expected_return_list: list,
+                              volatility_list: list,
+                              illiquidity_list: list,
+                              linear_regression_list: list):
+    
+    """
+    This needs to return the weighted average for the portfolio expected return (already calculated in the portfolio object, just needs to be extracted)
+    The weighted average for the portfolio asset volatility, illiquidity ratio and the slope of the linear regression line for the portfolio
+    """
+    weights_array = portfolio.weights_array
+    asset_list = portfolio.asset_list
+    expected_return = portfolio.expected_return
+    illiqidity_array = []
+    volatility_array = []
+    linear_regression_array = []
+    for asset in asset_list.values():
+        illiqidity_array.append(asset.illiquidity_ratio)
+        volatility_array.append(asset.volatility)
+        linear_regression_array.append(asset.linear_regression_slope)
+
+    # assert that the arrays are the same length
+    assert len(illiqidity_array) == len(volatility_array) == len(linear_regression_array) == len(weights_array)
+
+    illiqidity_array = np.array(illiqidity_array)
+    volatility_array = np.array(volatility_array)
+    linear_regression_array = np.array(linear_regression_array)
+
+    weighted_illiqidity = np.dot(weights_array, illiqidity_array)
+    weighted_volatility = np.dot(weights_array, volatility_array)
+    weighted_linear_regression = np.dot(weights_array, linear_regression_array)
+    # make sure volatility list is a list
+    volatility_list = list(volatility_list)
+    illiquidity_list = list(illiquidity_list)
+    linear_regression_list = list(linear_regression_list)
+    expected_return_list = list(expected_return_list)
+    #print(volatility_list)
+
+
+    expected_return_list.append(expected_return)
+    volatility_list.append(weighted_volatility)
+    illiquidity_list.append(weighted_illiqidity)
+    linear_regression_list.append(weighted_linear_regression)
+
+    return expected_return_list, volatility_list, illiquidity_list, linear_regression_list
 
 if __name__ == "__main__":
     asset_universe = pickle.load(
@@ -826,17 +946,26 @@ if __name__ == "__main__":
         open("Collections/macro_economic_factors.pkl", "rb")
     )
     #start_date = hyperparameters["initial_validation_date"]
-    latest_date = extract_latest_date(asset_universe)
-    start_date = datetime.date(2023, 1, 1)
+    #latest_date = extract_latest_date(asset_universe)
+    #start_date = datetime.date(2023, 1, 1)
 
-    percentile_lookup = generate_percentile_array(asset_universe, start_date, latest_date)
+    #percentile_lookup = generate_percentile_array(asset_universe, start_date, latest_date)
     
-    ubah = calculate_ubah(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
-    ucrp = calculate_ucrp(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
-    ftw = calculate_ftw(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
-    ftl = calculate_ftl(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    #ubah = calculate_ubah(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    #ucrp = calculate_ucrp(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    #ftw = calculate_ftw(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
+    #ftl = calculate_ftl(asset_universe, macro_economic_data, start_date, latest_date, make_csv=True, percentile_lookup=percentile_lookup)
     
-    metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile", "Cumulative Sortino Ratio", "Cumulative Treynor Ratio"]
-    for metric in metrics:
-        plot_baselines(asset_universe, start_date, latest_date, metric, ubah, ucrp, ftw, ftl)
+    #metrics = ["ROI", "Entropy", "Volatility", "Cumulative Sharpe Ratio", "Weighted Mean Asset Percentile", "Cumulative Sortino Ratio", "Cumulative Treynor Ratio"]
+    #for metric in metrics:
+    #    plot_baselines(asset_universe, start_date, latest_date, metric, ubah, ucrp, ftw, ftl)
+
+    start_date = hyperparameters["start_validation_date"]
+    end_date = hyperparameters["start_training_date"]
+    observation_collection(asset_universe, macro_economic_data, start_date, end_date)
+
+    start_date = hyperparameters["end_training_date"]
+    end_date = extract_latest_date(asset_universe)
+    observation_collection(asset_universe, macro_economic_data, start_date, end_date)
+
     

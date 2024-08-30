@@ -8,6 +8,7 @@ from numba import njit
 class AssetCollection(Collection):
     def __init__(self, asset_list):
         super().__init__(asset_list=asset_list)
+        self.observation = None
 
     def get_observation(
         self, macro_economic_collection: MacroEconomicCollection, date: datetime.date
@@ -17,13 +18,20 @@ class AssetCollection(Collection):
         It will loop through each asset in the asset universe and generate the observation for each asset, appending it to the observation space.
         The observation space will ne a np.array of shape (n_assets, n_features) where n_assets is the number of assets in the asset universe and n_features is the number of features for each asset.
         """
-        observation_space = [
+        self.observation = [
             asset.get_observation(macro_economic_collection, date)
             for asset in self.asset_list.values()
         ]
+        self.observation = np.array(self.observation)
+        # make a copy of the observation space
+        obs_copy = self.observation.copy()
+        next_obs = AssetCollection.normalise_observation(obs_copy)
+        # free up memory
+        del obs_copy
+        
 
         # print(observation_space)
-        return AssetCollection.normalise_observation(np.array(observation_space))
+        return next_obs
 
     @staticmethod
     @njit(nogil=True)
