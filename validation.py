@@ -708,12 +708,11 @@ if __name__ == "__main__":
     # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
-    model_folder = "INSERT MODEL FOLDER HERE INCLUDING THE /DDPG BIT"
+    model_folder = "Logs/test/PPO"
     model_type = model_folder.split("/")[-1]
-    #validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
+    validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
     #validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
-
-    manual_plot("Validation/2024-08-27_16-50-39_2006-01-01_to_2012-01-01_comparison")
+    manual_plot("Validation/test_2021-01-01_to_2024-08-23_comparison")
 
 
 

@@ -159,12 +159,7 @@ class PortfolioCollection(Collection):
 
         # Calculate the entropy penalty
         self.entropy_penalty = -np.sum(self.weights_array * np.log(self.weights_array))
-        print("Entropy:" ,self.entropy_penalty)
-        # print expected return, expected sharpe ratio, expected treynor ratio, expected sortino ratio 
-        print("Expected Return:", self.expected_return)
-        print("Expected Sharpe Ratio:", self.expected_sharpe_ratio)
-        print("Expected Treynor Ratio:", self.expected_treynor_ratio)
-        print("Expected Sortino Ratio:", self.expected_sortino_ratio)
+
 
         self.reward = (
             (hyperparameters["treynor_weight"] * self.expected_treynor_ratio)
