@@ -5,6 +5,7 @@ from scipy import stats
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from mods import clean
+from scipy.stats import wilcoxon
 
 
 def hypothesis_test(metric1: str, metric2: str, significance_level:float, model1: pd.DataFrame, model2: pd.DataFrame, delta = False) -> None:
@@ -18,6 +19,27 @@ def hypothesis_test(metric1: str, metric2: str, significance_level:float, model1
     
     # Now we can perform the hypothesis test
     t_stat, p_val = stats.ttest_rel(model1[metric1], model2[metric2])
+    print(f"The t-statistic is {t_stat} and the p-value is {p_val}")
+    
+    # Now we can check if the p-value is less than the significance level
+    if p_val < significance_level:
+        print(f"The p-value of {p_val} is less than the significance level of {significance_level}. We can reject the null hypothesis that the two models are the same.")
+    else:
+        print(f"The p-value of {p_val} is greater than the significance level of {significance_level}. We cannot reject the null hypothesis that the two models are the same.")
+
+    print("\n")
+
+def wilcoxon_test(metric1: str, metric2: str, significance_level:float, model1: pd.DataFrame, model2: pd.DataFrame, delta = False) -> None:
+    """
+    This function will perform a hypothesis test on the metric provided for the two models provided.
+    """
+    # First we need to check if the two models have the same number of data points
+    print(f"Model 1 has {len(model1[metric1])} data points")
+    print(f"Model 2 has {len(model2[metric2])} data points")
+    assert len(model1[metric1]) == len(model2[metric2]), "Models have different number of data points"
+    
+    # Now we can perform the hypothesis test
+    t_stat, p_val = wilcoxon(model1[metric1], model2[metric2])
     print(f"The t-statistic is {t_stat} and the p-value is {p_val}")
     
     # Now we can check if the p-value is less than the significance level
@@ -161,71 +183,26 @@ def main():
 
     ddpg_2006_feature_selection = pd.read_csv("Analysis/2024-08-27_16-50-39/DDPG/model_30000_steps_2006-01-01_to_2012-01-01/weighted_obs.csv")
     ddpg_2021_feature_selection = pd.read_csv("Analysis/2024-08-27_16-50-39/DDPG/model_40000_steps_2021-01-01_to_2024-08-23/weighted_obs.csv")
-
-    # Perform the hypothesis tests
-    print("PPO 2006 vs DDPG 2006 - Sharpe Ratio")
-    hypothesis_test("real sharpe","real sharpe", 0.05, ppo_2006, ddpg_2006)
-    print("PPO 2021 vs DDPG 2021 - Sharpe Ratio")
-    hypothesis_test("real sharpe","real sharpe", 0.05, ppo_2021, ddpg_2021)
-
-    print("PPO 2006 vs DDPG 2006 - Sortino Ratio")
-    hypothesis_test("real sortino","real sortino", 0.05, ppo_2006, ddpg_2006)
-    print("PPO 2021 vs DDPG 2021 - Sortino Ratio")
-    hypothesis_test("real sortino","real sortino", 0.05, ppo_2021, ddpg_2021)
-
-    print("PPO 2006 vs DDPG 2006 - Treynor Ratio")
-    hypothesis_test("real treynor","real treynor", 0.05, ppo_2006, ddpg_2006)
-    print("PPO 2021 vs DDPG 2021 - Treynor Ratio")
-    hypothesis_test("real treynor","real treynor", 0.05, ppo_2021, ddpg_2021)
-
-    print("PPO 2006 vs DDPG 2006 - Volatility")
-    hypothesis_test("Volatility","Volatility", 0.05, ppo_2006, ddpg_2006)
-    print("PPO 2021 vs DDPG 2021 - Volatility")
-    hypothesis_test("Volatility","Volatility", 0.05, ppo_2021, ddpg_2021)
-
-    print("PPO 2006 vs DDPG 2006 - Weighted Mean Asset Percentile")
-    hypothesis_test("Weighted Mean Asset Percentile","Weighted Mean Asset Percentile", 0.05, ppo_2006, ddpg_2006)
-    print("PPO 2021 vs DDPG 2021 - Weighted Mean Asset Percentile")
-    hypothesis_test("Weighted Mean Asset Percentile","Weighted Mean Asset Percentile", 0.05, ppo_2021, ddpg_2021)
-
-    plot_feature_selection("Analysis/2024-08-27_16-50-39/DDPG/model_30000_steps_2006-01-01_to_2012-01-01/weighted_obs.csv", 
-                           "Baselines/observations_2006-01-01_2012-01-01.csv")
     
-    plot_feature_selection("Analysis/2024-08-27_16-50-39/DDPG/model_40000_steps_2021-01-01_to_2024-08-23/weighted_obs.csv",
-                           "Baselines/observations_2021-01-01_2024-08-23.csv")
-    
-    # read in the weighted_obs as dataframes
-    ddpg_2006 = pd.read_csv("Analysis/2024-08-27_16-50-39/DDPG/model_30000_steps_2006-01-01_to_2012-01-01/weighted_obs.csv")
-    ddpg_2021 = pd.read_csv("Analysis/2024-08-27_16-50-39/DDPG/model_40000_steps_2021-01-01_to_2024-08-23/weighted_obs.csv")
-    # now rea din the baselines observations
-    baseline_2006 = pd.read_csv("Baselines/observations_2006-01-01_2012-01-01.csv")
-    baseline_2021 = pd.read_csv("Baselines/observations_2021-01-01_2024-08-23.csv")
-    # set the index of the baselines to be the first column
-    baseline_2006.set_index(baseline_2006.columns[0], inplace=True)
-    baseline_2021.set_index(baseline_2021.columns[0], inplace=True)
-    # set the index of the ddpg models to be the same as the baselines
-    ddpg_2006.set_index(baseline_2006.index, inplace=True)
-    ddpg_2021.set_index(baseline_2021.index, inplace=True)
-    # now we can do hypothesis tests on the feature selection   
-    print("DDPG 2006 vs Baseline 2006 - Expected Return")
-    hypothesis_test("Weighted Asset Expected Return","Expected Return", 0.05, ddpg_2006, baseline_2006)
-    print("DDPG 2021 vs Baseline 2021 - Expected Return")
-    hypothesis_test("Weighted Asset Expected Return","Expected Return", 0.05, ddpg_2021, baseline_2021)
 
-    print("DDPG 2006 vs Baseline 2006 - Volatility")
-    hypothesis_test("Weighted Asset Volatility","Volatility", 0.05, ddpg_2006, baseline_2006)
-    print("DDPG 2021 vs Baseline 2021 - Volatility")
-    hypothesis_test("Weighted Asset Volatility","Volatility", 0.05, ddpg_2021, baseline_2021)
+    print("Wilcoxon Test for PPO 2021 vs DDPG 2021 in Volatility")
+    wilcoxon_test("Volatility", "Volatility", 0.05, ppo_2021, ddpg_2021)
 
-    print("DDPG 2006 vs Baseline 2006 - Illiquidity")
-    hypothesis_test("Weighted Asset Illiquidity","Illiquidity", 0.05, ddpg_2006, baseline_2006)
-    print("DDPG 2021 vs Baseline 2021 - Illiquidity")
-    hypothesis_test("Weighted Asset Illiquidity","Illiquidity", 0.05, ddpg_2021, baseline_2021)
+    print("Wilcoxon Test for PPO 2006 vs DDPG 2006 in Volatility")
+    wilcoxon_test("Volatility", "Volatility", 0.05, ppo_2006, ddpg_2006)
 
-    print("DDPG 2006 vs Baseline 2006 - Linear Regression")
-    hypothesis_test("Weighted Asset Linear Regression","Slope", 0.05, ddpg_2006, baseline_2006)
-    print("DDPG 2021 vs Baseline 2021 - Linear Regression")
-    hypothesis_test("Weighted Asset Linear Regression","Slope", 0.05, ddpg_2021, baseline_2021)
+    print("Wilcoxon Test for PPO 2021 vs DDPG 2021 in Weighted Mean Asset Percentile")
+    wilcoxon_test("Weighted Mean Asset Percentile", "Weighted Mean Asset Percentile", 0.05, ppo_2021, ddpg_2021)
+
+    print("Wilcoxon Test for PPO 2006 vs DDPG 2006 in Weighted Mean Asset Percentile")
+    wilcoxon_test("Weighted Mean Asset Percentile", "Weighted Mean Asset Percentile", 0.05, ppo_2006, ddpg_2006)
+
+    print("Wilcoxon Test for PPO 2021 vs DDPG 2021 in Entropy")
+    wilcoxon_test("Entropy", "Entropy", 0.05, ppo_2021, ddpg_2021)
+
+    print("Wilcoxon Test for PPO 2006 vs DDPG 2006 in Entropy")
+    wilcoxon_test("Entropy", "Entropy", 0.05, ppo_2006, ddpg_2006)
+
 
 
 

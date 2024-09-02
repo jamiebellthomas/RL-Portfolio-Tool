@@ -92,7 +92,7 @@ def plot_volatility(asset: Asset, date: datetime.date, period: int):
     )
 
     fig.update_yaxes(
-            title_text="$\\text{Asset Value}$",
+            title_text="$\\text{Asset Value (USD)}$",
             row=1,
             col=1,
             showgrid=True,

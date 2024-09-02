@@ -9,20 +9,10 @@ import numpy as np
 from Asset import Asset
 from create_universe import extract_time_series, time_series_edit
 from macro_economic_factors import open_macro_economic_file
-
+import pickle
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
-
-def asset_creation(ticker: str):
-    """
-    This function creates a single asset
-    """
-    hist = extract_time_series(ticker)
-    index_list, value_list, open_list, close_list, volume_list = time_series_edit(hist)
-    asset = Asset(ticker, index_list, value_list, open_list, close_list, volume_list)
-    return asset
 
 
 def CAPM_investigation(asset: Asset, macro_economic_collection):
@@ -136,6 +126,9 @@ def CAPM_over_time(
         ),
         horizontal_spacing=0.08,
     )
+
+    # increase subplot totle font size
+    returns_fig.update_layout(title_font=dict(size=30))
     returns_fig.add_trace(
         go.Scatter(
             x=date_range,
@@ -147,8 +140,8 @@ def CAPM_over_time(
         col=1,
     )
 
-    title_font = dict(size=20, color="black")
-    tick_font = dict(size=17, family="Serif", color="black")
+    title_font = dict(size=30, color="black")
+    tick_font = dict(size=20, family="Serif", color="black")
     color="lightgrey"
 
     returns_fig.update_xaxes(
@@ -271,10 +264,10 @@ def CAPM_over_time(
 
     returns_fig.update_yaxes(title_text=r"$\text{Expected Return}$", row=1, col=1)
     returns_fig.update_xaxes(title_text=r"$\text{Date}$", row=1, col=1)
-    returns_fig.update_yaxes(title_text=r"$\text{Asset Value}$", row=1, col=2)
+    returns_fig.update_yaxes(title_text=r"$\text{Asset Value (USD)}$", row=1, col=2)
     returns_fig.update_xaxes(title_text=r"$\text{Date}$", row=1, col=2)
     returns_fig.update_yaxes(
-        title_text=r"$\text{NASDAQ Composite Index Value}$", row=1, col=3
+        title_text=r"$\text{NASDAQ Composite Index Value (USD)}$", row=1, col=3
     )
     returns_fig.update_xaxes(title_text=r"$\text{Date}$", row=1, col=3)
     # remove legend
@@ -294,7 +287,10 @@ def CAPM_over_time(
         xaxis_title="Date",
         yaxis_title="Beta",
     )
+
     betas_fig.write_image("Investigations/CAPM_period/" + asset.ticker + "/betas.png")
+
+    
 
 
 def main():
@@ -312,9 +308,10 @@ def main():
     ]
     # tickers for 4 of the largest stocks and 4 random ones I chose (Azenta, SCYNEXIS, Crocs Inc, & PLUS THERAPEUTICS)
     macro_economic_collection = open_macro_economic_file()
+    asset_unvierse = pickle.load(open("Collections/asset_universe.pkl", "rb"))
     for ticker in tickers:
         print(ticker)
-        asset = asset_creation(ticker)
+        asset = asset_unvierse.asset_lookup(ticker)
         CAPM_investigation(asset, macro_economic_collection)
         CAPM_over_time(
             asset,

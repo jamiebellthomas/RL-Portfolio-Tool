@@ -71,7 +71,7 @@ def illiquidity_sense_check_investigation(asset_universe: Collection):
         fig.add_trace(
             go.Scatter(
                 x=[mean_volume],
-                y=[asset.illiquidity_ratio],
+                y=[asset.illiquidity_ratio]*1000000,
                 mode="markers",
                 marker=dict(color="blue"),
             )

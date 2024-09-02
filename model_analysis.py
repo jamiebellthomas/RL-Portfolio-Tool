@@ -392,18 +392,32 @@ def highest_performing_model(validation_comparison_folder:str) -> str:
 
 
 if __name__ == "__main__":
-    highest_performer = highest_performing_model("Validation/test_2021-01-01_to_2024-08-23_comparison")
-    #validation1 = "Logs/v20/model_3883008_steps.zip"
+    #highest_performer = highest_performing_model("Validation/test_2021-01-01_to_2024-08-23_comparison")
+    #model = "Logs/v20/model_3883008_steps.zip"
     #validation2 = "Logs/2024-08-27_00-19-40/PPO/model_3719168_steps.zip"
     #validation2 = "Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"
     #validation1 = "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"
-    model = "Logs/test/PPO/model_{}_steps.zip".format(highest_performer)
-    print("Model path: ", model)
-    #validation1 = "Logs/v19/model_3833856_steps.zip"
-    main(model_path=model, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
-    #main(model_path=validation2, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
     
-    #main(model_path=valiation1, start_date=datetime.date(2012, 1, 1), end_date=datetime.date(2012, 1, 5))
+    #model = "Logs/test/PPO/model_{}_steps.zip".format(highest_performer)
+
+    #model = "Logs/only_entropy/PPO/model_393216_steps.zip"
+    #model = "Logs/only_roi/PPO/model_196608_steps.zip"
+    #model = "Logs/only_sharpe/PPO/model_2293760_steps.zip"
+    #model = "Logs/roi/PPO/model_1114112_steps.zip"
+    #model = "Logs/sortino/PPO/model_2949120_steps.zip"
+    #model = "Logs/treynor/PPO/model_1212416_steps.zip"
+    #model = "Logs/entropy/PPO/model_1277952_steps.zip"
+
+    model_list = ["Logs/v20/model_3883008_steps.zip", "Logs/2024-08-27_16-50-39/DDPG/model_40000_steps.zip"]
+
+    for model in model_list:
+        print("Model path: ", model)
+        main(model_path=model, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 27))
+
+    model_list = ["Logs/2024-08-27_00-19-40/PPO/model_3719168_steps.zip","Logs/2024-08-27_16-50-39/DDPG/model_30000_steps.zip"]
+    for model in model_list:
+        print("Model path: ", model)
+        main(model_path=model, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"])
 
     
     

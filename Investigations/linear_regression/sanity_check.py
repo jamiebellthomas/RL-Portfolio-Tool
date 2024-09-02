@@ -30,6 +30,7 @@ def plot_linear_regression(asset_list: list, date: datetime.date) -> None:
             f"$\\text{{Trajectory of {asset_list[1]}}}$",
             f"$\\text{{Trajectory of {asset_list[2]}}}$",
         ),
+        horizontal_spacing=0.08,
     )
     for index, asset in enumerate(asset_list):
         slope, intercept, pct_change = asset.calculate_linear_regression(
