@@ -52,7 +52,7 @@ The `step()` method takes in an `action`, which is a normalised vector represent
 the next timestamp sequentially to generate the next iterations observations. The enviornment will continue to increments the time until 
 a critical time is reached at which point `reset()` is called and the environment resets and the agent starts again.
 
-A full outline of the motivations, methodologies, results, future work and conclusions can be found in my project report.
+A full outline of the motivations, methodologies, results, future work and conclusions can be found in my [Project Report](https://github.com/jamiebellthomas/RL-Portfolio-Tool/blob/main/ws19177_Summer_Project_MSc_Report.pdf).
 
 
 
