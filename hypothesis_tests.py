@@ -4,7 +4,6 @@ import numpy as np
 from scipy import stats
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from mods import clean
 from scipy.stats import wilcoxon
 
 
@@ -63,10 +62,8 @@ def plot_feature_selection(model_file_path: str, baseline_file_path: str) -> Non
 
     # Let's get the feature selection for the model
     expected_returns = model["Weighted Asset Expected Return"]
-    clean(expected_returns, 1.2,0.003)
 
     volatility = model["Weighted Asset Volatility"]
-    clean(volatility, 0.93,0.0001)
 
     illiquidity = model["Weighted Asset Illiquidity"]
 

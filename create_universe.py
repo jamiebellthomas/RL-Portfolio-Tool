@@ -141,7 +141,8 @@ def main_create():
     Output: None
     """
 
-    main_filename = "Collections/test_asset_universe.pkl"
+    main_filename = "Collections/asset_universe.pkl"
+    reduced_filename = "Collections/reduced_asset_universe.pkl"
 
     # First check to see if the file already exists, if so, delete it
     try:
@@ -159,10 +160,9 @@ def main_create():
     with open(main_filename, "wb") as file:
         pickle.dump(collection, file)
 
-    # upload the file to Google Drive
+    with open(reduced_filename, "wb") as file:
+        pickle.dump(reduced_collection, file)
 
-    # upload(main_filename,'Collections','asset_universe.pkl')
-    # upload(reduced_filename,'Collections','reduced_asset_universe.pkl')
 
 
 def extract_ticker_list_from_collection(asset_collection: AssetCollection) -> list:
@@ -216,15 +216,4 @@ def main_read():
 
 
 if __name__ == "__main__":
-    # main_create()
-    # main_read()
-
-    collection = read_collection("Collections/test_asset_universe.pkl")
-    create_reduced_collection(collection, "Collections/test_reduced_asset_universe.pkl")
-    # extract_ticker_list_from_collection(collection)
-    # asset = collection.asset_lookup("CRIS")
-    # asset.plot_asset()
-    reduced_collection = read_collection("Collections/test_reduced_asset_universe.pkl")
-    # check to see if NVDA is in the reduced collection
-    print(reduced_collection.asset_lookup("NVDA"))
-    pass
+    main_create()

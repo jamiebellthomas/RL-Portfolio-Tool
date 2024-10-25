@@ -700,30 +700,28 @@ if __name__ == "__main__":
         open("Collections/macro_economic_factors.pkl", "rb")
     )
 
-    # asset = asset_universe.asset_lookup("NVDA")
-    # today = datetime.date.today()
-    # asset.plot_asset(start_date=datetime.date(2023, 1, 1), end_date=today)
-
-
-    # sense_check(asset_universe)
 
     # validate(model_path=model_path,asset_universe=asset_universe,macro_economic_factors=macro_economic_factors,create_folder=True)
     model_folder = "Logs/test/PPO"
+
+
     model_type = model_folder.split("/")[-1]
     validate_loop(model_folder=model_folder, start_date=hyperparameters["end_training_date"], end_date=datetime.date(2024, 8, 26), model_type=model_type)
+    
+
+
+
+    """
+
     #validate_loop(model_folder=model_folder, start_date=hyperparameters["start_validation_date"], end_date=hyperparameters["start_training_date"], model_type=model_type)
     manual_plot("Validation/test_2021-01-01_to_2024-08-23_comparison")
-
-
-
-
     # analyse_validation_results("v4", asset_universe)
 
     model_list = [16384, 98304, 1015808, 2015232, 3063808, 3883008]
     validation_folder = "Validation/v20_comparison"
     #validation_multiplot(validation_folder, model_list, asset_universe, macro_economic_factors)
 
-    """
+    
     # playing around with plots
     latest_date = extract_latest_date(asset_universe)
     print("Latest Date: ", latest_date)
